@@ -95,7 +95,7 @@ def snrvtime_fit(fn,bid):
     fn = fn.expanduser()
 
     with h5py.File(str(fn),'r',libver='latest') as f:
-        t = ut2dt(f['/Time/UnixTime'])
+        t = ut2dt(f['/Time/UnixTime'].value)
         bind = f['/BeamCodes'][:,0] == bid
         snr = f['/NeFromPower/SNR'][:,bind,:].squeeze().T
         z = f['/NeFromPower/Altitude'][bind,:].squeeze()/1e3
@@ -218,12 +218,12 @@ if __name__ == '__main__':
     fn = Path(p.fn).expanduser()
     ftype = fn.name.split('.')[1]
 #%% raw (lowest common level)
-    if ftype in ('.dt0','.dt3') and p.samples:
+    if ftype in ('dt0','dt3') and p.samples:
         vlim = p.vlim if p.vlim else (35,None)
         snrsamp = snrvtime_samples(fn,p.beamid)
         plotsnr(snrsamp,fn,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
 #%% 12 second (numerous integrated pulses)
-    elif ftype in ('.dt0','.dt3'):
+    elif ftype in ('dt0','dt3'):
         vlim = p.vlim if p.vlim else (47,None)
         snr12sec = snrvtime_raw12sec(fn,p.beamid)
         plotsnr(snr12sec,fn,vlim=vlim,ctxt='SNR [dB]')
