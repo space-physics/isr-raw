@@ -83,7 +83,7 @@ def snrvtime_raw12sec(fn,bid):
     fn = fn.expanduser()
 
     with h5py.File(str(fn),'r',libver='latest') as f:
-        t = ut2dt(f['/Time/UnixTime'])
+        t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
         bind  = f['/Raw11/Raw/Beamcodes'][0,:] == bid
         power = f['/Raw11/Raw/Power/Data'][:,bind,:].squeeze().T
         srng  = f['/Raw11/Raw/Power/Range'].value.squeeze()/1e3
@@ -139,11 +139,25 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     c.set_label(ctxt)
 
     ts = snr.columns[1] - snr.columns[0]
-    ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(fn.name, snr.columns[0].strftime('%Y-%m-%d'),ts.microseconds/1e6))
+    ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(_expfn(fn), snr.columns[0].strftime('%Y-%m-%d'),ts.total_seconds()))
 
 
     #last command
     fg.tight_layout()
+
+def _expfn(fn):
+    """
+    returns text string based on file suffix
+    """
+    if fn.name.endswith('.dt0.h5'):
+        return 'alternating code'
+    elif fn.name.endswith('.dt1.h5'):
+        return 'downnshifted plasma line'
+    elif fn.name.endswith('.dt2.h5'):
+        return 'upshifted plasma line'
+    elif fn.name.endswith('.dt3.h5'):
+        return 'long pulse'
+
 
 def plotsnr1d(snr,fn,t0,zlim=(90,None)):
     assert isinstance(snr,DataFrame)
@@ -202,13 +216,14 @@ if __name__ == '__main__':
 
 #%%
     fn = Path(p.fn).expanduser()
+    ftype = fn.name.split('.')[1]
 #%% raw (lowest common level)
-    if fn.name.endswith('.dt3.h5') and p.samples:
+    if ftype in ('.dt0','.dt3') and p.samples:
         vlim = p.vlim if p.vlim else (35,None)
         snrsamp = snrvtime_samples(fn,p.beamid)
         plotsnr(snrsamp,fn,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
 #%% 12 second (numerous integrated pulses)
-    elif fn.name.endswith('.dt3.h5'):
+    elif ftype in ('.dt0','.dt3'):
         vlim = p.vlim if p.vlim else (47,None)
         snr12sec = snrvtime_raw12sec(fn,p.beamid)
         plotsnr(snr12sec,fn,vlim=vlim,ctxt='SNR [dB]')
