@@ -192,25 +192,21 @@ if __name__ == '__main__':
     p.add_argument('--t0',help='time to extract 1-D vertical plot')
     p.add_argument('--samples',help='use raw samples (lowest level data commnoly available)',action='store_true')
     p.add_argument('--beamid',help='beam id 64157 zenith beam',type=int,default=64157)
-    p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2,default=(35,None))
+    p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2)
     p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90,None))
     p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2)
     p = p.parse_args()
 
-#    fn = (Path('~/data/20130413.001_ac_30sec.h5'),
-#          Path('~/data/20130413.001_lp_30sec.h5'))
-#    t0 = datetime(2013,4,14,8,54,30)
-#    for b in ((datetime(2013,4,14,8),   datetime(2013,4,14,10)),
-#              (datetime(2013,4,14,8,50),datetime(2013,4,14,9,0))):
 #%%
     fn = Path(p.fn).expanduser()
 #%% raw (lowest common level)
     if fn.name.endswith('.dt3.h5') and p.samples:
+        vlim = p.vlim if p.vlim else (35,None)
         snrsamp = snrvtime_samples(fn,p.beamid)
         plotsnr(snrsamp,fn,tlim=p.tlim,vlim=p.vlim,ctxt='Power [dB]')
 #%% 12 second (numerous integrated pulses)
     elif fn.name.endswith('.dt3.h5'):
-        #vlim=(47,None)
+        vlim = p.vlim if p.vlim else (47,None)
         snr12sec = snrvtime_raw12sec(fn,p.beamid)
         plotsnr(snr12sec,fn,vlim=p.vlim,ctxt='SNR [dB]')
 #%% 30 second integegration plots
