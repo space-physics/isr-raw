@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 reading PFISR data down to IQ samples
+
+See README.rst for the data types this file handles.
+
 """
 from __future__ import division
 from pathlib2 import Path
