@@ -206,20 +206,20 @@ if __name__ == '__main__':
     if fn.name.endswith('.dt3.h5') and p.samples:
         vlim = p.vlim if p.vlim else (35,None)
         snrsamp = snrvtime_samples(fn,p.beamid)
-        plotsnr(snrsamp,fn,tlim=p.tlim,vlim=p.vlim,ctxt='Power [dB]')
+        plotsnr(snrsamp,fn,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
 #%% 12 second (numerous integrated pulses)
     elif fn.name.endswith('.dt3.h5'):
         vlim = p.vlim if p.vlim else (47,None)
         snr12sec = snrvtime_raw12sec(fn,p.beamid)
-        plotsnr(snr12sec,fn,vlim=p.vlim,ctxt='SNR [dB]')
+        plotsnr(snr12sec,fn,vlim=vlim,ctxt='SNR [dB]')
 #%% 30 second integegration plots
     else:
-        #vlim=(-20,None)
+        vlim = p.vlim if p.vlim else (-20,None)
         snr = snrvtime_fit(fn,p.beamid)
 
         if p.t0:
             plotsnr1d(snr,fn,p.t0,p.zlim)
-        plotsnr(snr,fn,p.tlim,p.vlim)
-        plotsnrmesh(snr,fn,p.t0,p.vlim,p.zlim)
+        plotsnr(snr,fn,p.tlim,vlim)
+        plotsnrmesh(snr,fn,p.t0,vlim,p.zlim)
 
     show()

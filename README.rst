@@ -12,18 +12,27 @@ File Types
 ==========
 Currently, these raw data files are *not* currently contained on `Madrigal <http://isr.sri.com/madrigal>`_, you will have to email SRI staff to get them manually.
 
-The "ion line" measurement bandwidth is ~ +/- 100 kHz from the radar center frequency, and contains the data necessary for volume estimates of Electron Density, Ion Temperature, Electron Temperature, and Ion Velocity,
-under certain assumptions for species composition vs. altitude. Some of the need to make assumptions about atmospheric composition can be mitigated with combined ion/plasma line inversion, among numerous other benefits.
-The plasma line returns have several MHz of bandwidth, but most of the energy is contained in narrower bands upshifted and downshifted from the center frequency.
-
 ===========   ==================
 File ext.      Data Type
 ===========   ==================
 dt0.h5        Ion Line: Alternating Code
 dt1.h5        Downshifted Plamsa line (negative Doppler shift)
-dt2.h5        Upshifted Plasma line (postive Doppler shift)
-dt3.ht        Ion Line: Long Pulse (small Doppler )
+dt2.h5        Upshifted Plasma line (positive Doppler shift)
+dt3.h5        Ion Line: Long Pulse (small Doppler )
 ===========   ==================
+
+
+Discussion
+==========
+
+The "ion line" measurement bandwidth is ~ +/- 100 kHz from the radar center frequency, and contains the data necessary for volume estimates of Electron Density, Ion Temperature, Electron Temperature, and Ion Velocity,
+under certain assumptions for species composition vs. altitude. Some of the need to make assumptions about atmospheric composition can be mitigated with combined ion/plasma line inversion, among numerous other benefits.
+The plasma line returns have several MHz of bandwidth, but most of the energy is contained in narrower bands upshifted and downshifted from the center frequency.
+
+No one radar waveform is optimal for all conditions, particularly with regard to the spatio-temporal sampling dilemma.
+Incoherent scattering from tiny particles gives exceedingly weak returns, and even with many billions of particles in the scattering volume, it takes well over ten thousand radar pulses to build a statistical basis for a usable autocorrelation function (ACF).
+The shape of the ACF is fitted to estimate certain plasma parameters, given assumptions on the particle population that may be violated, causing in some limited
+sets of cases either inaccurate fits or a failure to estimate the parameters.
 
 
 
