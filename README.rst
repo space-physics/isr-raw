@@ -17,7 +17,7 @@ Currently, these raw data files are *not* currently contained on `Madrigal <http
 File ext.      Data Type
 ===========   ==================
 dt0.h5        Ion Line: Alternating Code
-dt1.h5        Downshifted Plamsa line (negative Doppler shift)
+dt1.h5        Downshifted Plasma line (negative Doppler shift)
 dt2.h5        Upshifted Plasma line (positive Doppler shift)
 dt3.h5        Ion Line: Long Pulse (small Doppler )
 ===========   ==================

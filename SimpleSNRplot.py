@@ -74,7 +74,15 @@ def readACF(fn,bid):
     """
     assert isinstance(fn,Path)
     assert isinstance(bid,integer_types) # a scalar integer!
+    fn = fn.expanduser()
 
+    with h5py.File(str(fn),'r',libver='latest') as f:
+        srng = f['/S/Data/Acf/Range'].values.squeeze()
+        Np = f['/Raw11/Raw/PulsesIntegrated'][0,0] #FIXME is this correct in general?
+        ut = sampletime(f['/Time/UnixTime'],Np)
+
+    t = ut2dt(ut)
+    return DataFrame(index=srng,columns=t,data=acf)
 
 def readpower_samples(fn,bid):
     """
@@ -83,7 +91,6 @@ def readpower_samples(fn,bid):
     """
     assert isinstance(fn,Path)
     assert isinstance(bid,integer_types) # a scalar integer!
-
     fn = fn.expanduser()
 
     with h5py.File(str(fn),'r',libver='latest') as f:
@@ -227,6 +234,7 @@ if __name__ == '__main__':
     p = ArgumentParser(description='demo of loading raw ISR data')
     p.add_argument('fn',help='HDF5 file to read')
     p.add_argument('--t0',help='time to extract 1-D vertical plot')
+    p.add_argument('--acf',help='show autocorrelation function (ACF)',action='store_true')
     p.add_argument('--samples',help='use raw samples (lowest level data commnoly available)',action='store_true')
     p.add_argument('--beamid',help='beam id 64157 zenith beam',type=int,default=64157)
     p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2)
@@ -242,6 +250,10 @@ if __name__ == '__main__':
         vlim = p.vlim if p.vlim else (32,60)
         snrsamp = readpower_samples(fn,p.beamid)
         plotsnr(snrsamp,fn,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
+    elif ftype in ('dt0','dt3') and p.acf:
+        vlim = p.vlim if p.vlim else (32,60)
+        acf = readACF(fn,p.beamid)
+        plotacf(acf,fn,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
 #%% 12 second (numerous integrated pulses)
     elif ftype in ('dt0','dt3'):
         vlim = p.vlim if p.vlim else (47,70)
