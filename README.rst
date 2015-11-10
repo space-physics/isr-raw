@@ -7,6 +7,7 @@ We work with the complex IQ voltage samples, the lowest level data available fro
 
 Coming soon, simultaneous plots with high speed multi-camera synchronized video.
 
+Tested on Python 3.5
 
 File Types
 ==========

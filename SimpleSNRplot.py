@@ -4,8 +4,10 @@ reading PFISR data down to IQ samples
 
 See README.rst for the data types this file handles.
 
+Designed for Python 3.5+, may work with older versions.
 """
 from __future__ import division
+from six import integer_types
 from pathlib2 import Path
 from datetime import datetime,timedelta
 from pytz import UTC
@@ -49,6 +51,12 @@ def findstride(beammat,bid):
     return nonzero(beammat[0,:]==bid)[0]
 
 def samplepower(sampiq,bstride,Np,Nr,Nt):
+    """
+    returns I**2 + Q**2 of radar received amplitudes
+    FIXME: what are sample units?
+    """
+    assert sampiq.ndim == 4
+
     power = empty((Nr,Np*Nt))
     i=0
     for it in range(Nt):
@@ -60,9 +68,22 @@ def samplepower(sampiq,bstride,Np,Nr,Nt):
 
     return power
 
-
-def snrvtime_samples(fn,bid):
+def readACF(fn,bid):
+    """
+    reads incoherent scatter radar autocorrelation function (ACF)
+    """
     assert isinstance(fn,Path)
+    assert isinstance(bid,integer_types) # a scalar integer!
+
+
+def readpower_samples(fn,bid):
+    """
+    reads samples (lowest level data) and computes power for a particular beam.
+    returns a Pandas DataFrame containing power measurements
+    """
+    assert isinstance(fn,Path)
+    assert isinstance(bid,integer_types) # a scalar integer!
+
     fn = fn.expanduser()
 
     with h5py.File(str(fn),'r',libver='latest') as f:
@@ -77,8 +98,7 @@ def snrvtime_samples(fn,bid):
     return DataFrame(index=srng, columns=t, data=power)
 
 
-
-def snrvtime_raw12sec(fn,bid):
+def readsnr_int(fn,bid):
     assert isinstance(fn,Path)
     fn = fn.expanduser()
 
@@ -219,13 +239,13 @@ if __name__ == '__main__':
     ftype = fn.name.split('.')[1]
 #%% raw (lowest common level)
     if ftype in ('dt0','dt3') and p.samples:
-        vlim = p.vlim if p.vlim else (35,None)
-        snrsamp = snrvtime_samples(fn,p.beamid)
+        vlim = p.vlim if p.vlim else (32,60)
+        snrsamp = readpower_samples(fn,p.beamid)
         plotsnr(snrsamp,fn,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
 #%% 12 second (numerous integrated pulses)
     elif ftype in ('dt0','dt3'):
-        vlim = p.vlim if p.vlim else (47,None)
-        snr12sec = snrvtime_raw12sec(fn,p.beamid)
+        vlim = p.vlim if p.vlim else (47,70)
+        snr12sec = readsnr_int(fn,p.beamid)
         plotsnr(snr12sec,fn,vlim=vlim,ctxt='SNR [dB]')
 #%% 30 second integegration plots
     else:
