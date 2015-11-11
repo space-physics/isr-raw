@@ -79,18 +79,18 @@ def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
     acf_noise = zeros((noiseall.shape[3],Nlag),complex64)
     spec_noise= zeros(2*Nlag-1,complex128)
 
-    for i in range(tInd[ti],tInd[ti]+2):
+    for i in range(tInd[ti]-1,tInd[ti]+1):
         acf += (acfall[i,bstride,:,:,0] + 1j*acfall[i,bstride,:,:,1]).T
 
         acf_noise += (noiseall[i,bstride,:,:,0] + 1j*noiseall[i,bstride,:,:,1]).T
 
-    acf       /= dns / (i-tInd[ti]+1) #division by zero w/o +1
-    acf_noise /= dns / (i-tInd[ti]+1)
+    acf       = acf/dns/(i-(tInd[ti]-1)+1) #NOT /=
+    acf_noise = acf_noise/dns / (i-(tInd[ti]-1)+1)
 #%% spectrum noise
     for i in range(Nlag):
         spec_noise += fftshift(fft(append(conj(acf_noise[i,1:][::-1]),acf_noise[i,:])))
 #
-    spec_noise /= Nlag
+    spec_noise = spec_noise/ Nlag
 #%% spectrum from ACF
     for i in range(Nr):
         spec[i,:] = fftshift(fft(append(conj(acf[i,1:][::-1]), acf[i,:])))-spec_noise
@@ -107,25 +107,26 @@ def readACF(fn,bid):
     assert isinstance(bid,integer_types) # a scalar integer!
     fn = fn.expanduser()
 
-    tInd = range(0,12,2) #TODO
+    tInd = list(range(20,30,1)) #TODO pick indices by datetime
     with h5py.File(str(fn),'r',libver='latest') as f:
         Nt = f['/Time/UnixTime'].shape[0]
+        t = ut2dt(f['/Time/UnixTime'].value)
         srng = f['/S/Data/Acf/Range'].value.squeeze()
         bstride = findstride(f['/S/Data/Beamcodes'],bid)
         bcodemap = DataFrame(index=f['/Setup/BeamcodeMap'][:,0].astype(int),
                              columns=['az','el'],
                              data=f['/Setup/BeamcodeMap'][:,1:3])
         azel = bcodemap.loc[bid,:]
-        for ti in tInd:
+        for i in range(len(tInd)):
             spectrum,acf = compacf(f['/S/Data/Acf/Data'],f['/S/Noise/Acf/Data'],
-                               srng.size,dns,bstride,ti,tInd)
+                               srng.size,dns,bstride,i,tInd)
             specdf = DataFrame(index=srng,data=spectrum)
-            plotacf(specdf,fn,azel,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
+            plotacf(specdf,fn,azel,t,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
 
-def plotacf(spec,fn,azel,tlim=(None,None),vlim=(None,None),ctxt=''):
+def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt=''):
     #%% plot axes
     goodz =spec.index.values*sin(radians(azel['el'])) > 60e3
-    z = spec.iloc[goodz,:].values #altitude over N km
+    z = spec.index[goodz].values #altitude over N km
     xfreq = linspace(-100/6,100/6,31) #kHz
 
     fg = figure()
