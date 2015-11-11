@@ -12,7 +12,7 @@ from pathlib2 import Path
 from datetime import datetime,timedelta
 from pytz import UTC
 from dateutil.parser import parse
-from numpy import (array,log10,absolute, meshgrid,empty,nonzero,zeros,
+from numpy import (array,log10,absolute, meshgrid,empty,nonzero,zeros,zeros_like,
                    complex64,complex128,conj,append,sin,radians,linspace)
 from numpy.ma import masked_invalid
 from numpy.fft import fft,fftshift
@@ -57,7 +57,7 @@ def samplepower(sampiq,bstride,Np,Nr,Nt):
     returns I**2 + Q**2 of radar received amplitudes
     FIXME: what are sample units?
     """
-    assert sampiq.ndim == 4
+    assert len(sampiq.shape) == 4 #h5py 2.5.0 doesn't have ndim, don't want .value to avoid reading whole dataset
 
     power = empty((Nr,Np*Nt))
     i=0
@@ -71,26 +71,34 @@ def samplepower(sampiq,bstride,Np,Nr,Nt):
     return power
 
 def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
+    bstride=bstride.squeeze()
     assert bstride.size==1 #TODO
 
     Nlag = acfall.shape[2]
     acf  =      zeros((Nr,Nlag),complex64) #NOT empty, note complex64 is single complex float
     spec =      empty((Nr,2*Nlag-1),complex128)
-    acf_noise = zeros((noiseall.shape[3],Nlag),complex64)
-    spec_noise= zeros(2*Nlag-1,complex128)
+    try:
+        acf_noise = zeros((noiseall.shape[3],Nlag),complex64)
+        spec_noise= zeros(2*Nlag-1,complex128)
+    except AttributeError:
+        acf_noise = None
+        spec_noise= 0.
 
     for i in range(tInd[ti]-1,tInd[ti]+1):
         acf += (acfall[i,bstride,:,:,0] + 1j*acfall[i,bstride,:,:,1]).T
+        if acf_noise is not None: #must be is not None
+            acf_noise += (noiseall[i,bstride,:,:,0] + 1j*noiseall[i,bstride,:,:,1]).T
 
-        acf_noise += (noiseall[i,bstride,:,:,0] + 1j*noiseall[i,bstride,:,:,1]).T
-
-    acf       = acf/dns/(i-(tInd[ti]-1)+1) #NOT /=
-    acf_noise = acf_noise/dns / (i-(tInd[ti]-1)+1)
+    acf = acf/dns/(i-(tInd[ti]-1)+1) #NOT /=
+    if acf_noise is not None: #must be is not None
+        acf_noise = acf_noise/dns / (i-(tInd[ti]-1)+1)
 #%% spectrum noise
-    for i in range(Nlag):
-        spec_noise += fftshift(fft(append(conj(acf_noise[i,1:][::-1]),acf_noise[i,:])))
-#
-    spec_noise = spec_noise/ Nlag
+    if acf_noise is not None:
+        for i in range(Nlag):
+            spec_noise += fftshift(fft(append(conj(acf_noise[i,1:][::-1]),acf_noise[i,:])))
+
+
+        spec_noise = spec_noise/ Nlag
 #%% spectrum from ACF
     for i in range(Nr):
         spec[i,:] = fftshift(fft(append(conj(acf[i,1:][::-1]), acf[i,:])))-spec_noise
@@ -111,14 +119,25 @@ def readACF(fn,bid,makeplot,odir):
     with h5py.File(str(fn),'r',libver='latest') as f:
         Nt = f['/Time/UnixTime'].shape[0]
         t = ut2dt(f['/Time/UnixTime'].value)
-        srng = f['/S/Data/Acf/Range'].value.squeeze()
-        bstride = findstride(f['/S/Data/Beamcodes'],bid)
+        ft = ftype(fn)
+        if ft == 'dt3':
+            rk = '/S/'
+            noiseall = f[rk+'Noise/Acf/Data']
+        elif ft == 'dt0':
+            rk = '/IncohCodeFl/'
+            s=f[rk+'Data/Acf/Data'].shape
+            noiseall = None #TODO hack for dt0
+        else:
+            raise TypeError('unexpected file type {}'.format(ft))
+
+        srng = f[rk + 'Data/Acf/Range'].value.squeeze()
+        bstride = findstride(f[rk+'Data/Beamcodes'],bid)
         bcodemap = DataFrame(index=f['/Setup/BeamcodeMap'][:,0].astype(int),
                              columns=['az','el'],
                              data=f['/Setup/BeamcodeMap'][:,1:3])
         azel = bcodemap.loc[bid,:]
         for i in range(len(tInd)):
-            spectrum,acf = compacf(f['/S/Data/Acf/Data'],f['/S/Noise/Acf/Data'],
+            spectrum,acf = compacf(f[rk+'Data/Acf/Data'],noiseall,
                                srng.size,dns,bstride,i,tInd)
             specdf = DataFrame(index=srng,data=spectrum)
             plotacf(specdf,fn,azel,t[tInd[i]],tlim=p.tlim,vlim=vlim,ctxt='dB',
@@ -128,7 +147,7 @@ def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt='',makeplot=[]
     #%% plot axes
     goodz =spec.index.values*sin(radians(azel['el'])) > 60e3
     z = spec.index[goodz].values/1e3 #altitude over N km
-    xfreq = linspace(-100/6,100/6,31) #kHz
+    xfreq = linspace(-100/6,100/6,spec.shape[1]) #kHz
 
     fg = figure()
     ax = fg.gca()
@@ -138,7 +157,7 @@ def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt='',makeplot=[]
     c.set_label(ctxt)
     ax.set_xlabel('frequency [kHz]')
     ax.set_ylabel('altitude [km]')
-    ax.set_title('{} {}'.format(fn.name,t))
+    ax.set_title('{} {}'.format(_expfn(fn),t))
     ax.autoscale(True,'both',tight=True)
 
     if 'png' in makeplot:
@@ -295,6 +314,9 @@ def plotsnrmesh(snr,fn,t0,vlim,zlim=(90,None)):
     ax3.set_xlabel('time')
     ax3.autoscale(True,'y',tight=True)
 
+def ftype(fn):
+    return fn.name.split('.')[1]
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
     p = ArgumentParser(description='demo of loading raw ISR data')
@@ -313,18 +335,17 @@ if __name__ == '__main__':
 #%%
     fn = Path(p.fn).expanduser()
     odir = Path(p.odir).expanduser()
-    ftype = fn.name.split('.')[1]
 
 #%% raw (lowest common level)
-    if ftype in ('dt0','dt3') and p.samples:
+    if ftype(fn) in ('dt0','dt3') and p.samples:
         vlim = p.vlim if p.vlim else (32,60)
         snrsamp = readpower_samples(fn,p.beamid)
         plotsnr(snrsamp,fn,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
-    elif ftype in ('dt0','dt3') and p.acf:
+    elif ftype(fn) in ('dt0','dt3') and p.acf:
         vlim = p.vlim if p.vlim else (20,45)
         readACF(fn,p.beamid,p.makeplot,odir)
 #%% 12 second (numerous integrated pulses)
-    elif ftype in ('dt0','dt3'):
+    elif ftype(fn) in ('dt0','dt3'):
         vlim = p.vlim if p.vlim else (47,70)
         snr12sec = readsnr_int(fn,p.beamid)
         plotsnr(snr12sec,fn,vlim=vlim,ctxt='SNR [dB]')
