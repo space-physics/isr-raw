@@ -18,7 +18,7 @@ from numpy.ma import masked_invalid
 from numpy.fft import fft,fftshift
 import h5py
 from pandas import DataFrame
-from matplotlib.pyplot import figure,show
+from matplotlib.pyplot import figure,show,close
 from matplotlib.dates import MinuteLocator,SecondLocator
 from mpl_toolkits.mplot3d import Axes3D
 #import seaborn as sns
@@ -98,7 +98,7 @@ def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
 
     return spec,acf
 
-def readACF(fn,bid):
+def readACF(fn,bid,makeplot,odir):
     """
     reads incoherent scatter radar autocorrelation function (ACF)
     """
@@ -121,20 +121,33 @@ def readACF(fn,bid):
             spectrum,acf = compacf(f['/S/Data/Acf/Data'],f['/S/Noise/Acf/Data'],
                                srng.size,dns,bstride,i,tInd)
             specdf = DataFrame(index=srng,data=spectrum)
-            plotacf(specdf,fn,azel,t,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
+            plotacf(specdf,fn,azel,t[tInd[i]],tlim=p.tlim,vlim=vlim,ctxt='dB',
+                    makeplot=makeplot,odir=odir)
 
-def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt=''):
+def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt='',makeplot=[],odir=''):
     #%% plot axes
     goodz =spec.index.values*sin(radians(azel['el'])) > 60e3
-    z = spec.index[goodz].values #altitude over N km
+    z = spec.index[goodz].values/1e3 #altitude over N km
     xfreq = linspace(-100/6,100/6,31) #kHz
 
     fg = figure()
     ax = fg.gca()
     h=ax.pcolormesh(xfreq,z,10*log10(absolute(spec.values[goodz,:])),
-                  vmin=vlim[0],vmax=vlim[1])
+                  vmin=vlim[0],vmax=vlim[1],cmap='cubehelix_r')
     c=fg.colorbar(h,ax=ax)
-    c.set_label('dB relative')
+    c.set_label(ctxt)
+    ax.set_xlabel('frequency [kHz]')
+    ax.set_ylabel('altitude [km]')
+    ax.set_title('{} {}'.format(fn.name,t))
+    ax.autoscale(True,'both',tight=True)
+
+    if 'png' in makeplot:
+        ppth = odir/(t.strftime('%Y-%m-%dT%H:%M:%S')+'.png')
+        print('saving {}'.format(ppth))
+        fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
+
+    if not 'show' in makeplot:
+        close(fg)
 
 
 def readpower_samples(fn,bid):
@@ -293,19 +306,23 @@ if __name__ == '__main__':
     p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2)
     p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90,None))
     p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2)
+    p.add_argument('-m','--makeplot',help='png to write pngs',nargs='+',default=['show'])
+    p.add_argument('-o','--odir',help='directory to write files to',default='')
     p = p.parse_args()
 
 #%%
     fn = Path(p.fn).expanduser()
+    odir = Path(p.odir).expanduser()
     ftype = fn.name.split('.')[1]
+
 #%% raw (lowest common level)
     if ftype in ('dt0','dt3') and p.samples:
         vlim = p.vlim if p.vlim else (32,60)
         snrsamp = readpower_samples(fn,p.beamid)
         plotsnr(snrsamp,fn,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
     elif ftype in ('dt0','dt3') and p.acf:
-        vlim = p.vlim if p.vlim else (32,60)
-        readACF(fn,p.beamid)
+        vlim = p.vlim if p.vlim else (20,45)
+        readACF(fn,p.beamid,p.makeplot,odir)
 #%% 12 second (numerous integrated pulses)
     elif ftype in ('dt0','dt3'):
         vlim = p.vlim if p.vlim else (47,70)
