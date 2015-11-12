@@ -1,0 +1,10 @@
+setuptools
+six
+nose
+numpy
+pandas
+matplotlib
+seaborn
+h5py
+python-dateutil
+pytz

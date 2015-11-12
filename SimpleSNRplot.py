@@ -19,6 +19,33 @@ from isrutils.snrpower import (readpower_samples,plotsnr,readsnr_int,snrvtime_fi
 from isrutils.rawacf import readACF
 from isrutils.common import ftype
 
+def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
+    fn = Path(fn).expanduser()
+    odir = Path(odir).expanduser()
+
+#%% raw (lowest common level)
+    if ftype(fn) in ('dt0','dt3') and samples:
+        vlim = vlim if vlim else (32,60)
+        snrsamp = readpower_samples(fn,beamid)
+        plotsnr(snrsamp,fn,tlim=tlim,vlim=vlim,ctxt='Power [dB]')
+    elif ftype(fn) in ('dt0','dt3') and acf:
+        vlim = vlim if vlim else (20,45)
+        readACF(fn,beamid,makeplot,odir,tlim=tlim,vlim=vlim)
+#%% 12 second (numerous integrated pulses)
+    elif ftype(fn) in ('dt0','dt3'):
+        vlim = vlim if vlim else (47,70)
+        snr12sec = readsnr_int(fn,beamid)
+        plotsnr(snr12sec,fn,vlim=vlim,ctxt='SNR [dB]')
+#%% 30 second integegration plots
+    else:
+        vlim = vlim if vlim else (-20,None)
+        snr = snrvtime_fit(fn,beamid)
+
+        if t0:
+            plotsnr1d(snr,fn,t0,zlim)
+        plotsnr(snr,fn,tlim,vlim)
+        plotsnrmesh(snr,fn,t0,vlim,zlim)
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
     p = ArgumentParser(description='demo of loading raw ISR data')
@@ -34,31 +61,6 @@ if __name__ == '__main__':
     p.add_argument('-o','--odir',help='directory to write files to',default='')
     p = p.parse_args()
 
-#%%
-    fn = Path(p.fn).expanduser()
-    odir = Path(p.odir).expanduser()
-
-#%% raw (lowest common level)
-    if ftype(fn) in ('dt0','dt3') and p.samples:
-        vlim = p.vlim if p.vlim else (32,60)
-        snrsamp = readpower_samples(fn,p.beamid)
-        plotsnr(snrsamp,fn,tlim=p.tlim,vlim=vlim,ctxt='Power [dB]')
-    elif ftype(fn) in ('dt0','dt3') and p.acf:
-        vlim = p.vlim if p.vlim else (20,45)
-        readACF(fn,p.beamid,p.makeplot,odir,tlim=p.tlim,vlim=vlim)
-#%% 12 second (numerous integrated pulses)
-    elif ftype(fn) in ('dt0','dt3'):
-        vlim = p.vlim if p.vlim else (47,70)
-        snr12sec = readsnr_int(fn,p.beamid)
-        plotsnr(snr12sec,fn,vlim=vlim,ctxt='SNR [dB]')
-#%% 30 second integegration plots
-    else:
-        vlim = p.vlim if p.vlim else (-20,None)
-        snr = snrvtime_fit(fn,p.beamid)
-
-        if p.t0:
-            plotsnr1d(snr,fn,p.t0,p.zlim)
-        plotsnr(snr,fn,p.tlim,vlim)
-        plotsnrmesh(snr,fn,p.t0,vlim,p.zlim)
+    isrselect(p.fn,p.odir,p.beamid,p.tlim,p.vlim,p.zlim,p.t0,p.acf,p.samples,p.makeplot)
 
     show()

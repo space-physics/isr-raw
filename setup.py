@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 
 from setuptools import setup
-
+import subprocess,os
+#%%
+try:
+    subprocess.call(['conda','install','--file','requirements.txt'],env={'PATH': os.environ['PATH']},shell=False)
+    ok = True
+except Exception as e:
+    ok = False
+#%%
 with open('README.rst','r') as f:
 	long_description = f.read()
 
@@ -15,3 +22,5 @@ setup(name='isrutils',
       packages=['isrutils'],
 	  )
 
+if not ok:
+    print('you will need to install packages in requirements.txt  {}'.format(e))
