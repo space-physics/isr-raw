@@ -9,6 +9,15 @@ Coming soon, simultaneous plots with high speed multi-camera synchronized video.
 
 Tested on Python 3.5
 
+.. contents::
+
+Install
+=======
+::
+
+    git clone https://github.com/scienceopen/isrutils
+    python setup.py develop
+
 File Types
 ==========
 Currently, these raw data files are *not* currently contained on `Madrigal <http://isr.sri.com/madrigal>`_, you will have to email SRI staff to get them manually.
