@@ -1,14 +1,14 @@
 from __future__ import division, absolute_import
 from six import integer_types
 from pathlib2 import Path
-from numpy import empty,log10
+from numpy import empty,log10,nonzero
 import h5py
 #from pandas import DataFrame
 from matplotlib.pyplot import figure
 #
 from .common import ftype,findstride,ut2dt,_expfn,writeplots
 
-def readplasmaline(fn,beamid,makeplot,odir,vlim):
+def readplasmaline(fn,beamid,makeplot,odir,tlim,vlim):
     assert isinstance(fn,Path)
     assert isinstance(beamid,integer_types) # a scalar integer!
     fn = fn.expanduser()
@@ -28,8 +28,10 @@ def readplasmaline(fn,beamid,makeplot,odir,vlim):
         srng  = f['/PLFFTS/Data/Spectra/Range'].value.squeeze()/1e3
         freq  = f['/PLFFTS/Data/Spectra/Frequency'].value.squeeze() + foffs
 #%% spectrum compute
+    if tlim:
+        tind = nonzero((tlim[0] <= T) & (T<=tlim[1]))[0]
     spec = empty((srng.size,freq.size))
-    for ti,t in enumerate(T):
+    for ti,t in zip(tind,T[tind]):
         for i in range(srng.size):
             spec[i,:] = data[i,:,ti]
         plotplasmaline(spec,srng,freq,fn,t,vlim=vlim,ctxt=_expfn(fn),makeplot=makeplot,odir=odir)
@@ -53,4 +55,4 @@ def plotplasmaline(spec,srng,freq,fn,t,
     ax.tick_params(axis='both', which='both', direction='out')
     ax.autoscale(True,'both',tight=True)
 
-    writeplots(fg,t,odir,makeplot)
+    writeplots(fg,t,odir,makeplot,ctxt.split(' ')[0])

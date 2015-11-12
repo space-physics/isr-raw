@@ -9,6 +9,7 @@ Designed for Python 3.5+, may work with older versions.
 from __future__ import division,absolute_import
 from pathlib2 import Path
 from matplotlib.pyplot import show
+from dateutil.parser import parse
 #import seaborn as sns
 #sns.color_palette(sns.color_palette("cubehelix"))
 #sns.set(context='poster', style='ticks')
@@ -33,7 +34,7 @@ def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
 #%% plasma line
     if ft in ('dt1','dt2'):
         vlim = vlim if vlim else (70,100)
-        readplasmaline(fn,beamid,makeplot,odir,vlim=vlim)
+        readplasmaline(fn,beamid,makeplot,odir,tlim=tlim,vlim=vlim)
 #%% raw altcode and longpulse
     elif ft in ('dt0','dt3') and samples:
         vlim = vlim if vlim else (32,60)
@@ -72,6 +73,9 @@ if __name__ == '__main__':
     p.add_argument('-o','--odir',help='directory to write files to',default='')
     p = p.parse_args()
 
-    isrselect(p.fn,p.odir,p.beamid,p.tlim,p.vlim,p.zlim,p.t0,p.acf,p.samples,p.makeplot)
+    if p.tlim:
+        tlim = (parse(p.tlim[0]),parse(p.tlim[1]))
+
+    isrselect(p.fn,p.odir,p.beamid,tlim,p.vlim,p.zlim,p.t0,p.acf,p.samples,p.makeplot)
 
     show()

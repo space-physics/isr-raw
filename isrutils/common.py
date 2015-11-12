@@ -44,9 +44,9 @@ def sampletime(T,Np):
             i+=1
     return dtime
 
-def writeplots(fg,t,odir,makeplot):
+def writeplots(fg,t,odir,makeplot,ctxt=''):
     if 'png' in makeplot:
-        ppth = odir/(t.strftime('%Y-%m-%dT%H:%M:%S')+'.png')
+        ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H:%M:%S')+'.png')
         print('saving {}'.format(ppth))
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
         if 'show' not in makeplot:
