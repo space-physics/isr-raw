@@ -10,15 +10,11 @@ from __future__ import division,absolute_import
 from pathlib2 import Path
 from matplotlib.pyplot import show
 from dateutil.parser import parse
-#import seaborn as sns
-#sns.color_palette(sns.color_palette("cubehelix"))
-#sns.set(context='poster', style='ticks')
-#sns.set(rc={'image.cmap': 'cubehelix_r'}) #for contour
 #
 from isrutils.snrpower import (readpower_samples,plotsnr,readsnr_int,snrvtime_fit,
                                plotsnr1d,plotsnrmesh)
 from isrutils.rawacf import readACF
-from isrutils.common import ftype,_expfn
+from isrutils.common import ftype
 from isrutils.plasmaline import readplasmaline,plotplasmaline
 
 def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
@@ -36,7 +32,6 @@ def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
         vlim = vlim if vlim else (70,100)
         spec,freq = readplasmaline(fn,beamid,makeplot,odir,tlim=tlim,vlim=vlim)
         plotplasmaline(spec,freq,fn,vlim=vlim,zlim=zlim,makeplot=makeplot,odir=odir)
-
 #%% raw altcode and longpulse
     elif ft in ('dt0','dt3') and samples:
         vlim = vlim if vlim else (32,60)
@@ -67,7 +62,7 @@ if __name__ == '__main__':
     p.add_argument('--t0',help='time to extract 1-D vertical plot')
     p.add_argument('--acf',help='show autocorrelation function (ACF)',action='store_true')
     p.add_argument('--samples',help='use raw samples (lowest level data commnoly available)',action='store_true')
-    p.add_argument('--beamid',help='beam id 64157 zenith beam',type=int,default=64157)
+    p.add_argument('--beamid',help='beam id 64157 is magnetic zenith beam',type=int,default=64157)
     p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2)
     p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90,None))
     p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2)
@@ -75,8 +70,7 @@ if __name__ == '__main__':
     p.add_argument('-o','--odir',help='directory to write files to',default='')
     p = p.parse_args()
 
-    if p.tlim:
-        tlim = (parse(p.tlim[0]),parse(p.tlim[1]))
+    tlim = (parse(p.tlim[0]),parse(p.tlim[1])) if p.tlim else (None,None)
 
     isrselect(p.fn,p.odir,p.beamid,tlim,p.vlim,p.zlim,p.t0,p.acf,p.samples,p.makeplot)
 
