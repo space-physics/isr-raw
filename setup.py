@@ -17,6 +17,6 @@ setup(name='isrutils',
 	  )
 #%%
 try:
-    subprocess.call(['conda','install','--yes','--file','requirements.txt'],env={'PATH': os.environ['PATH']},shell=False)
+    subprocess.call(['conda','install','--yes','--quiet','--file','requirements.txt'],env={'PATH': os.environ['PATH']},shell=False)
 except Exception as e:
     print('you will need to install packages in requirements.txt  {}'.format(e))
