@@ -3,12 +3,6 @@
 from setuptools import setup
 import subprocess,os
 #%%
-try:
-    subprocess.call(['conda','install','--yes','--file','requirements.txt'],env={'PATH': os.environ['PATH']},shell=False)
-    ok = True
-except Exception as e:
-    ok = False
-#%%
 with open('README.rst','r') as f:
 	long_description = f.read()
 
@@ -21,6 +15,8 @@ setup(name='isrutils',
 	  install_requires=['pathlib2'],
       packages=['isrutils'],
 	  )
-
-if not ok:
+#%%
+try:
+    subprocess.call(['conda','install','--yes','--file','requirements.txt'],env={'PATH': os.environ['PATH']},shell=False)
+except Exception as e:
     print('you will need to install packages in requirements.txt  {}'.format(e))
