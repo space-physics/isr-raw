@@ -18,8 +18,8 @@ from dateutil.parser import parse
 from isrutils.snrpower import (readpower_samples,plotsnr,readsnr_int,snrvtime_fit,
                                plotsnr1d,plotsnrmesh)
 from isrutils.rawacf import readACF
-from isrutils.common import ftype
-from isrutils.plasmaline import readplasmaline
+from isrutils.common import ftype,_expfn
+from isrutils.plasmaline import readplasmaline,plotplasmaline
 
 def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
     """
@@ -34,7 +34,9 @@ def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
 #%% plasma line
     if ft in ('dt1','dt2'):
         vlim = vlim if vlim else (70,100)
-        readplasmaline(fn,beamid,makeplot,odir,tlim=tlim,vlim=vlim)
+        spec,freq = readplasmaline(fn,beamid,makeplot,odir,tlim=tlim,vlim=vlim)
+        plotplasmaline(spec,freq,fn,vlim=vlim,makeplot=makeplot,odir=odir)
+
 #%% raw altcode and longpulse
     elif ft in ('dt0','dt3') and samples:
         vlim = vlim if vlim else (32,60)
