@@ -8,7 +8,7 @@ from matplotlib.pyplot import figure,subplots,show
 #
 from .common import findstride,ut2dt,_expfn,writeplots
 
-def readplasmaline(fn,beamid,makeplot,odir,tlim,vlim):
+def readplasmaline(fn,beamid,tlim):
     """
     inputs:
     fn: d*.dt?.h5 file to load

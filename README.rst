@@ -15,7 +15,6 @@ Install
 =======
 ::
 
-    git clone https://github.com/scienceopen/isrutils
     python setup.py develop
 
 File Types
@@ -50,3 +49,4 @@ References
 ==========
 .. [1] H. Nilsson et al. `"Enhanced incoherent scatter plasma lines", Annales Geophysicae, 1997 <http://dx.doi.org/10.1007/s00585-996-1462-z>`_
 .. [2] E. Kudeki and M. Milla "Incoherent Scatter Radar — Spectral Signal Model and Ionospheric Applications", 2012, in:  Doppler Radar Observations - Weather Radar, Wind Profiler, Ionospheric Radar, and Other Advanced Applications, Dr. Joan Bech (Ed.), ISBN: 978-953-51-0496-4, InTech, DOI: 10.5772/39010. <http://www.intechopen.com/books/doppler-radar-observations-weather-radar-wind-profiler-ionospheric-radar-and-other-advanced-applications/incoherent-scatter-radar-spectral-measurements-and-ionospheric-applications>`_
+.. [3] H. Akbari et al

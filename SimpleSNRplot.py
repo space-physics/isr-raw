@@ -9,12 +9,11 @@ Designed for Python 3.5+, may work with older versions.
 from __future__ import division,absolute_import
 from pathlib2 import Path
 from matplotlib.pyplot import show
-from dateutil.parser import parse
 #
 from isrutils.snrpower import (readpower_samples,plotsnr,readsnr_int,snrvtime_fit,
                                plotsnr1d,plotsnrmesh)
 from isrutils.rawacf import readACF
-from isrutils.common import ftype
+from isrutils.common import ftype,boilerplateapi
 from isrutils.plasmaline import readplasmaline,plotplasmaline
 
 def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
@@ -22,15 +21,13 @@ def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
     this function is a switchyard to pick the right function to read and plot
     the desired data based on filename and user requests.
     """
+    assert isinstance(fn,Path)
 #%% handle path, detect file type
-    fn = Path(fn).expanduser()
-    odir = Path(odir).expanduser()
-
     ft = ftype(fn)
 #%% plasma line
     if ft in ('dt1','dt2'):
         vlim = vlim if vlim else (70,100)
-        spec,freq = readplasmaline(fn,beamid,makeplot,odir,tlim=tlim,vlim=vlim)
+        spec,freq = readplasmaline(fn,beamid,tlim)
         plotplasmaline(spec,freq,fn,vlim=vlim,zlim=zlim,makeplot=makeplot,odir=odir)
 #%% raw altcode and longpulse
     elif ft in ('dt0','dt3') and samples:
@@ -56,22 +53,8 @@ def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
         plotsnrmesh(snr,fn,t0,vlim,zlim)
 
 if __name__ == '__main__':
-    from argparse import ArgumentParser
-    p = ArgumentParser(description='demo of loading raw ISR data')
-    p.add_argument('fn',help='HDF5 file to read')
-    p.add_argument('--t0',help='time to extract 1-D vertical plot')
-    p.add_argument('--acf',help='show autocorrelation function (ACF)',action='store_true')
-    p.add_argument('--samples',help='use raw samples (lowest level data commnoly available)',action='store_true')
-    p.add_argument('--beamid',help='beam id 64157 is magnetic zenith beam',type=int,default=64157)
-    p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2)
-    p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90,None))
-    p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2)
-    p.add_argument('-m','--makeplot',help='png to write pngs',nargs='+',default=['show'])
-    p.add_argument('-o','--odir',help='directory to write files to',default='')
-    p = p.parse_args()
+    p,fn,odir,tlim = boilerplateapi()
 
-    tlim = (parse(p.tlim[0]),parse(p.tlim[1])) if p.tlim else (None,None)
-
-    isrselect(p.fn,p.odir,p.beamid,tlim,p.vlim,p.zlim,p.t0,p.acf,p.samples,p.makeplot)
+    isrselect(fn,odir,p.beamid,tlim,p.vlim,p.zlim,p.t0,p.acf,p.samples,p.makeplot)
 
     show()
