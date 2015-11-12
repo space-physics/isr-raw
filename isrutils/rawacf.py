@@ -8,7 +8,7 @@ from numpy import (empty,zeros,complex64,complex128,conj,append,sin,radians,lins
 from numpy.fft import fft,fftshift
 from matplotlib.pyplot import figure,close
 #
-from .common import ftype,ut2dt,findstride,_expfn
+from .common import ftype,ut2dt,findstride,_expfn,writeplots
 
 def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
     bstride=bstride.squeeze()
@@ -100,10 +100,7 @@ def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt='',makeplot=[]
     ax.set_title('{} {}'.format(_expfn(fn),t))
     ax.autoscale(True,'both',tight=True)
 
-    if 'png' in makeplot:
-        ppth = odir/(t.strftime('%Y-%m-%dT%H:%M:%S')+'.png')
-        print('saving {}'.format(ppth))
-        fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
+    writeplots(fg,t,odir,makeplot)
 
     if not 'show' in makeplot:
         close(fg)

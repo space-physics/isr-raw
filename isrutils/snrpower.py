@@ -11,17 +11,7 @@ from matplotlib.pyplot import figure
 from matplotlib.dates import MinuteLocator,SecondLocator
 from mpl_toolkits.mplot3d import Axes3D
 #
-from .common import ut2dt,findstride,_expfn
-
-def sampletime(T,Np):
-    dtime = empty(Np*T.shape[0])
-    i=0
-    for t in T: #each row
-        dt=(t[1]-t[0]) / Np
-        for j in range(Np):
-            dtime[i]=t[0]+j*dt
-            i+=1
-    return dtime
+from .common import ut2dt,findstride,_expfn,sampletime
 
 def samplepower(sampiq,bstride,Np,Nr,Nt):
     """
@@ -64,6 +54,7 @@ def readpower_samples(fn,bid):
 
 def readsnr_int(fn,bid):
     assert isinstance(fn,Path)
+    assert isinstance(bid,integer_types) # a scalar integer!
     fn = fn.expanduser()
 
     with h5py.File(str(fn),'r',libver='latest') as f:

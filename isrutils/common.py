@@ -1,6 +1,7 @@
-from numpy import array,nonzero
+from numpy import array,nonzero,empty
 from datetime import datetime
 from pytz import UTC
+from matplotlib.pyplot import close
 
 def ut2dt(ut):
     if ut.ndim==1:
@@ -32,3 +33,21 @@ def _expfn(fn):
         return 'upshifted plasma line'
     elif fn.name.endswith('.dt3.h5'):
         return 'long pulse'
+
+def sampletime(T,Np):
+    dtime = empty(Np*T.shape[0])
+    i=0
+    for t in T: #each row
+        dt=(t[1]-t[0]) / Np
+        for j in range(Np):
+            dtime[i]=t[0]+j*dt
+            i+=1
+    return dtime
+
+def writeplots(fg,t,odir,makeplot):
+    if 'png' in makeplot:
+        ppth = odir/(t.strftime('%Y-%m-%dT%H:%M:%S')+'.png')
+        print('saving {}'.format(ppth))
+        fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
+        if 'show' not in makeplot:
+            close(fg)
