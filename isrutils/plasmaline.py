@@ -1,10 +1,10 @@
 from __future__ import division, absolute_import
 from six import integer_types
 from pathlib2 import Path
-from numpy import log10,nonzero
+from numpy import log10,nonzero,meshgrid
 import h5py
 from pandas import Panel4D,DataFrame
-from matplotlib.pyplot import figure,subplots
+from matplotlib.pyplot import figure,subplots,show
 #
 from .common import findstride,ut2dt,_expfn,writeplots
 
@@ -45,17 +45,32 @@ def readplasmaline(fn,beamid,makeplot,odir,tlim,vlim):
     return spec,Freq
 
 
-def plotplasmaline(spec,Freq,fn, tlim=(None,None),vlim=(None,None),makeplot=[],odir=''):
+def plotplasmaline(spec,Freq,fn, tlim=(None,None),vlim=(None,None),zlim=(None,None),makeplot=[],odir=''):
+
+    ptype='mesh'
 
     for t in spec.items:
-        fg,axs = subplots(1,2,figsize=(15,5),sharey=True)
+        if ptype in ('mesh','surf'): #cannot use subplots for 3d with matplotlib 1.4
+            axs=[None,None]
+            fg = figure(figsize=(15,5))
+            axs[0] = fg.add_subplot(1,2,1,projection='3d')
+            axs[1] = fg.add_subplot(1,2,2,projection='3d')
+            fg.suptitle('{} {}'.format(fn.name,t.to_pydatetime()))
+        else:
+            fg,axs = subplots(1,2,figsize=(15,5),sharey=True)
+
         for s,ax,F in zip(spec,axs,Freq):
-            plotplasmatime(spec.loc[s,t,:,:],Freq[F].values,t.to_pydatetime(),fn,fg,ax,tlim,vlim,s,makeplot,odir)
+            if not ptype:
+                plotplasmatime(spec.loc[s,t,:,:],Freq[F].values,t.to_pydatetime(),fn,
+                               fg,ax,tlim,vlim,s,makeplot,odir)
+            else:
+                plotplasmamesh(spec.loc[s,t,:,:],Freq[F].values,fg,ax,vlim,zlim,ptype)
 
         writeplots(fg,t,odir,makeplot,s.split(' ')[0])
+        show()
 
 def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot,odir):
-
+    assert isinstance(spec,DataFrame)
     if not fg and not ax:
         fg = figure()
         ax = fg.gca()
@@ -63,7 +78,6 @@ def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot,odir):
         ax = fg.gca()
 
     srng = spec.index.values
-
     zgood = srng>60 # above N km
 
     h=ax.pcolormesh(freq/1e6,srng[zgood],10*log10(spec.values[zgood,:]),
@@ -79,4 +93,35 @@ def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot,odir):
     ax.set_title('{} {}'.format(_expfn(fn),t))
     ax.tick_params(axis='both', which='both', direction='out')
     ax.autoscale(True,'both',tight=True)
+    fg.tight_layout()
+
+def plotplasmamesh(spec,freq,fg,ax,vlim,zlim=(90,None),ptype=''):
+    assert isinstance(spec,DataFrame)
+    if not fg and not ax:
+        fg = figure()
+        ax = fg.gca()
+    elif fg and not ax:
+        ax = fg.gca()
+
+    srng = spec.index.values
+    zgood = srng>zlim[0] # above N km
+
+    S = 10*log10(spec.loc[zgood,:])
+    z = S.index.values
+
+    x,y = meshgrid(freq/1e6,z)
+
+#    ax3 = figure().gca(projection='3d')
+#
+#    ax3.scatter(x,y,S.values)
+    if ptype==  'surf':
+        ax.plot_surface(x,y,S.values,cmap='jet')
+    elif ptype=='mesh':
+        ax.plot_wireframe(x,y,S.values)
+
+    ax.set_zlim(vlim)
+    ax.set_zlabel('Power [dB]')
+    ax.set_ylabel('altitude [km]')
+    ax.set_xlabel('Frequency [MHz]')
+    ax.autoscale(True,'y',tight=True)
     fg.tight_layout()

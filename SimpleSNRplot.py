@@ -35,7 +35,7 @@ def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
     if ft in ('dt1','dt2'):
         vlim = vlim if vlim else (70,100)
         spec,freq = readplasmaline(fn,beamid,makeplot,odir,tlim=tlim,vlim=vlim)
-        plotplasmaline(spec,freq,fn,vlim=vlim,makeplot=makeplot,odir=odir)
+        plotplasmaline(spec,freq,fn,vlim=vlim,zlim=zlim,makeplot=makeplot,odir=odir)
 
 #%% raw altcode and longpulse
     elif ft in ('dt0','dt3') and samples:
