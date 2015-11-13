@@ -6,9 +6,10 @@ Michael Hirsch
 """
 from __future__ import division, absolute_import
 from pathlib2 import Path
+from matplotlib.pyplot import show
 #
 from isrutils.common import boilerplateapi,ftype
-from isrutils.summed import sumplasmaline,plotsumplasmaline
+from isrutils.summed import *
 
 def overlayisrhist(fn,odir,tlim,zlim,p):
     """
@@ -21,8 +22,11 @@ def overlayisrhist(fn,odir,tlim,zlim,p):
     ft = ftype(fn)
 #%% (0) read ISR, select power sum
     if ft in ('dt1','dt2'):
-        plsum = sumplasmaline(p.flim,zlim)
+        plsum = sumplasmaline(fn,p.beamid,p.flim,tlim,zlim)
         plotsumplasmaline(plsum)
+    elif ft in ('dt3',):
+        lpsum = sumlongpulse(fn,p.beamid,tlim,zlim)
+        plotsumlongpulse(lpsum,tlim)
 
 
 
@@ -30,3 +34,5 @@ if __name__ == '__main__':
     p,fn,odir,tlim = boilerplateapi()
 
     overlayisrhist(fn,odir,tlim,p.zlim,p)
+
+    show()

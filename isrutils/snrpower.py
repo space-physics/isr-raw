@@ -1,17 +1,15 @@
 from __future__ import division,absolute_import
 from pathlib2 import Path
 from six import integer_types
-from datetime import timedelta
 from dateutil.parser import parse
 from numpy import (log10,absolute, meshgrid,empty)
 from numpy.ma import masked_invalid
 import h5py
 from pandas import DataFrame
 from matplotlib.pyplot import figure
-from matplotlib.dates import MinuteLocator,SecondLocator
 from mpl_toolkits.mplot3d import Axes3D
 #
-from .common import ut2dt,findstride,_expfn,sampletime
+from .common import ut2dt,findstride,_expfn,sampletime,timeticks
 
 def samplepower(sampiq,bstride,Np,Nr,Nt):
     """
@@ -100,12 +98,7 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     else:
         tdiff = snr.columns[-1] - snr.columns[0]
 
-    if tdiff>timedelta(minutes=20):
-        ticker = MinuteLocator(interval=5)
-    elif (timedelta(minutes=1)<tdiff) & (tdiff<=timedelta(minutes=20)):
-        ticker = MinuteLocator(interval=1)
-    else:
-        ticker = SecondLocator(interval=5)
+    ticker = timeticks(tdiff)
 
     ax.xaxis.set_major_locator(ticker)
     ax.tick_params(axis='both', which='both', direction='out')

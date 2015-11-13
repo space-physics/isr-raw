@@ -1,10 +1,12 @@
 from six import integer_types
-from numpy import array,nonzero,empty,ndarray
+from h5py import Dataset
+from numpy import array,nonzero,empty,ndarray,int32
 from pathlib2 import Path
-from datetime import datetime
+from datetime import datetime,timedelta
 from dateutil.parser import parse
 from pytz import UTC
 from matplotlib.pyplot import close
+from matplotlib.dates import MinuteLocator,SecondLocator
 from argparse import ArgumentParser
 
 
@@ -47,8 +49,9 @@ def _expfn(fn):
         return 'long pulse'
 
 def sampletime(T,Np):
-    assert isinstance(T,ndarray)
-    assert isinstance(Np,integer_types)
+    assert isinstance(T,(ndarray,Dataset))
+    assert len(T.shape) ==2 and T.shape[1] == 2 #no ndim h5py 2.5
+    assert isinstance(Np,(integer_types,int32)), 'any integer will do'
     dtime = empty(Np*T.shape[0])
     i=0
     for t in T: #each row
@@ -67,6 +70,17 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
         if 'show' not in makeplot:
             close(fg)
+
+def timeticks(tdiff):
+    assert isinstance(tdiff,timedelta)
+
+    if tdiff>timedelta(minutes=20):
+        ticker = MinuteLocator(interval=5)
+    elif (timedelta(minutes=1)<tdiff) & (tdiff<=timedelta(minutes=20)):
+        ticker = MinuteLocator(interval=1)
+    else:
+        ticker = SecondLocator(interval=5)
+    return ticker
 
 def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p = ArgumentParser(description=descr)
