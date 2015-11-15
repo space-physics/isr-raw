@@ -2,7 +2,7 @@ from __future__ import division,absolute_import
 from pathlib2 import Path
 from six import integer_types
 from dateutil.parser import parse
-from numpy import (log10,absolute, meshgrid,empty)
+from numpy import (log10,absolute, meshgrid,empty,nonzero)
 from numpy.ma import masked_invalid
 import h5py
 from pandas import DataFrame
@@ -11,25 +11,37 @@ from mpl_toolkits.mplot3d import Axes3D
 #
 from .common import ut2dt,findstride,_expfn,sampletime,timeticks
 
-def samplepower(sampiq,bstride,Np,Nr,Nt):
+def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     """
     returns I**2 + Q**2 of radar received amplitudes
     FIXME: what are sample units?
+
+    I can't index by stride and slant range simultaneously, since h5py 2.5 says
+    Only one indexing vector or array is currently allowed for advanced selection
     """
     assert len(sampiq.shape) == 4 #h5py 2.5.0 doesn't have ndim, don't want .value to avoid reading whole dataset
+    assert isinstance(zlim[0],float) and isinstance(zlim[1],float),'you must specify altitude summation limits --zlim'
 
-    power = empty((Nr,Np*Nt))
-    i=0
-    for it in range(Nt):
-        for ip in range(Np):
-            power[:,i] = (sampiq[it,bstride[ip],:,0]**2 +
-                          sampiq[it,bstride[ip],:,1]**2)
+    Nr = srng.size
+    zind = (zlim[0] <= srng) & (srng <= zlim[1])
+    srng = srng[zind]
 
-            i+=1
+    Nt = ut.size
+#%% load only small bits of the hdf5 file, using advanced indexing. So fast!
+    power = empty((Nr,Nt))
+    for it in range(Nt//Np):
+        power[:,Np*it:Np*(it+1)] = (sampiq[it,bstride,:,0]**2 +
+                                    sampiq[it,bstride,:,1]**2).T
+#%% NOTE: could also index by read, start with pulse batch before request and end with batch after last request.
+    t = ut2dt(ut)
+    if tlim[0] is not None and tlim[1] is not None:
+        tind = (tlim[0]<=t) & (t<=tlim[1])
+        t = t[tind]
+        power = power[:,tind]
 
-    return power
+    return DataFrame(index=srng, columns=t, data=power[zind,:])
 
-def readpower_samples(fn,bid):
+def readpower_samples(fn,bid,tlim,zlim):
     """
     reads samples (lowest level data) and computes power for a particular beam.
     returns a Pandas DataFrame containing power measurements
@@ -39,15 +51,14 @@ def readpower_samples(fn,bid):
     fn = fn.expanduser()
 
     with h5py.File(str(fn),'r',libver='latest') as f:
-        Nt = f['/Time/UnixTime'].shape[0]
+#        Nt = f['/Time/UnixTime'].shape[0]
         Np = f['/Raw11/Raw/PulsesIntegrated'][0,0] #FIXME is this correct in general?
         ut = sampletime(f['/Time/UnixTime'],Np)
         srng  = f['/Raw11/Raw/Power/Range'].value.squeeze()/1e3
         bstride = findstride(f['/Raw11/Raw/RadacHeader/BeamCode'],bid)
-        power = samplepower(f['/Raw11/Raw/Samples/Data'],bstride,Np,srng.size,Nt) #I + jQ   # Ntimes x striped x alt x real/comp
+        power = samplepower(f['/Raw11/Raw/Samples/Data'],bstride,Np,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
 
-    t = ut2dt(ut)
-    return DataFrame(index=srng, columns=t, data=power)
+    return power
 
 
 def readsnr_int(fn,bid):

@@ -75,22 +75,23 @@ def timeticks(tdiff):
     assert isinstance(tdiff,timedelta)
 
     if tdiff>timedelta(minutes=20):
-        ticker = MinuteLocator(interval=5)
+        return MinuteLocator(interval=5)
     elif (timedelta(minutes=1)<tdiff) & (tdiff<=timedelta(minutes=20)):
-        ticker = MinuteLocator(interval=1)
+        return MinuteLocator(interval=1)
     else:
-        ticker = SecondLocator(interval=5)
-    return ticker
+        return SecondLocator(interval=5)
 
 def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p = ArgumentParser(description=descr)
-    p.add_argument('fn',help='HDF5 file to read')
+    p.add_argument('isrfn',help='HDF5 file to read')
+    p.add_argument('-c','--optfn',help='optical data HDF5 to read',default='')
+    p.add_argument('-a','--azelfn',help='plate scale file hdf5',default='')
     p.add_argument('--t0',help='time to extract 1-D vertical plot')
     p.add_argument('--acf',help='show autocorrelation function (ACF)',action='store_true')
     p.add_argument('--samples',help='use raw samples (lowest level data commnoly available)',action='store_true')
     p.add_argument('--beamid',help='beam id 64157 is magnetic zenith beam',type=int,default=64157)
     p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2)
-    p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90,None))
+    p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90.,None))
     p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2)
     p.add_argument('--flim',help='frequency limits to plots',type=float,nargs=2)
     p.add_argument('-m','--makeplot',help='png to write pngs',nargs='+',default=['show'])
@@ -99,4 +100,7 @@ def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
 
     tlim = (parse(p.tlim[0]),parse(p.tlim[1])) if p.tlim else (None,None)
 
-    return p,Path(p.fn).expanduser(),Path(p.odir).expanduser(),tlim
+    return (p,
+            Path(p.isrfn).expanduser(),
+            Path(p.odir).expanduser(),
+            tlim,)

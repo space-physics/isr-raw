@@ -53,8 +53,8 @@ def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
         plotsnrmesh(snr,fn,t0,vlim,zlim)
 
 if __name__ == '__main__':
-    p,fn,odir,tlim = boilerplateapi()
+    p,isrfn,odir,tlim = boilerplateapi()
 
-    isrselect(fn,odir,p.beamid,tlim,p.vlim,p.zlim,p.t0,p.acf,p.samples,p.makeplot)
+    isrselect(isrfn,odir,p.beamid,tlim,p.vlim,p.zlim,p.t0,p.acf,p.samples,p.makeplot)
 
     show()
