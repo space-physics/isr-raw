@@ -2,40 +2,63 @@
 summed measurements and plots
 """
 from __future__ import division,absolute_import
+from datetime import datetime
 from pandas import Panel4D,DataFrame,Series
-from numpy import absolute,nan
+from numpy import absolute,nan,linspace
 from matplotlib.pyplot import figure,draw,pause
+from matplotlib.cm import jet
 #import matplotlib.animation as anim
 #
 from .plasmaline import readplasmaline
-from .common import timeticks
+from .common import timeticks,findindex2Dsphere,timesync
 from .snrpower import readpower_samples
 
 #%% joint isr optical plot
-def dojointplot(ds,f1,a1,optical,coordnames,dataloc,sensorloc,utopt):
+def dojointplot(ds,beamazel,f1,a1,optical,coordnames,dataloc,sensorloc,utopt,utlim):
     """
     f1,a1: radar   figure,axes
     f2,a2: optical figure,axes
     """
     assert isinstance(ds,(Series,DataFrame))
-#%% form optical data
-
 
 #%% setup plots
     T = ds.index
     h1 = a1.axvline(nan)
+    t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
 
     f2 = figure()
     a2 = f2.gca()
     h2 = a2.imshow(optical[0,...],origin='lower',interpolation='none',cmap='gray')
+    a2.set_axis_off()
     t2 = a2.set_title('')
 
-    for i,t in enumerate(T):
+#%% plot magnetic zenith beam
+    azimg = dataloc[:,1].reshape(optical.shape[1:])
+    elimg = dataloc[:,2].reshape(optical.shape[1:])
+
+    br,bc = findindex2Dsphere(azimg,elimg,beamazel[0],beamazel[1])
+
+    #hollow beam circle
+#    a2.scatter(bc,br,s=500,marker='o',facecolors='none',edgecolor='red', alpha=0.5)
+
+    #beam data, filled circle
+    s2 = a2.scatter(bc,br,s=500,alpha=0.5,linewidths=1.5,
+                    edgecolors=jet(linspace(ds.min(),ds.max())))
+
+    a2.autoscale(True,tight=True)
+
+#%% time sync
+    Iisr,Iopt = timesync(T,utopt,utlim)
+#%% iterate
+    for iisr,iopt in zip(Iisr,Iopt):
 #%% update isr plot
-        h1.set_xdata(t)
+        t0isr=T[iisr]
+        h1.set_xdata(t0isr)
+        s2.set_array(ds[t0isr])
+        t1.set_text('isr: {}'.format(t0isr))
 #%% update hist plot
-        h2.set_data(optical[i,...])
-        h2.set_label('{}'.format(t))
+        h2.set_data(optical[iopt,...])
+        t2.set_text('  opt: {}'.format(datetime.utcfromtimestamp(utopt[iopt])))
 #%% anim
         draw(); pause(0.01)
 #
@@ -48,10 +71,10 @@ def dojointplot(ds,f1,a1,optical,coordnames,dataloc,sensorloc,utopt):
 
 #%% dt3
 def sumlongpulse(fn,beamid,tlim,zlim):
-    snrsamp = readpower_samples(fn,beamid,tlim,zlim)
+    snrsamp,azel = readpower_samples(fn,beamid,tlim,zlim)
     assert isinstance(snrsamp,DataFrame)
 
-    return snrsamp.sum(axis=0)
+    return snrsamp.sum(axis=0),azel
 
 def plotsumlongpulse(dsum):
     assert isinstance(dsum,Series)

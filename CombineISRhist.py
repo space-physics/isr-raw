@@ -33,7 +33,7 @@ def overlayisrhist(isrfn,odir,tlim,zlim,P):
         dsum = sumplasmaline(isrfn,p.beamid,p.flim,tlim,zlim)
         plotsumplasmaline(dsum)
     elif ft in ('dt3',):
-        dsum = sumlongpulse(isrfn,p.beamid,tlim,zlim)
+        dsum,beamazel = sumlongpulse(isrfn,p.beamid,tlim,zlim)
         fg,ax = plotsumlongpulse(dsum)
 #%% (2) plot radar with HiST optical
     utlim = [(l-epoch).total_seconds() for l in tlim]
@@ -44,7 +44,8 @@ def overlayisrhist(isrfn,odir,tlim,zlim,P):
 
 
 
-    dojointplot(dsum,fg,ax,optical['optical'],coordnames,dataloc,sensorloc,utopt)
+    dojointplot(dsum,beamazel,fg,ax,optical['optical'],coordnames,dataloc,sensorloc,
+                utopt,utlim)
 
 
 

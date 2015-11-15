@@ -57,8 +57,11 @@ def readpower_samples(fn,bid,tlim,zlim):
         srng  = f['/Raw11/Raw/Power/Range'].value.squeeze()/1e3
         bstride = findstride(f['/Raw11/Raw/RadacHeader/BeamCode'],bid)
         power = samplepower(f['/Raw11/Raw/Samples/Data'],bstride,Np,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
+#%% return az,el of this beam
+        azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
+        azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
 
-    return power
+    return power,azel
 
 
 def readsnr_int(fn,bid):
