@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from setuptools import setup
-import subprocess,os
+import subprocess
 #%%
 with open('README.rst','r') as f:
 	long_description = f.read()
@@ -12,7 +12,9 @@ setup(name='isrutils',
 	  long_description=long_description,
 	  author='Michael Hirsch',
 	  url='https://github.com/scienceopen/isrutils',
-	  install_requires=['pathlib2'],
+	  install_requires=['pymap3d',
+                       'pathlib2'],
+      dependency_links = ['https://github.com/scienceopen/pymap3d/tarball/master#egg=pymap3d',
       packages=['isrutils'],
 	  )
 #%%
