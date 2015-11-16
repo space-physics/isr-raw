@@ -52,6 +52,7 @@ def readpower_samples(fn,bid,tlim,zlim):
 
     with h5py.File(str(fn),'r',libver='latest') as f:
 #        Nt = f['/Time/UnixTime'].shape[0]
+        lla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
         Np = f['/Raw11/Raw/PulsesIntegrated'][0,0] #FIXME is this correct in general?
         ut = sampletime(f['/Time/UnixTime'],Np)
         srng  = f['/Raw11/Raw/Power/Range'].value.squeeze()/1e3
@@ -61,7 +62,7 @@ def readpower_samples(fn,bid,tlim,zlim):
         azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
         azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
 
-    return power,azel
+    return power,azel,lla
 
 
 def readsnr_int(fn,bid):

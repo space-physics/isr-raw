@@ -5,7 +5,7 @@ from __future__ import division,absolute_import
 from datetime import datetime
 from pandas import Panel4D,DataFrame,Series
 from numpy import absolute,nan,linspace,percentile
-from matplotlib.pyplot import figure,draw,pause,subplots
+from matplotlib.pyplot import figure,draw,pause,subplots,show
 from matplotlib.cm import jet
 from matplotlib.colors import LogNorm
 #import matplotlib.animation as anim
@@ -13,11 +13,12 @@ from matplotlib.colors import LogNorm
 from .plasmaline import readplasmaline
 from .common import timeticks,findindex2Dsphere,timesync
 from .snrpower import readpower_samples
+from GeoData.plotting import plotazelscale
 
 vidnorm = None #LogNorm()
 
 #%% joint isr optical plot
-def dojointplot(ds,beamazel,optical,coordnames,dataloc,sensorloc,utopt,utlim,makeplot):
+def dojointplot(ds,beamazel,optical,coordnames,optazel,optlla,optisrazel,utopt,utlim,makeplot):
     """
     f1,a1: radar   figure,axes
     f2,a2: optical figure,axes
@@ -34,17 +35,17 @@ def dojointplot(ds,beamazel,optical,coordnames,dataloc,sensorloc,utopt,utlim,mak
     t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
 #%% setup top optical plot
     a0 = axs[0]
-    clim = compclim(optical,lower=5,upper=95)
+    clim = compclim(optical,lower=10,upper=99.9)
     h0 = a0.imshow(optical[0,...],origin='lower',interpolation='none',cmap='gray',
                    norm=vidnorm,vmin=clim[0],vmax=clim[1])
     a0.set_axis_off()
     t0 = a0.set_title('')
 
 #%% plot magnetic zenith beam
-    azimg = dataloc[:,1].reshape(optical.shape[1:])
-    elimg = dataloc[:,2].reshape(optical.shape[1:])
+    azimg = optazel[:,1].reshape(optical.shape[1:])
+    elimg = optazel[:,2].reshape(optical.shape[1:])
 
-    br,bc = findindex2Dsphere(azimg,elimg,beamazel[0],beamazel[1])
+    br,bc = findindex2Dsphere(azimg,elimg,optisrazel['az'],optisrazel['el'])
 
     #hollow beam circle
 #    a2.scatter(bc,br,s=500,marker='o',facecolors='none',edgecolor='red', alpha=0.5)
@@ -58,6 +59,7 @@ def dojointplot(ds,beamazel,optical,coordnames,dataloc,sensorloc,utopt,utlim,mak
 #%% time sync
     Iisr,Iopt = timesync(T,utopt,utlim)
 #%% iterate
+    first = True
     for iisr,iopt in zip(Iisr,Iopt):
 #%% update isr plot
         t0isr=T[iisr]
@@ -69,6 +71,10 @@ def dojointplot(ds,beamazel,optical,coordnames,dataloc,sensorloc,utopt,utlim,mak
         t0.set_text('optical: {}'.format(datetime.utcfromtimestamp(utopt[iopt])))
 #%% anim
         if 'show' in makeplot:
+            if first:
+                plotazelscale(optical[iopt,...],azimg,elimg)
+                show()
+                first=False
             draw(); pause(0.01)
 
         if 'png' in makeplot:
@@ -81,7 +87,7 @@ def dojointplot(ds,beamazel,optical,coordnames,dataloc,sensorloc,utopt,utlim,mak
 #    line_ani = anim.FuncAnimation(fig=f1, func=update, frames=T.size,
 #                                   interval=50, blit=False)
 
-def compclim(imgs,lower=0.5,upper=99.5,Nsamples=10):
+def compclim(imgs,lower=0.5,upper=99.9,Nsamples=10):
     """
     inputs:
     images: Nframe x ypix x xpix grayscale image stack (have not tried with 4-D color)
@@ -94,10 +100,10 @@ def compclim(imgs,lower=0.5,upper=99.5,Nsamples=10):
 
 #%% dt3
 def sumlongpulse(fn,beamid,tlim,zlim):
-    snrsamp,azel = readpower_samples(fn,beamid,tlim,zlim)
+    snrsamp,azel,lla = readpower_samples(fn,beamid,tlim,zlim)
     assert isinstance(snrsamp,DataFrame)
 
-    return snrsamp.sum(axis=0),azel
+    return snrsamp.sum(axis=0),azel,lla
 
 def plotsumlongpulse(dsum,ax):
     assert isinstance(dsum,Series)

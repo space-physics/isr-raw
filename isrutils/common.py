@@ -13,8 +13,23 @@ from matplotlib.dates import MinuteLocator,SecondLocator
 from argparse import ArgumentParser
 #
 from pymap3d.haversine import angledist
+from pymap3d.coordconv3d import aer2ecef,ecef2aer
 
 epoch = datetime(1970,1,1,tzinfo=UTC)
+
+
+def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
+    """
+    intended to project ISR beam at a single height into optical data.
+
+    output:
+    az,el,slantrange in degrees,meters
+    """
+    assert len(isrlla) == len(optlla) == 3
+    x,y,z = aer2ecef(beamazel[0],beamazel[1],heightkm*1e3,isrlla[0],isrlla[1],isrlla[2])
+    optazelrng= ecef2aer(x,y,z,optlla[0],optlla[1],optlla[2])
+
+    return {'az':optazelrng[0],'el':optazelrng[1],'srng':optazelrng[2]}
 
 def timesync(tisr,topt,tlim):
     """
