@@ -3,6 +3,8 @@ from six import integer_types
 from h5py import Dataset
 from numpy import array,nonzero,empty,ndarray,int32,unravel_index
 from scipy.interpolate import interp1d
+from astropy.coordinates.angle_utilities import angular_separation
+from astropy import units as u
 from pathlib2 import Path
 from datetime import datetime,timedelta
 from dateutil.parser import parse
@@ -12,7 +14,6 @@ from matplotlib.pyplot import close
 from matplotlib.dates import MinuteLocator,SecondLocator
 from argparse import ArgumentParser
 #
-from pymap3d.haversine import angledist
 from pymap3d.coordconv3d import aer2ecef,ecef2aer
 
 epoch = datetime(1970,1,1,tzinfo=UTC)
@@ -87,7 +88,8 @@ def findindex2Dsphere(azimg,elimg,az,el):
     assert len(azimg.shape) == 2 and len(elimg.shape) == 2 #no ndim in h5py 2.5
     assert isinstance(az,float) and isinstance(el,float)
 
-    adist = angledist(azimg,elimg,az,el)
+    adist = angular_separation(azimg*u.deg,elimg*u.deg,az*u.deg,el*u.deg)
+    assert (adist>0).all()
     return unravel_index(adist.argmin(), azimg.shape)
 
 
