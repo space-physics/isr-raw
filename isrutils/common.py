@@ -146,7 +146,7 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
 
     if 'png' in makeplot:
         odir = Path(odir).expanduser()
-        ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H:%M:%S')+'.png')
+        ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H:%M:%S.%f')+'.png')
         print('saving {}'.format(ppth))
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
         if 'show' not in makeplot:
