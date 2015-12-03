@@ -7,18 +7,18 @@ from pandas import Panel4D,DataFrame,Series
 from numpy import absolute,nan,linspace,percentile
 from matplotlib.pyplot import figure,draw,pause,subplots,show
 from matplotlib.cm import jet
-from matplotlib.colors import LogNorm
+#from matplotlib.colors import LogNorm
 #import matplotlib.animation as anim
 #
 from .plasmaline import readplasmaline
-from .common import timeticks,findindex2Dsphere,timesync
+from .common import timeticks,findindex2Dsphere,timesync,projectisrhist
 from .snrpower import readpower_samples
 from GeoData.plotting import plotazelscale
 
 vidnorm = None #LogNorm()
 
 #%% joint isr optical plot
-def dojointplot(ds,beamazel,optical,coordnames,optazel,optlla,optisrazel,utopt,utlim,makeplot):
+def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,utlim,makeplot):
     """
     f1,a1: radar   figure,axes
     f2,a2: optical figure,axes
@@ -44,6 +44,8 @@ def dojointplot(ds,beamazel,optical,coordnames,optazel,optlla,optisrazel,utopt,u
 #%% plot magnetic zenith beam
     azimg = optazel[:,1].reshape(optical.shape[1:])
     elimg = optazel[:,2].reshape(optical.shape[1:])
+
+    optisrazel = projectisrhist(isrlla,beamazel,optlla,optazel,heightkm)
 
     br,bc = findindex2Dsphere(azimg,elimg,optisrazel['az'],optisrazel['el'])
 

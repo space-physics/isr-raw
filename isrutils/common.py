@@ -165,8 +165,8 @@ def timeticks(tdiff):
 def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p = ArgumentParser(description=descr)
     p.add_argument('isrfn',help='HDF5 file to read')
-    p.add_argument('-c','--optfn',help='optical data HDF5 to read',nargs='+',default=('',))
-    p.add_argument('-a','--azelfn',help='plate scale file hdf5',nargs='+',default=('',))
+    p.add_argument('-c','--optfn',help='optical data HDF5 to read') #,nargs='+',default=('',)
+    p.add_argument('-a','--azelfn',help='plate scale file hdf5') #,nargs='+',default=('',)
     p.add_argument('--t0',help='time to extract 1-D vertical plot')
     p.add_argument('--acf',help='show autocorrelation function (ACF)',action='store_true')
     p.add_argument('--samples',help='use raw samples (lowest level data commnoly available)',action='store_true')
