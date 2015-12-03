@@ -3,8 +3,6 @@
 reading PFISR data down to IQ samples
 
 See README.rst for the data types this file handles.
-
-Designed for Python 3.5+, may work with older versions.
 """
 from __future__ import division,absolute_import
 from pathlib2 import Path
@@ -21,7 +19,7 @@ def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
     this function is a switchyard to pick the right function to read and plot
     the desired data based on filename and user requests.
     """
-    assert isinstance(fn,Path)
+    fn = Path(fn)
 #%% handle path, detect file type
     ft = ftype(fn)
 #%% plasma line

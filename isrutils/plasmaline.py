@@ -4,7 +4,7 @@ from pathlib2 import Path
 from numpy import log10,nonzero,meshgrid
 import h5py
 from pandas import Panel4D,DataFrame
-from matplotlib.pyplot import figure,subplots,show
+from matplotlib.pyplot import figure,subplots,show,close
 #
 from .common import findstride,ut2dt,_expfn,writeplots
 
@@ -29,7 +29,7 @@ def readplasmaline(fn,beamid,tlim):
 
 
     for F,s in zip(fiter,dshift):
-        filename = fn.parent / (fn.name.split('.')[0] + '.' + F[0] + '.h5')
+        filename = fn.parent / ('.'.join((fn.stem.split('.')[0], F[0], 'h5')))
         with h5py.File(str(filename),'r',libver='latest') as f:
             T     = ut2dt(f['/Time/UnixTime'].value)
             bind  = findstride(f['/PLFFTS/Data/Beamcodes'], beamid) #NOTE: what if beam pattern changes during file?
@@ -55,7 +55,7 @@ def readplasmaline(fn,beamid,tlim):
     return spec,Freq
 
 
-def plotplasmaline(spec,Freq,fn, tlim=(None,None),vlim=(None,None),zlim=(None,None),makeplot=[],odir=''):
+def plotplasmaline(spec,Freq,fn, tlim=None,vlim=(None,None),zlim=(None,None),makeplot=[],odir=''):
 
     ptype=None#'mesh'
 
@@ -74,19 +74,27 @@ def plotplasmaline(spec,Freq,fn, tlim=(None,None),vlim=(None,None),zlim=(None,No
                 plotplasmamesh(spec.loc[s,t,:,:],Freq[F].values,fg,ax,vlim,zlim,ptype)
             else: #pcolor
                 plotplasmatime(spec.loc[s,t,:,:],Freq[F].values,t.to_pydatetime(),fn,
-                               fg,ax,tlim,vlim,s,makeplot,odir)
+                               fg,ax,tlim,vlim,s,makeplot)
 
 
         writeplots(fg,t,odir,makeplot,s.split(' ')[0])
-        show() #optinal: so as to allow viewing each plot without opening 50 windows at once.
+        if 'show' in makeplot:
+            show()
+        else:
+            close(fg)
 
-def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot,odir):
+def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot):
     assert isinstance(spec,DataFrame)
+
     if not fg and not ax:
         fg = figure()
         ax = fg.gca()
+        isown = False
     elif fg and not ax:
         ax = fg.gca()
+        isown = False
+    else:
+        isown = True
 
     srng = spec.index.values
     zgood = srng>60 # above N km
@@ -94,11 +102,11 @@ def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot,odir):
     h=ax.pcolormesh(freq/1e6,srng[zgood],10*log10(spec.values[zgood,:]),
                     vmin=vlim[0],vmax=vlim[1],cmap='jet')#'cubehelix_r')
 
-    if ctxt.startswith('down'):
+    if not isown or ctxt.startswith('down'):
         ax.set_ylabel('slant range [km]')
-    else:
-        c=fg.colorbar(h,ax=ax)
-        c.set_label('Power [dB]')
+
+    c=fg.colorbar(h,ax=ax)
+    c.set_label('Power [dB]')
 
     ax.set_xlabel('Doppler frequency [MHz]')
     ax.set_title('{} {}'.format(_expfn(fn),t))

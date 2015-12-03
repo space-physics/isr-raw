@@ -17,6 +17,11 @@ Install
 
     python setup.py develop
 
+Examples
+========
+
+See Dropbox/aurora_data/Study Events folder for the dates you want.
+
 File Types
 ==========
 Currently, these raw data files are *not* currently contained on `Madrigal <http://isr.sri.com/madrigal>`_, you will have to email SRI staff to get them manually.

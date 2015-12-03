@@ -3,8 +3,6 @@ from six import integer_types
 from h5py import Dataset
 from numpy import array,nonzero,empty,ndarray,int32,unravel_index
 from scipy.interpolate import interp1d
-from astropy.coordinates.angle_utilities import angular_separation
-from astropy import units as u
 from pathlib2 import Path
 from datetime import datetime,timedelta
 from dateutil.parser import parse
@@ -14,6 +12,7 @@ from matplotlib.pyplot import close
 from matplotlib.dates import MinuteLocator,SecondLocator
 from argparse import ArgumentParser
 #
+from pymap3d.haversine import angledist
 from pymap3d.coordconv3d import aer2ecef,ecef2aer
 
 epoch = datetime(1970,1,1,tzinfo=UTC)
@@ -88,8 +87,7 @@ def findindex2Dsphere(azimg,elimg,az,el):
     assert len(azimg.shape) == 2 and len(elimg.shape) == 2 #no ndim in h5py 2.5
     assert isinstance(az,float) and isinstance(el,float)
 
-    adist = angular_separation(azimg*u.deg,elimg*u.deg,az*u.deg,el*u.deg)
-    assert (adist>0).all()
+    adist = angledist(azimg,elimg,az,el)
     return unravel_index(adist.argmin(), azimg.shape)
 
 
@@ -114,7 +112,7 @@ def findstride(beammat,bid):
 
 def ftype(fn):
     assert isinstance(fn,Path)
-    return fn.name.split('.')[1]
+    return fn.stem.split('.')[1]
 
 def _expfn(fn):
     """
@@ -145,9 +143,9 @@ def sampletime(T,Np):
     return dtime
 
 def writeplots(fg,t,odir,makeplot,ctxt=''):
-    assert isinstance(odir,Path)
 
     if 'png' in makeplot:
+        odir = Path(odir).expanduser()
         ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H:%M:%S')+'.png')
         print('saving {}'.format(ppth))
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
@@ -167,16 +165,16 @@ def timeticks(tdiff):
 def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p = ArgumentParser(description=descr)
     p.add_argument('isrfn',help='HDF5 file to read')
-    p.add_argument('-c','--optfn',help='optical data HDF5 to read',default='')
-    p.add_argument('-a','--azelfn',help='plate scale file hdf5',default='')
+    p.add_argument('-c','--optfn',help='optical data HDF5 to read',nargs='+',default=('',))
+    p.add_argument('-a','--azelfn',help='plate scale file hdf5',nargs='+',default=('',))
     p.add_argument('--t0',help='time to extract 1-D vertical plot')
     p.add_argument('--acf',help='show autocorrelation function (ACF)',action='store_true')
     p.add_argument('--samples',help='use raw samples (lowest level data commnoly available)',action='store_true')
     p.add_argument('--beamid',help='beam id 64157 is magnetic zenith beam',type=int,default=64157)
-    p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2)
+    p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2,default=(None,None))
     p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90.,None))
     p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2)
-    p.add_argument('--flim',help='frequency limits to plots',type=float,nargs=2)
+    p.add_argument('--flim',help='frequency limits to plots',type=float,nargs=2,default=(None,None))
     p.add_argument('-m','--makeplot',help='png to write pngs',nargs='+',default=['show'])
     p.add_argument('-o','--odir',help='directory to write files to',default='')
     p = p.parse_args()
