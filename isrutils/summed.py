@@ -11,14 +11,14 @@ from matplotlib.cm import jet
 #import matplotlib.animation as anim
 #
 from .plasmaline import readplasmaline
-from .common import timeticks,findindex2Dsphere,timesync,projectisrhist
+from .common import timeticks,findindex2Dsphere,timesync,projectisrhist,writeplots
 from .snrpower import readpower_samples
 from GeoData.plotting import plotazelscale
 
 vidnorm = None #LogNorm()
 
 #%% joint isr optical plot
-def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,utlim,makeplot):
+def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,utlim,makeplot,odir):
     """
     f1,a1: radar   figure,axes
     f2,a2: optical figure,axes
@@ -79,8 +79,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
                 first=False
             draw(); pause(0.01)
 
-        if 'png' in makeplot:
-            fig.savefig('/tmp/joint_t{:05d}'.format(iopt),bbox_inches='tight',dpi=100)
+        writeplots(fig,t0isr,odir,makeplot,ctxt='joint')
 #
 #    def update(t):
 #        h.set_xdata(t)

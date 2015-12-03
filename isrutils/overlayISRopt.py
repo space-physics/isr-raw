@@ -41,4 +41,4 @@ def overlayisrhist(isrfn,odir,tlim,zlim,P):
     # now this happens inside do joint plot
 #%% (6) plot joint
     dojointplot(lpsum,spec,freq,beamazel,opt['optical'],optazel,optlla,isrlla,
-                heightkm,optut,utlim,P.makeplot)
+                heightkm,optut,utlim,P.makeplot,P.odir)
