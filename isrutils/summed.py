@@ -30,7 +30,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
 #%% setup radar plot(s)
     a1 = axs[1]
     plotsumlongpulse(ds,a1)
-    T = ds.index
+
     h1 = a1.axvline(nan,color='k',linestyle='--')
     t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
 #%% setup top optical plot
@@ -59,27 +59,30 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
     a0.autoscale(True,tight=True)
 
 #%% time sync
-    Iisr,Iopt = timesync(T,utopt,utlim)
+    tisr = ds.index#.to_pydatetime() #Timestamp() is fine, no need to make it datetime(). datetime64() is no good.
+    Iisr,Iopt = timesync(tisr,utopt,utlim)
 #%% iterate
     first = True
     for iisr,iopt in zip(Iisr,Iopt):
+        ctisr = tisr[iisr]
+        ctopt = datetime.utcfromtimestamp(utopt[iopt])
 #%% update isr plot
-        t0isr=T[iisr]
-        h1.set_xdata(t0isr)
-        t1.set_text('isr: {}'.format(t0isr))
+        h1.set_xdata(ctisr)
+        t1.set_text('isr: {}'.format(ctisr))
 #%% update hist plot
         h0.set_data(optical[iopt,...])
-        s0.set_array(ds[t0isr]) #magnetic zenith beam color (not changing color?)
-        t0.set_text('optical: {}'.format(datetime.utcfromtimestamp(utopt[iopt])))
+        s0.set_array(ds[ctisr]) #FIXME not changing magnetic zenith beam color? NOTE this is isr time index
+        t0.set_text('optical: {}'.format(ctopt))
 #%% anim
         if 'show' in makeplot:
             if first:
                 plotazelscale(optical[iopt,...],azimg,elimg)
                 show()
                 first=False
+#
             draw(); pause(0.01)
 
-        writeplots(fig,t0isr,odir,makeplot,ctxt='joint')
+        writeplots(fig,ctopt,odir,makeplot,ctxt='joint')
 #
 #    def update(t):
 #        h.set_xdata(t)

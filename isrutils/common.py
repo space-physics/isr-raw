@@ -1,7 +1,7 @@
 from __future__ import division,absolute_import
 from six import integer_types
 from h5py import Dataset
-from numpy import array,nonzero,empty,ndarray,int32,unravel_index
+from numpy import array,nonzero,empty,ndarray,int32,unravel_index,datetime64
 from scipy.interpolate import interp1d
 from pathlib2 import Path
 from datetime import datetime,timedelta
@@ -44,9 +44,12 @@ def timesync(tisr,topt,tlim):
     iopt: indices of optical to playback at same time as isr
     """
     assert len(tlim)==2
+    if isinstance(tisr[0],datetime64):
+        tisr = Timestamp(tisr) #FIXME untested
+#
     if isinstance(tisr[0],(datetime,Timestamp)):
         tisr = array([(t-epoch).total_seconds() for t in tisr])
-
+    assert isinstance(tisr[0],float), 'datetime64 is not wanted here, lets use ut1_unix float for minimum conversion effort'
 #%% interpolate isr indices to opt (assume opt is faster, a lot of duplicates iisr)
 
     # optical:  typically treq = topt
