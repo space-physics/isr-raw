@@ -77,7 +77,7 @@ def plotplasmaline(spec,Freq,fn, tlim=None,vlim=(None,None),zlim=(None,None),mak
                                fg,ax,tlim,vlim,s,makeplot)
 
 
-        writeplots(fg,t,odir,makeplot,s.split(' ')[0])
+        writeplots(fg,t,odir,makeplot,'plasmaLine')
         if 'show' in makeplot:
             show()
         else:
