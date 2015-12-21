@@ -1,7 +1,8 @@
 from __future__ import division,absolute_import
 from six import integer_types
 from h5py import Dataset
-from numpy import array,nonzero,empty,ndarray,int32,unravel_index,datetime64
+from numpy import (array,nonzero,empty,ndarray,int32,unravel_index,datetime64,
+                   asarray,atleast_1d)
 from scipy.interpolate import interp1d
 from pathlib2 import Path
 from datetime import datetime,timedelta
@@ -25,11 +26,12 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
     output:
     az,el,slantrange in degrees,meters
     """
-    assert len(isrlla) == len(optlla) == 3
+    isrlla = asarray(isrlla); optlla=asarray(optlla)
+    assert len(isrlla) == len(optlla.view(float)) == 3
     x,y,z = aer2ecef(beamazel[0],beamazel[1],heightkm*1e3,isrlla[0],isrlla[1],isrlla[2])
-    optazelrng= ecef2aer(x,y,z,optlla[0],optlla[1],optlla[2])
+    az,el,srng= ecef2aer(x,y,z,optlla['lat'],optlla['lon'],optlla['alt_m'])
 
-    return {'az':optazelrng[0],'el':optazelrng[1],'srng':optazelrng[2]}
+    return {'az':az,'el':el,'srng':srng}
 
 def timesync(tisr,topt,tlim):
     """
@@ -87,8 +89,9 @@ def findindex2Dsphere(azimg,elimg,az,el):
     right ascension, declination
     latitude, longitude
     """
+    az = atleast_1d(az); el = atleast_1d(el)
     assert len(azimg.shape) == 2 and len(elimg.shape) == 2 #no ndim in h5py 2.5
-    assert isinstance(az,float) and isinstance(el,float)
+    assert isinstance(az[0],float) and isinstance(el[0],float)
 
     adist = angledist(azimg,elimg,az,el)
     return unravel_index(adist.argmin(), azimg.shape)
@@ -176,7 +179,7 @@ def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p.add_argument('--samples',help='use raw samples (lowest level data commnoly available)',action='store_true')
     p.add_argument('--beamid',help='beam id 64157 is magnetic zenith beam',type=int,default=64157)
     p.add_argument('--vlim',help='min,max for SNR plot [dB]',type=float,nargs=2,default=(None,None))
-    p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90.,None))
+    p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(80.,1000.))
     p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2)
     p.add_argument('--flim',help='frequency limits to plots',type=float,nargs=2,default=(None,None))
     p.add_argument('-m','--makeplot',help='png to write pngs',nargs='+',default=['show'])

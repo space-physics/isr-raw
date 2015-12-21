@@ -30,7 +30,7 @@ def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
 #%% raw altcode and longpulse
     elif ft in ('dt0','dt3') and samples:
         vlim = vlim if vlim else (32,60)
-        snrsamp,azel = readpower_samples(fn,beamid)
+        snrsamp,azel,isrlla = readpower_samples(fn,beamid,tlim,zlim)
         plotsnr(snrsamp,fn,tlim=tlim,vlim=vlim,ctxt='Power [dB]')
     elif ft in ('dt0','dt3') and acf:
         vlim = vlim if vlim else (20,45)
