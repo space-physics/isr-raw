@@ -1,8 +1,9 @@
 from __future__ import division,absolute_import
 from pathlib2 import Path
-from six import integer_types
+from six import integer_types,string_types
+from datetime import datetime
 from dateutil.parser import parse
-from numpy import (log10,absolute, meshgrid,empty,nonzero)
+from numpy import (log10,absolute, meshgrid,empty)
 from numpy.ma import masked_invalid
 import h5py
 from pandas import DataFrame
@@ -52,7 +53,7 @@ def readpower_samples(fn,bid,tlim,zlim):
 
     with h5py.File(str(fn),'r',libver='latest') as f:
 #        Nt = f['/Time/UnixTime'].shape[0]
-        lla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
+        isrlla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
         Np = f['/Raw11/Raw/PulsesIntegrated'][0,0] #FIXME is this correct in general?
         ut = sampletime(f['/Time/UnixTime'],Np)
         srng  = f['/Raw11/Raw/Power/Range'].value.squeeze()/1e3
@@ -62,7 +63,7 @@ def readpower_samples(fn,bid,tlim,zlim):
         azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
         azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
 
-    return power,azel,lla
+    return power,azel,isrlla
 
 
 def readsnr_int(fn,bid):
@@ -97,7 +98,7 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     ax =fg.gca()
     h=ax.pcolormesh(snr.columns.values,snr.index.values,
                      10*log10(masked_invalid(snr.values)),
-                     vmin=vlim[0], vmax=vlim[1],cmap='cubehelix_r')
+                     vmin=vlim[0], vmax=vlim[1],cmap='jet')
     ax.autoscale(True,tight=True)
 
     ax.set_xlim(tlim)
@@ -107,8 +108,10 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     ax.set_xlabel('Time [UTC]')
 #%% date ticks
     fg.autofmt_xdate()
-    if tlim:
+    if isinstance(tlim[0],string_types):
         tlim[0],tlim[1] = parse(tlim[0]), parse(tlim[1])
+        tdiff = tlim[1]-tlim[0]
+    elif isinstance(tlim[0],datetime):
         tdiff = tlim[1]-tlim[0]
     else:
         tdiff = snr.columns[-1] - snr.columns[0]
