@@ -1,11 +1,66 @@
 #!/usr/bin/env python3
+"""
+given energy deposition matrix A (based on MSIS/IRI/etc)
+and measured electron number density Ne
+estimate solution for q=A Phi
+assuming quasi-stationary system such that
+q = alpha * Ne^2
+"""
+from pathlib import Path
 import h5py
+from pandas import DataFrame
+from numpy import atleast_1d,empty_like
 from matplotlib.pyplot import figure,show
+#
+from gridaurora.chapman import chapman_profile
+
+
+def isrdep(depfn):
+    depfn = Path(depfn).expanduser()
+
+    with h5py.File(str(depfn),'r',libver='latest') as f:
+        A = f['/eigenprofile'].value
+        zkm = f['/altitude'].value
+        Ek = f['/Ebins'].value
+        Ekedges = f['/EbinEdges'].value
+
+    return A,zkm,Ek
+
+def isrNeSim(NeFwd,Te):
+    """
+    From Wedlund 2013 Par. 40, Sheedhan and St.-Maurice 2004
+    """
+    hotind = Te>1200.
+    alphaO2 = empty_like(Te,dtype=float)
+    alphaNO = empty_like(Te,dtype=float)
+
+    alphaO2[hotind] = 1.95e-7 * (300./Te[hotind])** 0.56  # Te>1200K
+    alphaO2[~hotind]= 1.95e-7 * (300./Te[~hotind])**0.70
+
+    alphaNO[hotind] = 3.02e-7 * (300./Te[hotind])** 0.56  # Te>1200K
+    alphaNO[~hotind]= 3.50e-7 * (300./Te[~hotind])**0.69
+
+    #NOTE: valid 100-250km altitude Wedlund 2013 Par. 42
+    alpha = (0.478*alphaNO + 0.373*alphaO2)
 
 
 
+if __name__ == '__main__':
+    from argparse import ArgumentParser
+    p = ArgumentParser(descripton='simple demo of solving for flux given ISR Ne measurement')
+    p.add_argument('--depfn',help='energy deposition data HDF5 file',default='precompute/transcareigen.h5')
+    p.add_argument('--nez0',help='SIMULATION peak ionization altitude [km]',default=110.,type=float)
+    p.add_argument('--H',help='SIMULATION scale height [km]',default=20.,type=float)
+    p = p.parse_args()
 
+    A,zkm,Ek = isrdep(p.depfn)
 
+    NeFWD = DataFrame(data=chapman_profile(p.nez0,zkm,p.H),
+                      index=zkm)
+
+    Te = atleast_1d(2000.) #TODO this should be per altitude in real measurements and sims
+
+    isrNe2q(NeFWD,Te)
 
 
 
