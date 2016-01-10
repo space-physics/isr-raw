@@ -21,7 +21,7 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     Only one indexing vector or array is currently allowed for advanced selection
     """
     assert len(sampiq.shape) == 4 #h5py 2.5.0 doesn't have ndim, don't want .value to avoid reading whole dataset
-    assert isinstance(zlim[0],float) and isinstance(zlim[1],float),'you must specify altitude summation limits --zlim'
+    assert isinstance(zlim[0],(float,integer_types)) and isinstance(zlim[1],(float,integer_types)),'you must specify altitude summation limits --zlim'
 
     Nr = srng.size
     zind = (zlim[0] <= srng) & (srng <= zlim[1])
