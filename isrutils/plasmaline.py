@@ -1,6 +1,5 @@
-from __future__ import division, absolute_import
 from six import integer_types
-from pathlib2 import Path
+from pathlib import Path
 from numpy import log10,nonzero,meshgrid
 import h5py
 from pandas import Panel4D,DataFrame
@@ -19,9 +18,8 @@ def readplasmaline(fn,beamid,tlim):
     Freq: 2-D DataFrame: Nfreq x 2.  Column 1: downshift freq, Column 2: upshift freq
     """
 
-    assert isinstance(fn,Path)
+    fn = Path(fn).expanduser()
     assert isinstance(beamid,integer_types) # a scalar integer!
-    fn = fn.expanduser()
 
     fiter = (('dt1',-5e6),('dt2',5e6))
     dshift = ['downshift','upshift']
