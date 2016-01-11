@@ -1,10 +1,9 @@
-from __future__ import division,absolute_import
 from six import integer_types
 from h5py import Dataset
 from numpy import (array,nonzero,empty,ndarray,int32,unravel_index,datetime64,
                    asarray,atleast_1d)
 from scipy.interpolate import interp1d
-from pathlib2 import Path
+from pathlib import Path
 from datetime import datetime,timedelta
 from dateutil.parser import parse
 from pytz import UTC

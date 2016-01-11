@@ -1,5 +1,4 @@
-from pathlib2 import Path
-from six import integer_types
+from pathlib import Path
 from datetime import datetime
 from pytz import UTC
 from isrutils.plasmaline import readplasmaline#,plotplasmaline
@@ -18,11 +17,8 @@ def overlayisrhist(isrfn,odir,tlim,zlim,P):
     5) register ISR to HST
     6) plot overlay joint data
     """
-    isrfn = Path(isrfn).expanduser()
     optfn = Path(P.optfn).expanduser()
     azelfn = Path(P.azelfn).expanduser()
-    assert isinstance(zlim[0],(float,integer_types))
-
 #%% (1) read ISR plasma line
 #    plsum = sumplasmaline(isrfn,p.beamid,p.flim,tlim,zlim)
 #    plotsumplasmaline(plsum)

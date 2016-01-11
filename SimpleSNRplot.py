@@ -4,8 +4,7 @@ reading PFISR data down to IQ samples
 
 See README.rst for the data types this file handles.
 """
-from __future__ import division,absolute_import
-from pathlib2 import Path
+from pathlib import Path
 from matplotlib.pyplot import show
 #
 from isrutils.snrpower import (readpower_samples,plotsnr,readsnr_int,snrvtime_fit,

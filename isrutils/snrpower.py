@@ -1,5 +1,5 @@
 from __future__ import division,absolute_import
-from pathlib2 import Path
+from pathlib import Path
 from six import integer_types,string_types
 from datetime import datetime
 from dateutil.parser import parse
@@ -47,9 +47,8 @@ def readpower_samples(fn,bid,tlim,zlim):
     reads samples (lowest level data) and computes power for a particular beam.
     returns a Pandas DataFrame containing power measurements
     """
-    assert isinstance(fn,Path)
+    fn=Path(fn).expanduser()
     assert isinstance(bid,integer_types) # a scalar integer!
-    fn = fn.expanduser()
 
     with h5py.File(str(fn),'r',libver='latest') as f:
 #        Nt = f['/Time/UnixTime'].shape[0]
@@ -67,9 +66,8 @@ def readpower_samples(fn,bid,tlim,zlim):
 
 
 def readsnr_int(fn,bid):
-    assert isinstance(fn,Path)
+    fn = Path(fn).expanduser()
     assert isinstance(bid,integer_types) # a scalar integer!
-    fn = fn.expanduser()
 
     with h5py.File(str(fn),'r',libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
@@ -80,8 +78,7 @@ def readsnr_int(fn,bid):
     return DataFrame(index=srng,columns=t,data=power)
 
 def snrvtime_fit(fn,bid):
-    assert isinstance(fn,Path)
-    fn = fn.expanduser()
+    fn = Path(fn).expanduser()
 
     with h5py.File(str(fn),'r',libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'].value)

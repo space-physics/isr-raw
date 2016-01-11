@@ -1,6 +1,6 @@
 from __future__ import division,absolute_import
 from six import integer_types
-from pathlib2 import Path
+from pathlib import Path
 import h5py
 from pandas import DataFrame
 from numpy import (empty,zeros,complex64,complex128,conj,append,sin,radians,linspace,
@@ -38,7 +38,7 @@ def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
             spec_noise += fftshift(fft(append(conj(acf_noise[i,1:][::-1]),acf_noise[i,:])))
 
 
-        spec_noise = spec_noise/ Nlag
+        spec_noise = spec_noise / Nlag
 #%% spectrum from ACF
     for i in range(Nr):
         spec[i,:] = fftshift(fft(append(conj(acf[i,1:][::-1]), acf[i,:])))-spec_noise

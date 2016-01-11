@@ -7,6 +7,7 @@ from pandas import Panel4D,DataFrame,Series
 from numpy import absolute,nan,linspace,percentile
 from matplotlib.pyplot import figure,draw,pause,subplots,show
 from matplotlib.cm import jet
+import matplotlib.gridspec as gridspec
 #from matplotlib.colors import LogNorm
 #import matplotlib.animation as anim
 #
@@ -26,16 +27,17 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
     assert isinstance(ds,(Series,DataFrame))
 
 #%% setup master figure
-    fig,axs = subplots(2,1,figsize=(8,12))
+    fg = figure(figsize=(8,12))
+    gs = gridspec.GridSpec(2, 1, height_ratios=[3,1])
 #%% setup radar plot(s)
-    a1 = axs[1]
+    a1 = fg.add_subplot(gs[1])
     plotsumlongpulse(ds,a1)
 
     h1 = a1.axvline(nan,color='k',linestyle='--')
     t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
 #%% setup top optical plot
-    a0 = axs[0]
-    clim = compclim(optical,lower=10,upper=99.9)
+    a0 = fg.add_subplot(gs[0])
+    clim = compclim(optical,lower=10,upper=100)
     h0 = a0.imshow(optical[0,...],origin='lower',interpolation='none',cmap='gray',
                    norm=vidnorm,vmin=clim[0],vmax=clim[1])
     a0.set_axis_off()
@@ -53,11 +55,11 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
 #    a2.scatter(bc,br,s=500,marker='o',facecolors='none',edgecolor='red', alpha=0.5)
 
     #beam data, filled circle
-    s0 = a0.scatter(bc,br,s=500,alpha=0.5,linewidths=1.5,
+    s0 = a0.scatter(bc,br,s=2700,alpha=0.6,linewidths=3,
                     edgecolors=jet(linspace(ds.min(),ds.max())))
 
     a0.autoscale(True,tight=True)
-
+    fg.tight_layout()
 #%% time sync
     tisr = ds.index#.to_pydatetime() #Timestamp() is fine, no need to make it datetime(). datetime64() is no good.
     Iisr,Iopt = timesync(tisr,utopt,utlim)
@@ -82,7 +84,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
 #
             draw(); pause(0.01)
 
-        writeplots(fig,ctopt,odir,makeplot,ctxt='joint')
+        writeplots(fg,ctopt,odir,makeplot,ctxt='joint')
 #
 #    def update(t):
 #        h.set_xdata(t)
@@ -91,7 +93,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
 #    line_ani = anim.FuncAnimation(fig=f1, func=update, frames=T.size,
 #                                   interval=50, blit=False)
 
-def compclim(imgs,lower=0.5,upper=99.9,Nsamples=10):
+def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
     """
     inputs:
     images: Nframe x ypix x xpix grayscale image stack (have not tried with 4-D color)
@@ -100,7 +102,10 @@ def compclim(imgs,lower=0.5,upper=99.9,Nsamples=10):
     """
     sampind = linspace(0,imgs.shape[0],Nsamples,endpoint=False,dtype=int)
 
-    return percentile(imgs[sampind,...],[lower,upper])
+    clim = percentile(imgs[sampind,...],[lower,upper])
+    if upper == 100.:
+        clim[1] = imgs.max() #consider all images
+    return clim
 
 #%% dt3
 def sumlongpulse(fn,beamid,tlim,zlim):
