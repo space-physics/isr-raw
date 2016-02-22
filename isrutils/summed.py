@@ -21,6 +21,8 @@ vidnorm = None #LogNorm()
 #%% joint isr optical plot
 def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,utlim,makeplot,odir):
     """
+    ds: radar data
+
     f1,a1: radar   figure,axes
     f2,a2: optical figure,axes
     """
@@ -36,30 +38,31 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
     h1 = a1.axvline(nan,color='k',linestyle='--')
     t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
 #%% setup top optical plot
-    a0 = fg.add_subplot(gs[0])
-    clim = compclim(optical,lower=10,upper=100)
-    h0 = a0.imshow(optical[0,...],origin='lower',interpolation='none',cmap='gray',
-                   norm=vidnorm,vmin=clim[0],vmax=clim[1])
-    a0.set_axis_off()
-    t0 = a0.set_title('')
+    if optical is not None:
+        a0 = fg.add_subplot(gs[0])
+        clim = compclim(optical,lower=10,upper=100)
+        h0 = a0.imshow(optical[0,...],origin='lower',interpolation='none',cmap='gray',
+                       norm=vidnorm,vmin=clim[0],vmax=clim[1])
+        a0.set_axis_off()
+        t0 = a0.set_title('')
 
 #%% plot magnetic zenith beam
-    azimg = optazel[:,1].reshape(optical.shape[1:])
-    elimg = optazel[:,2].reshape(optical.shape[1:])
+        azimg = optazel[:,1].reshape(optical.shape[1:])
+        elimg = optazel[:,2].reshape(optical.shape[1:])
 
-    optisrazel = projectisrhist(isrlla,beamazel,optlla,optazel,heightkm)
+        optisrazel = projectisrhist(isrlla,beamazel,optlla,optazel,heightkm)
 
-    br,bc = findindex2Dsphere(azimg,elimg,optisrazel['az'],optisrazel['el'])
+        br,bc = findindex2Dsphere(azimg,elimg,optisrazel['az'],optisrazel['el'])
 
-    #hollow beam circle
-#    a2.scatter(bc,br,s=500,marker='o',facecolors='none',edgecolor='red', alpha=0.5)
+        #hollow beam circle
+    #    a2.scatter(bc,br,s=500,marker='o',facecolors='none',edgecolor='red', alpha=0.5)
 
-    #beam data, filled circle
-    s0 = a0.scatter(bc,br,s=2700,alpha=0.6,linewidths=3,
-                    edgecolors=jet(linspace(ds.min(),ds.max())))
+        #beam data, filled circle
+        s0 = a0.scatter(bc,br,s=2700,alpha=0.6,linewidths=3,
+                        edgecolors=jet(linspace(ds.min(),ds.max())))
 
-    a0.autoscale(True,tight=True)
-    fg.tight_layout()
+        a0.autoscale(True,tight=True)
+        fg.tight_layout()
 #%% time sync
     tisr = ds.index#.to_pydatetime() #Timestamp() is fine, no need to make it datetime(). datetime64() is no good.
     Iisr,Iopt = timesync(tisr,utopt,utlim)
@@ -67,24 +70,28 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
     first = True
     for iisr,iopt in zip(Iisr,Iopt):
         ctisr = tisr[iisr]
-        ctopt = datetime.utcfromtimestamp(utopt[iopt])
 #%% update isr plot
         h1.set_xdata(ctisr)
         t1.set_text('isr: {}'.format(ctisr))
 #%% update hist plot
-        h0.set_data(optical[iopt,...])
-        s0.set_array(ds[ctisr]) #FIXME not changing magnetic zenith beam color? NOTE this is isr time index
-        t0.set_text('optical: {}'.format(ctopt))
+        if iopt is not None:
+            ctopt = datetime.utcfromtimestamp(utopt[iopt])
+            h0.set_data(optical[iopt,...])
+            t0.set_text('optical: {}'.format(ctopt))
+            s0.set_array(ds[ctisr]) #FIXME circle not changing magnetic zenith beam color? NOTE this is isr time index
 #%% anim
-        if 'show' in makeplot:
-            if first:
+        if 'show' in makeplot: #FIXME should this be outside loop?
+            if first and iopt is not None:
                 plotazelscale(optical[iopt,...],azimg,elimg)
                 show()
                 first=False
 #
             draw(); pause(0.01)
 
-        writeplots(fg,ctopt,odir,makeplot,ctxt='joint')
+        try:
+            writeplots(fg,ctopt,odir,makeplot,ctxt='joint')
+        except UnboundLocalError:
+            writeplots(fg,ctisr,odir,makeplot,ctxt='isr')
 #
 #    def update(t):
 #        h.set_xdata(t)

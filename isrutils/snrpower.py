@@ -35,8 +35,11 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
                                     sampiq[it,bstride,:,1]**2).T
 #%% NOTE: could also index by read, start with pulse batch before request and end with batch after last request.
     t = ut2dt(ut)
-    if tlim[0] is not None and tlim[1] is not None:
-        tind = (tlim[0]<=t) & (t<=tlim[1])
+    if tlim is not None:
+        if tlim[0] is not None:
+            tind = tlim[0]<=t
+        if tlim[1] is not None:
+            tind &= t<=tlim[1]
         t = t[tind]
         power = power[:,tind]
 

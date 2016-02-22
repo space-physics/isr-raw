@@ -17,8 +17,11 @@ def overlayisrhist(isrfn,odir,tlim,zlim,P):
     5) register ISR to HST
     6) plot overlay joint data
     """
-    optfn = Path(P.optfn).expanduser()
-    azelfn = Path(P.azelfn).expanduser()
+    if P.optfn and P.azelfn:
+        optfn = Path(P.optfn).expanduser()
+        azelfn = Path(P.azelfn).expanduser()
+    else:
+        optfn = azelfn = None
 #%% (1) read ISR plasma line
 #    plsum = sumplasmaline(isrfn,p.beamid,p.flim,tlim,zlim)
 #    plotsumplasmaline(plsum)
@@ -27,14 +30,18 @@ def overlayisrhist(isrfn,odir,tlim,zlim,P):
 #%% (2-3) read ISR long pulse
     lpsum,beamazel,isrlla = sumlongpulse(isrfn,P.beamid,tlim,zlim)
 #%% (4) load optical data
-    utlim = [(l-epoch).total_seconds() for l in tlim]
+    if optfn is not None:
+        utlim = [(l-epoch).total_seconds() for l in tlim]
 
-    #hst = []; hstazel=[]; hstlla=[]; hstut=[]
-    opt, _, optazel, optlla, optut,_ = readNeoCMOS(str(optfn),str(azelfn),treq=utlim)
-    #hst.append(opt['optical']); hstazel.append(optazel)
-    #hstlla.append(optlla); hstut.append(optut)
+        #hst = []; hstazel=[]; hstlla=[]; hstut=[]
+        opt, _, optazel, optlla, optut,_ = readNeoCMOS(str(optfn),str(azelfn),treq=utlim)
+        #hst.append(opt['optical']); hstazel.append(optazel)
+        #hstlla.append(optlla); hstut.append(optut)
+        optdat = opt['optical']
+    else:
+        optdat=optazel=optlla=optut=utlim=None
 #%% (5) transform magnetic zenith PFISR to HiST frame, assuming single altitude
     # now this happens inside do joint plot
 #%% (6) plot joint
-    dojointplot(lpsum,spec,freq,beamazel,opt['optical'],optazel,optlla,isrlla,
+    dojointplot(lpsum,spec,freq,beamazel,optdat,optazel,optlla,isrlla,
                 heightkm,optut,utlim,P.makeplot,odir)

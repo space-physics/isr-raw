@@ -35,10 +35,10 @@ def readplasmaline(fn,beamid,tlim):
             srng  = f['/PLFFTS/Data/Spectra/Range'].value.squeeze()/1e3
             freq  = f['/PLFFTS/Data/Spectra/Frequency'].value.squeeze() + F[1]
     #%% spectrum compute
-        if tlim[0] is not None:
-            tind = nonzero((tlim[0] <= T) & (T<=tlim[1]))[0]
-        else:
+        if tlim is None or tlim[0] is None:
             tind = range(len(T))
+        else:
+            tind = nonzero((tlim[0] <= T) & (T<=tlim[1]))[0]
 
         if spec is None:
             spec = Panel4D(labels=dshift,items=T[tind],

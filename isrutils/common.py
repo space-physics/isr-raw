@@ -1,7 +1,6 @@
-from six import integer_types
 from h5py import Dataset
 from numpy import (array,nonzero,empty,ndarray,int32,unravel_index,datetime64,
-                   asarray,atleast_1d)
+                   asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from pathlib import Path
 from datetime import datetime,timedelta
@@ -14,8 +13,6 @@ from argparse import ArgumentParser
 #
 from pymap3d.haversine import angledist
 from pymap3d.coordconv3d import aer2ecef,ecef2aer
-
-epoch = datetime(1970,1,1,tzinfo=UTC)
 
 
 def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
@@ -41,30 +38,41 @@ def timesync(tisr,topt,tlim):
     tlim: start,stop UT1 Unix time request
 
     output
-    iisr: indices of isr to playback at same time as camera
-    iopt: indices of optical to playback at same time as isr
+    iisr: indices (integers) of isr to playback at same time as camera
+    iopt: indices (integers) of optical to playback at same time as isr
     """
-    assert len(tlim)==2
+
     if isinstance(tisr[0],datetime64):
         tisr = Timestamp(tisr) #FIXME untested
-#
+# separate comparison
     if isinstance(tisr[0],(datetime,Timestamp)):
-        tisr = array([(t-epoch).total_seconds() for t in tisr])
+        tisr = array([t.timestamp() for t in tisr]) #must be ndarray
     assert isinstance(tisr[0],float), 'datetime64 is not wanted here, lets use ut1_unix float for minimum conversion effort'
+
+    if tlim is None:
+        tlim = (nan,nan)
+    if topt is None:
+        topt = (nan,nan)
 #%% interpolate isr indices to opt (assume opt is faster, a lot of duplicates iisr)
+    tstart = nanmax([tlim[0],tisr[0], topt[0]])
+    tend   = nanmin([tlim[1],tisr[-1],topt[-1]])
 
-    # optical:  typically treq = topt
-    tstart = max([tlim[0],tisr[0], topt[0]])
-    tend   = min([tlim[1],tisr[-1],topt[-1]])
+    if topt is not None and isfinite(topt[0]):
+        f = interp1d(tisr,range(tisr.size),'nearest',assume_sorted=True)
 
-    ioptreq = nonzero((tstart<=topt) & (topt<=tend))[0]
-    toptreq = topt[ioptreq]
+        # optical:  typically treq = topt
+        ioptreq = nonzero((tstart<=topt) & (topt<=tend))[0]
 
-    #tisrreq = tisr[(tstart<=tisr) & (tisr<=tend)]
+        toptreq = topt[ioptreq]
+        iisrreq = f(toptreq).astype(int)
 
-    f = interp1d(tisr,range(tisr.size),'nearest',assume_sorted=True)
+        #tisrreq = tisr[(tstart<=tisr) & (tisr<=tend)]
+    else:
+        ioptreq = (None,)*tisr.size
+        iisrreq = nonzero((tstart<=tisr) & (tisr<=tend))[0]
 
-    return f(toptreq).astype(int),ioptreq
+
+    return iisrreq,ioptreq
 
 
 def findindex2Dsphere(azimg,elimg,az,el):
@@ -106,7 +114,7 @@ def ut2dt(ut):
     return array([datetime.fromtimestamp(t,tz=UTC) for t in T])
 
 def findstride(beammat,bid):
-    assert isinstance(bid,integer_types)
+    assert isinstance(bid,int)
     assert len(beammat.shape)==2 #h5py 2.5.0 dataset doesn't have ndim
     #FIXME is using just first row OK? other rows were identical for me.
 #    Nt = beammat.shape[0]
@@ -137,7 +145,7 @@ def _expfn(fn):
 def sampletime(T,Np):
     assert isinstance(T,(ndarray,Dataset))
     assert len(T.shape) ==2 and T.shape[1] == 2 #no ndim h5py 2.5
-    assert isinstance(Np,(integer_types,int32)), 'any integer will do'
+    assert isinstance(Np,(int,int32)), 'any integer will do'
     dtime = empty(Np*T.shape[0])
     i=0
     for t in T: #each row
