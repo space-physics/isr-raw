@@ -123,23 +123,22 @@ def findstride(beammat,bid):
 #        index[i,:] = nonzero(b==bid)[0] #NOTE: candidate for np.s_ ?
     return nonzero(beammat[0,:]==bid)[0]
 
-def ftype(fn):
-    assert isinstance(fn,Path)
-    return fn.stem.split('.')[1]
+def ftype(fn:Path)->str:
+    return fn.stem.rsplit('.',1)[-1]
 
 def _expfn(fn):
     """
     returns text string based on file suffix
     """
-    assert isinstance(fn,Path)
+    fn=Path(fn)
 
-    if fn.name.endswith('.dt0.h5'):
+    if ftype(fn)=='dt0':
         return 'alternating code'
-    elif fn.name.endswith('.dt1.h5'):
-        return 'downnshifted plasma line'
-    elif fn.name.endswith('.dt2.h5'):
+    elif ftype(fn)=='dt1':
+        return 'downshifted plasma line'
+    elif ftype(fn)=='dt2':
         return 'upshifted plasma line'
-    elif fn.name.endswith('.dt3.h5'):
+    elif ftype(fn)=='dt3':
         return 'long pulse'
 
 def sampletime(T,Np):
