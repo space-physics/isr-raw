@@ -91,6 +91,7 @@ def snrvtime_fit(fn,bid):
 
 def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     assert isinstance(snr,DataFrame)
+    assert snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
 
     fg = figure(figsize=(15,12))
     ax =fg.gca()
