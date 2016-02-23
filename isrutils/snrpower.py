@@ -92,7 +92,7 @@ def snrvtime_fit(fn,bid):
 def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     assert isinstance(snr,DataFrame)
 
-    fg = figure(figsize=(10,12))
+    fg = figure(figsize=(15,12))
     ax =fg.gca()
     h=ax.pcolormesh(snr.columns.values,snr.index.values,
                      10*masked_invalid(log10(snr.values)),

@@ -19,7 +19,7 @@ def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
         vlim = vlim if vlim else (70,100)
         spec,freq = readplasmaline(fn,beamid,tlim)
         plotplasmaline(spec,freq,fn,vlim=vlim,zlim=zlim,makeplot=makeplot,odir=odir)
-#%% raw altcode and longpulse
+#%% 0.234 second raw altcode and longpulse
     if ft in ('dt0','dt3') and samples:
         vlim = vlim if vlim else (30,60)
         snrsamp,azel,isrlla = readpower_samples(fn,beamid,tlim,zlim)
