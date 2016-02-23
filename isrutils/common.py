@@ -123,9 +123,8 @@ def findstride(beammat,bid):
 #        index[i,:] = nonzero(b==bid)[0] #NOTE: candidate for np.s_ ?
     return nonzero(beammat[0,:]==bid)[0]
 
-def ftype(fn):
-    assert isinstance(fn,Path)
-    return fn.stem.split('.')[1]
+def ftype(fn:Path)->str:
+    return fn.stem.rsplit('.',1)[-1]
 
 def _expfn(fn):
     """
