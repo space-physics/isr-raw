@@ -1,6 +1,4 @@
-from __future__ import division,absolute_import
 from pathlib import Path
-from six import integer_types,string_types
 from datetime import datetime
 from dateutil.parser import parse
 from numpy import (log10,absolute, meshgrid,empty)
@@ -21,7 +19,7 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     Only one indexing vector or array is currently allowed for advanced selection
     """
     assert len(sampiq.shape) == 4 #h5py 2.5.0 doesn't have ndim, don't want .value to avoid reading whole dataset
-    assert isinstance(zlim[0],(float,integer_types)) and isinstance(zlim[1],(float,integer_types)),'you must specify altitude summation limits --zlim'
+    assert isinstance(zlim[0],(float,int)) and isinstance(zlim[1],(float,int)),'you must specify altitude summation limits --zlim'
 
     Nr = srng.size
     zind = (zlim[0] <= srng) & (srng <= zlim[1])
@@ -51,7 +49,7 @@ def readpower_samples(fn,bid,tlim,zlim):
     returns a Pandas DataFrame containing power measurements
     """
     fn=Path(fn).expanduser()
-    assert isinstance(bid,integer_types) # a scalar integer!
+    assert isinstance(bid,int) # a scalar integer!
 
     with h5py.File(str(fn),'r',libver='latest') as f:
 #        Nt = f['/Time/UnixTime'].shape[0]
@@ -70,7 +68,7 @@ def readpower_samples(fn,bid,tlim,zlim):
 
 def readsnr_int(fn,bid):
     fn = Path(fn).expanduser()
-    assert isinstance(bid,integer_types) # a scalar integer!
+    assert isinstance(bid,int) # a scalar integer!
 
     with h5py.File(str(fn),'r',libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
@@ -93,11 +91,12 @@ def snrvtime_fit(fn,bid):
 
 def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     assert isinstance(snr,DataFrame)
+    assert snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
 
-    fg = figure(figsize=(10,12))
+    fg = figure(figsize=(15,12))
     ax =fg.gca()
     h=ax.pcolormesh(snr.columns.values,snr.index.values,
-                     10*log10(masked_invalid(snr.values)),
+                     10*masked_invalid(log10(snr.values)),
                      vmin=vlim[0], vmax=vlim[1],cmap='jet')
     ax.autoscale(True,tight=True)
 
@@ -108,13 +107,14 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     ax.set_xlabel('Time [UTC]')
 #%% date ticks
     fg.autofmt_xdate()
-    if isinstance(tlim[0],string_types):
-        tlim[0],tlim[1] = parse(tlim[0]), parse(tlim[1])
-        tdiff = tlim[1]-tlim[0]
-    elif isinstance(tlim[0],datetime):
-        tdiff = tlim[1]-tlim[0]
-    else:
+    if tlim is None or tlim[0] is None:
         tdiff = snr.columns[-1] - snr.columns[0]
+    else:
+        if isinstance(tlim[0],str):
+            tlim[0],tlim[1] = parse(tlim[0]), parse(tlim[1])
+            tdiff = tlim[1]-tlim[0]
+        elif isinstance(tlim[0],datetime):
+            tdiff = tlim[1]-tlim[0]
 
     ticker = timeticks(tdiff)
 
@@ -141,12 +141,13 @@ def plotsnr1d(snr,fn,t0,zlim=(90,None)):
     z = S.index
 
     ax = figure().gca()
-    ax.plot(S.iloc[:,0],z,color='r')
-    ax.plot(S.iloc[:,1],z,color='k')
-    ax.plot(S.iloc[:,2],z,color='b')
+    ax.plot(S.iloc[:,0],z,color='r',label=str(t1[0]))
+    ax.plot(S.iloc[:,1],z,color='k',label=str(t1[1]))
+    ax.plot(S.iloc[:,2],z,color='b',label=str(t1[2]))
 #    ax.set_ylim(zlim)
     ax.autoscale(True,'y',tight=True)
     ax.set_xlim(-5)
+    ax.legend()
 
     ax.set_title(fn.name)
     ax.set_xlabel('SNR [dB]')
