@@ -23,7 +23,7 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
     az,el,slantrange in degrees,meters
     """
     isrlla = asarray(isrlla); optlla=asarray(optlla)
-    assert len(isrlla) == len(optlla.view(float)) == 3
+    assert len(isrlla) == len(optlla.dtype) == 3
     x,y,z = aer2ecef(beamazel[0],beamazel[1],heightkm*1e3,isrlla[0],isrlla[1],isrlla[2])
     az,el,srng= ecef2aer(x,y,z,optlla['lat'],optlla['lon'],optlla['alt_m'])
 
@@ -113,7 +113,7 @@ def ut2dt(ut):
         T=ut[:,0]
     return array([datetime.fromtimestamp(t,tz=UTC) for t in T])
 
-def findstride(beammat,bid):
+def findstride(beammat:Dataset,bid:int):
     assert isinstance(bid,int)
     assert len(beammat.shape)==2 #h5py 2.5.0 dataset doesn't have ndim
     #FIXME is using just first row OK? other rows were identical for me.
@@ -126,7 +126,7 @@ def findstride(beammat,bid):
 def ftype(fn:Path)->str:
     return fn.stem.rsplit('.',1)[-1]
 
-def _expfn(fn):
+def _expfn(fn:Path)->str:
     """
     returns text string based on file suffix
     """
@@ -141,7 +141,7 @@ def _expfn(fn):
     elif ftype(fn)=='dt3':
         return 'long pulse'
 
-def sampletime(T,Np):
+def sampletime(T,Np:int)->float:
     assert isinstance(T,(ndarray,Dataset))
     assert len(T.shape) ==2 and T.shape[1] == 2 #no ndim h5py 2.5
     assert isinstance(Np,(int,int32)), 'any integer will do'
@@ -165,7 +165,7 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
         if 'show' not in makeplot:
             close(fg)
 
-def timeticks(tdiff):
+def timeticks(tdiff:timedelta ):
     assert isinstance(tdiff,timedelta)
 
     if tdiff>timedelta(minutes=20):
