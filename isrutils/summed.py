@@ -5,21 +5,21 @@ from __future__ import division,absolute_import
 from datetime import datetime
 from pandas import Panel4D,DataFrame,Series
 from numpy import absolute,nan,linspace,percentile
-from matplotlib.pyplot import figure,draw,pause,subplots,show
+from matplotlib.pyplot import figure,draw,pause,show
 from matplotlib.cm import jet
 import matplotlib.gridspec as gridspec
-#from matplotlib.colors import LogNorm
-#import matplotlib.animation as anim
+from matplotlib.colors import LogNorm
+import matplotlib.animation as anim
 #
 from .plasmaline import readplasmaline
 from .common import timeticks,findindex2Dsphere,timesync,projectisrhist,writeplots
 from .snrpower import readpower_samples
 from GeoData.plotting import plotazelscale
 
-vidnorm = None #LogNorm()
+vidnorm = LogNorm()
 
 #%% joint isr optical plot
-def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,utlim,makeplot,odir):
+def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,utlim,makeplot,ofn):
     """
     ds: radar data
 
@@ -40,7 +40,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
 #%% setup top optical plot
     if optical is not None:
         a0 = fg.add_subplot(gs[0])
-        clim = compclim(optical,lower=10,upper=100)
+        clim = compclim(optical,lower=10,upper=99.5)
         h0 = a0.imshow(optical[0,...],origin='lower',interpolation='none',cmap='gray',
                        norm=vidnorm,vmin=clim[0],vmax=clim[1])
         a0.set_axis_off()
@@ -68,7 +68,15 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
     Iisr,Iopt = timesync(tisr,utopt,utlim)
 #%% iterate
     first = True
-    for iisr,iopt in zip(Iisr,Iopt):
+    if 'movie' in makeplot:
+        print('writing {}'.format(ofn))
+    Writer = anim.writers['ffmpeg']
+    writer = Writer(fps=5,
+                    metadata=dict(artist='Michael Hirsch'),
+                    codec='ffv1')
+
+    with writer.saving(fg, str(ofn),150):
+      for iisr,iopt in zip(Iisr,Iopt):
         ctisr = tisr[iisr]
 #%% update isr plot
         h1.set_xdata(ctisr)
@@ -87,18 +95,13 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
                 first=False
 #
             draw(); pause(0.01)
-
-        try:
-            writeplots(fg,ctopt,odir,makeplot,ctxt='joint')
-        except UnboundLocalError:
-            writeplots(fg,ctisr,odir,makeplot,ctxt='isr')
-#
-#    def update(t):
-#        h.set_xdata(t)
-#        return h,
-#
-#    line_ani = anim.FuncAnimation(fig=f1, func=update, frames=T.size,
-#                                   interval=50, blit=False)
+        if 'movie' in makeplot:
+            writer.grab_frame(facecolor='k')
+        else: #png
+            try:
+                writeplots(fg,ctopt,ofn,makeplot,ctxt='joint')
+            except UnboundLocalError:
+                writeplots(fg,ctisr,ofn,makeplot,ctxt='isr')
 
 def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
     """
