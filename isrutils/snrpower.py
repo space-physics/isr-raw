@@ -8,7 +8,7 @@ from pandas import DataFrame
 from matplotlib.pyplot import figure
 from mpl_toolkits.mplot3d import Axes3D
 #
-from .common import ut2dt,findstride,_expfn,sampletime,timeticks
+from .common import ut2dt,findstride,expfn,sampletime,timeticks
 
 def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     """
@@ -125,7 +125,7 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     c.set_label(ctxt)
 
     ts = snr.columns[1] - snr.columns[0]
-    ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(_expfn(fn), snr.columns[0].strftime('%Y-%m-%d'),ts.total_seconds()))
+    ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(expfn(fn), snr.columns[0].strftime('%Y-%m-%d'),ts.total_seconds()))
 
 
     #last command

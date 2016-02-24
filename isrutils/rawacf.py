@@ -8,7 +8,7 @@ from numpy import (empty,zeros,complex64,complex128,conj,append,sin,radians,lins
 from numpy.fft import fft,fftshift
 from matplotlib.pyplot import figure,close
 #
-from .common import ftype,ut2dt,findstride,_expfn,writeplots
+from .common import ftype,ut2dt,findstride,expfn,writeplots
 
 def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
     bstride=bstride.squeeze()
@@ -97,7 +97,7 @@ def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt='',makeplot=[]
     c.set_label(ctxt)
     ax.set_xlabel('frequency [kHz]')
     ax.set_ylabel('altitude [km]')
-    ax.set_title('{} {}'.format(_expfn(fn),t))
+    ax.set_title('{} {}'.format(expfn(fn),t))
     ax.autoscale(True,'both',tight=True)
 
     writeplots(fg,t,odir,makeplot)

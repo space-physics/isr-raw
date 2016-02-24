@@ -19,7 +19,7 @@ from GeoData.plotting import plotazelscale
 vidnorm = LogNorm()
 
 #%% joint isr optical plot
-def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,utlim,makeplot,ofn):
+def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,isrfn,zlim,heightkm,utopt,utlim,makeplot,ofn):
     """
     ds: radar data
 
@@ -33,7 +33,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
     gs = gridspec.GridSpec(2, 1, height_ratios=[3,1])
 #%% setup radar plot(s)
     a1 = fg.add_subplot(gs[1])
-    plotsumlongpulse(ds,a1)
+    plotsumlongpulse(ds,a1,expfn(isrfn),zlim)
 
     h1 = a1.axvline(nan,color='k',linestyle='--')
     t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
@@ -124,7 +124,7 @@ def sumlongpulse(fn,beamid,tlim,zlim):
 
     return snrsamp.sum(axis=0),azel,lla
 
-def plotsumlongpulse(dsum,ax):
+def plotsumlongpulse(dsum,ax,rmode,zlim):
     assert isinstance(dsum,Series)
     if not ax:
         fg = figure()
@@ -133,7 +133,7 @@ def plotsumlongpulse(dsum,ax):
     dsum.plot(ax=ax)
     ax.set_ylabel('summed power')
     ax.set_xlabel('time [UTC]')
-    ax.set_title('long pulse summed over altitude (200..350)km')
+    ax.set_title('{} summed over altitude ({}..{})km'.format(rmode,zlim[0],zlim[1]))
 
     ax.set_yscale('log')
     ax.grid(True)
