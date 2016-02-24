@@ -12,7 +12,7 @@ from matplotlib.colors import LogNorm
 import matplotlib.animation as anim
 #
 from .plasmaline import readplasmaline
-from .common import timeticks,findindex2Dsphere,timesync,projectisrhist,writeplots
+from .common import timeticks,findindex2Dsphere,timesync,projectisrhist,writeplots,expfn
 from .snrpower import readpower_samples
 from GeoData.plotting import plotazelscale
 
@@ -40,7 +40,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,isrfn,zlim,h
 #%% setup top optical plot
     if optical is not None:
         a0 = fg.add_subplot(gs[0])
-        clim = compclim(optical,lower=10,upper=99.5)
+        clim = compclim(optical,lower=10,upper=99.99)
         h0 = a0.imshow(optical[0,...],origin='lower',interpolation='none',cmap='gray',
                        norm=vidnorm,vmin=clim[0],vmax=clim[1])
         a0.set_axis_off()
