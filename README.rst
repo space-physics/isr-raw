@@ -1,5 +1,7 @@
 .. image:: https://travis-ci.org/scienceopen/isrutils.svg?branch=master
     :target: https://travis-ci.org/scienceopen/isrutils
+.. image:: https://coveralls.io/repos/github/scienceopen/isrutils/badge.svg?branch=master 
+    :target: https://coveralls.io/github/scienceopen/isrutils?branch=master 
 
 ========================
 AMISR raw data utilities

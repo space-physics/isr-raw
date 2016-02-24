@@ -1,4 +1,5 @@
-from __future__ import division,absolute_import
+from numpy.testing import run_module_suite
+#
 from isrutils.snrpower import (readpower_samples,plotsnr,readsnr_int,snrvtime_fit,
                                plotsnr1d,plotsnrmesh)
 from isrutils.rawacf import readACF
@@ -12,3 +13,7 @@ def test_readacf():
 
 def test_readplasma():
     pass
+
+
+if __name__ == '__main__':
+    run_module_suite()
