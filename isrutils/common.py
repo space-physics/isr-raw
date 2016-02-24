@@ -126,7 +126,7 @@ def findstride(beammat:Dataset,bid:int):
 def ftype(fn:Path)->str:
     return fn.stem.rsplit('.',1)[-1]
 
-def _expfn(fn:Path)->str:
+def expfn(fn:Path)->str:
     """
     returns text string based on file suffix
     """

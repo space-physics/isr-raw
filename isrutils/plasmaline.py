@@ -5,7 +5,7 @@ import h5py
 from pandas import Panel4D,DataFrame
 from matplotlib.pyplot import figure,subplots,show,close
 #
-from .common import findstride,ut2dt,_expfn,writeplots
+from .common import findstride,ut2dt,expfn,writeplots
 
 def readplasmaline(fn,beamid,tlim):
     """
@@ -107,7 +107,7 @@ def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot):
     c.set_label('Power [dB]')
 
     ax.set_xlabel('Doppler frequency [MHz]')
-    ax.set_title('{} {}'.format(_expfn(fn),t))
+    ax.set_title('{} {}'.format(expfn(fn),t))
     ax.tick_params(axis='both', which='both', direction='out')
     ax.autoscale(True,'both',tight=True)
     fg.tight_layout()
