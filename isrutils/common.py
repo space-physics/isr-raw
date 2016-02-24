@@ -23,7 +23,7 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
     az,el,slantrange in degrees,meters
     """
     isrlla = asarray(isrlla); optlla=asarray(optlla)
-    assert len(isrlla) == len(optlla.view(float)) == 3
+    assert len(isrlla) == len(optlla.dtype.names) == 3
     x,y,z = aer2ecef(beamazel[0],beamazel[1],heightkm*1e3,isrlla[0],isrlla[1],isrlla[2])
     az,el,srng= ecef2aer(x,y,z,optlla['lat'],optlla['lon'],optlla['alt_m'])
 
@@ -126,7 +126,7 @@ def findstride(beammat,bid):
 def ftype(fn:Path)->str:
     return fn.stem.rsplit('.',1)[-1]
 
-def _expfn(fn):
+def expfn(fn):
     """
     returns text string based on file suffix
     """

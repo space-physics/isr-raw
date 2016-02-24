@@ -1,12 +1,9 @@
 from pathlib import Path
-from datetime import datetime
-from pytz import UTC
 from isrutils.plasmaline import readplasmaline#,plotplasmaline
 from isrutils.summed import sumlongpulse,dojointplot
 from GeoData.utilityfuncs import readNeoCMOS
 #
 heightkm=110.
-epoch = datetime(1970,1,1,tzinfo=UTC)
 #
 def overlayisrhist(isrfn,odir,tlim,zlim,P):
     """
@@ -31,10 +28,10 @@ def overlayisrhist(isrfn,odir,tlim,zlim,P):
     lpsum,beamazel,isrlla = sumlongpulse(isrfn,P.beamid,tlim,zlim)
 #%% (4) load optical data
     if optfn is not None:
-        utlim = [(l-epoch).total_seconds() for l in tlim]
+        utlim = [l.timestamp() for l in tlim]
 
         #hst = []; hstazel=[]; hstlla=[]; hstut=[]
-        opt, _, optazel, optlla, optut,_ = readNeoCMOS(str(optfn),str(azelfn),treq=utlim)
+        opt, _, optazel, optlla, optut,_ = readNeoCMOS(optfn,azelfn,treq=utlim)
         #hst.append(opt['optical']); hstazel.append(optazel)
         #hstlla.append(optlla); hstut.append(optut)
         optdat = opt['optical']
@@ -43,5 +40,5 @@ def overlayisrhist(isrfn,odir,tlim,zlim,P):
 #%% (5) transform magnetic zenith PFISR to HiST frame, assuming single altitude
     # now this happens inside do joint plot
 #%% (6) plot joint
-    dojointplot(lpsum,spec,freq,beamazel,optdat,optazel,optlla,isrlla,
+    dojointplot(lpsum,spec,freq,beamazel,optdat,optazel,optlla,isrlla,isrfn,zlim,
                 heightkm,optut,utlim,P.makeplot,odir)
