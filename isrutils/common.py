@@ -123,7 +123,8 @@ def findstride(beammat:Dataset,bid:int):
 #        index[i,:] = nonzero(b==bid)[0] #NOTE: candidate for np.s_ ?
     return nonzero(beammat[0,:]==bid)[0]
 
-def ftype(fn:Path)->str:
+def ftype(fn)->str:
+    fn = Path(fn)
     return fn.stem.rsplit('.',1)[-1]
 
 def expfn(fn:Path)->str:

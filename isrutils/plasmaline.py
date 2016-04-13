@@ -54,6 +54,7 @@ def readplasmaline(fn,beamid,tlim):
 
 
 def plotplasmaline(spec,Freq,fn, tlim=None,vlim=(None,None),zlim=(None,None),makeplot=[],odir=''):
+    if spec is None: return
 
     ptype=None#'mesh'
 

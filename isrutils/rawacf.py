@@ -1,5 +1,3 @@
-from __future__ import division,absolute_import
-from six import integer_types
 from pathlib import Path
 import h5py
 from pandas import DataFrame
@@ -51,8 +49,8 @@ def readACF(fn,bid,makeplot,odir,tlim=(None,None),vlim=(None,None)):
     reads incoherent scatter radar autocorrelation function (ACF)
     """
     dns=1071/3 #todo scalefactor
-    assert isinstance(fn,Path)
-    assert isinstance(bid,integer_types) # a scalar integer!
+    fn = Path(fn).expanduser()
+    assert isinstance(bid,int) # a scalar integer!
     fn = fn.expanduser()
 
     tInd = list(range(20,30,1)) #TODO pick indices by datetime
