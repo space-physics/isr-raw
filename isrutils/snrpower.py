@@ -7,6 +7,7 @@ import h5py
 from pandas import DataFrame
 from matplotlib.pyplot import figure
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.dates import SecondLocator, DateFormatter
 #
 from .common import ut2dt,findstride,expfn,sampletime,timeticks
 
@@ -90,7 +91,9 @@ def snrvtime_fit(fn,bid):
     return DataFrame(index=z,columns=t,data=snr)
 
 def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
-    assert isinstance(snr,DataFrame)
+    if not isinstance(snr,DataFrame): return
+
+
     assert snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
 
     fg = figure(figsize=(15,12))
@@ -104,7 +107,9 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     ax.set_ylim(zlim)
 
     ax.set_ylabel('altitude [km]')
+
     ax.set_xlabel('Time [UTC]')
+    ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
 #%% date ticks
     fg.autofmt_xdate()
     if tlim is None or tlim[0] is None:

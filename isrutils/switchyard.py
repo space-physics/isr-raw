@@ -1,4 +1,5 @@
 from pathlib import Path
+from pandas import concat
 #
 from isrutils.common import ftype
 from isrutils.rawacf import readACF
@@ -6,38 +7,72 @@ from isrutils.plasmaline import readplasmaline,plotplasmaline
 from isrutils.snrpower import (readpower_samples,plotsnr,readsnr_int,snrvtime_fit,
                                plotsnr1d,plotsnrmesh)
 
-def isrselect(fn,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
+
+def isrstacker(flist,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
+
+    for fn in flist:
+        fn = Path(fn).expanduser()
+
+        spec,freq,snrsamp,azel,isrlla,snrint,snr30int = isrselect(fn,beamid,tlim,zlim,t0,acf,samples)
+        if fn.samefile(flist[0]):
+            specs=spec; freqs=freq
+            snrsamps = snrsamp
+            snrints = snrint
+            snr30ints = snr30int
+        else:
+            if snrsamp is not None: snrsamps= concat((snrsamps,snrsamp),axis=1)
+            if snrint is not None:  snrints = concat((snrints,snrint), axis=1)
+            #TOOD other concat
+#%% plots
+    vlim = vlim if vlim else (30,70) #(70,100)
+    plotplasmaline(specs,freqs,flist,vlim=vlim,zlim=zlim,makeplot=makeplot,odir=odir)
+
+    vlim = vlim if vlim else (30,60)
+    plotsnr(snrsamps,fn,tlim=tlim,vlim=vlim,ctxt='Power [dB]')
+#%% ACF
+    vlim = vlim if vlim else (20,45)
+    readACF(fn,beamid,makeplot,odir,tlim=tlim,vlim=vlim)
+
+    vlim = vlim if vlim else (47,80)
+    plotsnr(snrints,fn,vlim=vlim,ctxt='SNR [dB]')
+
+    vlim = vlim if vlim else (-20,None)
+    if t0 is not None:
+        plotsnr1d(snr30ints,fn,t0,zlim)
+    plotsnr(snr30ints,fn,tlim,vlim)
+    #plotsnrmesh(snr,fn,t0,vlim,zlim)
+
+
+
+def isrselect(fn,beamid,tlim,zlim,t0,acf,samples):
     """
     this function is a switchyard to pick the right function to read and plot
     the desired data based on filename and user requests.
     """
-    fn = Path(fn).expanduser()
+    fn = Path(fn).expanduser() #need this here
 #%% handle path, detect file type
     ft = ftype(fn)
 #%% plasma line
+    spec=freq=None
     if ft in ('dt1','dt2'):
-        vlim = vlim if vlim else (70,100)
         spec,freq = readplasmaline(fn,beamid,tlim)
-        plotplasmaline(spec,freq,fn,vlim=vlim,zlim=zlim,makeplot=makeplot,odir=odir)
 #%% 0.234 second raw altcode and longpulse
+    snrsamp=azel=isrlla=None
     if ft in ('dt0','dt3') and samples:
-        vlim = vlim if vlim else (30,60)
-        snrsamp,azel,isrlla = readpower_samples(fn,beamid,tlim,zlim)
-        plotsnr(snrsamp,fn,tlim=tlim,vlim=vlim,ctxt='Power [dB]')
-    if ft in ('dt0','dt3') and acf:
-        vlim = vlim if vlim else (20,45)
-        readACF(fn,beamid,makeplot,odir,tlim=tlim,vlim=vlim)
-#%% 12 second (numerous integrated pulses)
+        try:
+            snrsamp,azel,isrlla = readpower_samples(fn,beamid,tlim,zlim)
+        except KeyError as e:
+            print('raw pulse data not found {}  {}'.format(fn,e))
+#%% multi-second integration (numerous integrated pulses)
+    snrint=None
     if ft in ('dt0','dt3'):
-        vlim = vlim if vlim else (47,70)
-        snr12sec = readsnr_int(fn,beamid)
-        plotsnr(snr12sec,fn,vlim=vlim,ctxt='SNR [dB]')
+        try:
+            snrint = readsnr_int(fn,beamid)
+        except KeyError as e:
+            print('integrated pulse data not found {}  {}'.format(fn,e))
 #%% 30 second integration plots
+    snr30int=None
     if fn.stem.rsplit('_',1)[-1] == '30sec':
-        vlim = vlim if vlim else (-20,None)
-        snr = snrvtime_fit(fn,beamid)
+        snr30int = snrvtime_fit(fn,beamid)
 
-        if t0 is not None:
-            plotsnr1d(snr,fn,t0,zlim)
-        plotsnr(snr,fn,tlim,vlim)
-        #plotsnrmesh(snr,fn,t0,vlim,zlim)
+    return spec,freq,snrsamp,azel,isrlla,snrint,snr30int
