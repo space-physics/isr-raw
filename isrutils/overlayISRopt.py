@@ -31,7 +31,7 @@ def overlayisrhist(isrfn,odir,tlim,zlim,P):
         utlim = [l.timestamp() for l in tlim]
 
         #hst = []; hstazel=[]; hstlla=[]; hstut=[]
-        opt, _, optazel, optlla, optut,_ = readNeoCMOS(optfn,azelfn,treq=utlim)
+        opt, _, optazel, optlla, optut = readNeoCMOS(optfn,azelfn,treq=utlim)[:5]
         #hst.append(opt['optical']); hstazel.append(optazel)
         #hstlla.append(optlla); hstut.append(optut)
         optdat = opt['optical']
