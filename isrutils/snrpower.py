@@ -19,7 +19,7 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     I can't index by stride and slant range simultaneously, since h5py 2.5 says
     Only one indexing vector or array is currently allowed for advanced selection
     """
-    assert len(sampiq.shape) == 4 #h5py 2.5.0 doesn't have ndim, don't want .value to avoid reading whole dataset
+    assert sampiq.ndim == 4
     assert isinstance(zlim[0],(float,int)) and isinstance(zlim[1],(float,int)),'you must specify altitude summation limits --zlim'
 
     Nr = srng.size
