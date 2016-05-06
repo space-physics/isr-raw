@@ -97,7 +97,7 @@ def findindex2Dsphere(azimg,elimg,az,el):
     latitude, longitude
     """
     az = atleast_1d(az); el = atleast_1d(el)
-    assert len(azimg.shape) == 2 and len(elimg.shape) == 2 #no ndim in h5py 2.5
+    assert azimg.ndim == 2 and elimg.ndim == 2 
     assert isinstance(az[0],float) and isinstance(el[0],float)
 
     adist = angledist(azimg,elimg,az,el)
@@ -115,7 +115,7 @@ def ut2dt(ut):
 
 def findstride(beammat:Dataset,bid:int):
     assert isinstance(bid,int)
-    assert len(beammat.shape)==2 #h5py 2.5.0 dataset doesn't have ndim
+    assert beammat.ndim==2 
     #FIXME is using just first row OK? other rows were identical for me.
 #    Nt = beammat.shape[0]
 #    index = empty((Nt,Np),dtype=int)
@@ -144,7 +144,7 @@ def expfn(fn:Path)->str:
 
 def sampletime(T,Np:int)->float:
     assert isinstance(T,(ndarray,Dataset))
-    assert len(T.shape) ==2 and T.shape[1] == 2 #no ndim h5py 2.5
+    assert T.ndim == 2 and T.shape[1] == 2
     assert isinstance(Np,(int,int32)), 'any integer will do'
     dtime = empty(Np*T.shape[0])
     i=0
