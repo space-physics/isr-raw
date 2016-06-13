@@ -1,10 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 plots integrated ISR power over altitude range on top of HiST image stream
-
-Michael Hirsch
 """
-from __future__ import division, absolute_import
 from matplotlib.pyplot import show
 #
 from isrutils.overlayISRopt import overlayisrhist
