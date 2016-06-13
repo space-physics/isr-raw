@@ -1,7 +1,7 @@
+#!/usr/bin/env python
 """
 summed measurements and plots
 """
-from __future__ import division,absolute_import
 from datetime import datetime
 from pandas import Panel4D,DataFrame,Series
 from numpy import absolute,nan,linspace,percentile
@@ -153,7 +153,7 @@ def sumplasmaline(fn,beamid,flim,tlim,zlim):
     zind = (zlim[0] <= z) & (z <= zlim[1])
 
     for s in spec:
-        find = (flim[0] <= absolute(freq[s]/1e6)) & (absolute(freq[s]/1e6) < flim[1])
+        find = (flim[0] <= absolute(freq[s]/1.e6)) & (absolute(freq[s]/1.e6) < flim[1])
         specsum.loc[:,s] = spec.loc[:,:,zind,find].sum(axis=3).sum(axis=2)
 
     return specsum

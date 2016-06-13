@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from six import integer_types
 from . import Path
-from numpy import empty
+from numpy import empty,ones
 import h5py
 from pandas import DataFrame
 #
@@ -30,13 +30,15 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
                                     sampiq[it,bstride,:,1]**2).T
 #%% NOTE: could also index by read, start with pulse batch before request and end with batch after last request.
     t = ut2dt(ut)
-    if tlim is not None:
-        if tlim[0] is not None:
-            tind = tlim[0]<=t
-        if tlim[1] is not None:
-            tind &= t<=tlim[1]
-        t = t[tind]
-        power = power[:,tind]
+
+    tind = ones(t.size,dtype=bool)
+
+    if tlim[0] is not None:
+        tind &= tlim[0]<=t
+    if tlim[1] is not None:
+        tind &= t<=tlim[1]
+    t = t[tind]
+    power = power[:,tind]
 
     return DataFrame(index=srng, columns=t, data=power[zind,:])
 
