@@ -2,7 +2,7 @@ from h5py import Dataset
 from numpy import (array,nonzero,empty,ndarray,int32,unravel_index,datetime64,
                    asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
-from pathlib import Path
+from . import Path
 from datetime import datetime,timedelta
 from dateutil.parser import parse
 from pytz import UTC
@@ -97,7 +97,7 @@ def findindex2Dsphere(azimg,elimg,az,el):
     latitude, longitude
     """
     az = atleast_1d(az); el = atleast_1d(el)
-    assert azimg.ndim == 2 and elimg.ndim == 2 
+    assert azimg.ndim == 2 and elimg.ndim == 2
     assert isinstance(az[0],float) and isinstance(el[0],float)
 
     adist = angledist(azimg,elimg,az,el)
@@ -115,7 +115,7 @@ def ut2dt(ut):
 
 def findstride(beammat:Dataset,bid:int):
     assert isinstance(bid,int)
-    assert beammat.ndim==2 
+    assert beammat.ndim==2
     #FIXME is using just first row OK? other rows were identical for me.
 #    Nt = beammat.shape[0]
 #    index = empty((Nt,Np),dtype=int)
@@ -123,11 +123,13 @@ def findstride(beammat:Dataset,bid:int):
 #        index[i,:] = nonzero(b==bid)[0] #NOTE: candidate for np.s_ ?
     return nonzero(beammat[0,:]==bid)[0]
 
-def ftype(fn)->str:
+#def ftype(fn)->str:
+def ftype(fn):
     fn = Path(fn)
     return fn.stem.rsplit('.',1)[-1]
 
-def expfn(fn:Path)->str:
+#def expfn(fn:Path)->str:
+def expfn(fn):
     """
     returns text string based on file suffix
     """

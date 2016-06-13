@@ -1,15 +1,11 @@
-from pathlib import Path
-from datetime import datetime
-from dateutil.parser import parse
-from numpy import (log10,absolute, meshgrid,empty)
-from numpy.ma import masked_invalid
+#!/usr/bin/env python
+from six import integer_types
+from . import Path
+from numpy import empty
 import h5py
 from pandas import DataFrame
-from matplotlib.pyplot import figure
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.dates import SecondLocator, DateFormatter
 #
-from .common import ut2dt,findstride,expfn,sampletime,timeticks
+from .common import ut2dt,findstride,sampletime
 
 def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     """
@@ -20,7 +16,7 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     Only one indexing vector or array is currently allowed for advanced selection
     """
     assert sampiq.ndim == 4
-    assert isinstance(zlim[0],(float,int)) and isinstance(zlim[1],(float,int)),'you must specify altitude summation limits --zlim'
+    assert isinstance(zlim[0],(float,integer_types)) and isinstance(zlim[1],(float,integer_types)),'you must specify altitude summation limits --zlim'
 
     Nr = srng.size
     zind = (zlim[0] <= srng) & (srng <= zlim[1])
@@ -50,7 +46,7 @@ def readpower_samples(fn,bid,tlim,zlim):
     returns a Pandas DataFrame containing power measurements
     """
     fn=Path(fn).expanduser()
-    assert isinstance(bid,int) # a scalar integer!
+    assert isinstance(bid,integer_types) # a scalar integer!
 
     with h5py.File(str(fn),'r',libver='latest') as f:
 #        Nt = f['/Time/UnixTime'].shape[0]
@@ -66,10 +62,9 @@ def readpower_samples(fn,bid,tlim,zlim):
 
     return power,azel,isrlla
 
-
 def readsnr_int(fn,bid):
     fn = Path(fn).expanduser()
-    assert isinstance(bid,int) # a scalar integer!
+    assert isinstance(bid,integer_types) # a scalar integer!
 
     with h5py.File(str(fn),'r',libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
@@ -89,93 +84,3 @@ def snrvtime_fit(fn,bid):
         z = f['/NeFromPower/Altitude'][bind,:].squeeze()/1e3
 #%% return requested beam data only
     return DataFrame(index=z,columns=t,data=snr)
-
-def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
-    if not isinstance(snr,DataFrame): return
-
-
-    assert snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
-
-    fg = figure(figsize=(15,12))
-    ax =fg.gca()
-    h=ax.pcolormesh(snr.columns.values,snr.index.values,
-                     10*masked_invalid(log10(snr.values)),
-                     vmin=vlim[0], vmax=vlim[1],cmap='jet')
-    ax.autoscale(True,tight=True)
-
-    ax.set_xlim(tlim)
-    ax.set_ylim(zlim)
-
-    ax.set_ylabel('altitude [km]')
-
-    ax.set_xlabel('Time [UTC]')
-    ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
-#%% date ticks
-    fg.autofmt_xdate()
-    if tlim is None or tlim[0] is None:
-        tdiff = snr.columns[-1] - snr.columns[0]
-    else:
-        if isinstance(tlim[0],str):
-            tlim[0],tlim[1] = parse(tlim[0]), parse(tlim[1])
-            tdiff = tlim[1]-tlim[0]
-        elif isinstance(tlim[0],datetime):
-            tdiff = tlim[1]-tlim[0]
-
-    ticker = timeticks(tdiff)
-
-    ax.xaxis.set_major_locator(ticker)
-    ax.tick_params(axis='both', which='both', direction='out')
-
-    c=fg.colorbar(h,ax=ax,fraction=0.075,shrink=0.5)
-    c.set_label(ctxt)
-
-    ts = snr.columns[1] - snr.columns[0]
-    ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(expfn(fn), snr.columns[0].strftime('%Y-%m-%d'),ts.total_seconds()))
-
-
-    #last command
-    fg.tight_layout()
-
-def plotsnr1d(snr,fn,t0,zlim=(90,None)):
-    assert isinstance(snr,DataFrame)
-    tind=absolute(snr.columns-t0).argmin()
-    tind = range(tind-1,tind+2)
-    t1 = snr.columns[tind]
-
-    S = 10*log10(snr.loc[snr.index>=zlim[0],t1])
-    z = S.index
-
-    ax = figure().gca()
-    ax.plot(S.iloc[:,0],z,color='r',label=str(t1[0]))
-    ax.plot(S.iloc[:,1],z,color='k',label=str(t1[1]))
-    ax.plot(S.iloc[:,2],z,color='b',label=str(t1[2]))
-#    ax.set_ylim(zlim)
-    ax.autoscale(True,'y',tight=True)
-    ax.set_xlim(-5)
-    ax.legend()
-
-    ax.set_title(fn.name)
-    ax.set_xlabel('SNR [dB]')
-    ax.set_ylabel('altitude [km]')
-
-def plotsnrmesh(snr,fn,t0,vlim,zlim=(90,None)):
-    assert isinstance(snr,DataFrame)
-    tind=absolute(snr.columns-t0).argmin()
-    tind=range(tind-5,tind+6)
-    t1 = snr.columns[tind]
-
-    S = 10*log10(snr.loc[snr.index>=zlim[0],t1])
-    z = S.index
-
-    x,y = meshgrid(S.columns.values.astype(float),z)
-
-    ax3 = figure().gca(projection='3d')
-
-#    ax3.plot_wireframe(x,y,S.values)
-#    ax3.scatter(x,y,S.values)
-    ax3.plot_surface(x,y,S.values,cmap='jet')
-    ax3.set_zlim(vlim)
-    ax3.set_zlabel('SNR [dB]')
-    ax3.set_ylabel('altitude [km]')
-    ax3.set_xlabel('time')
-    ax3.autoscale(True,'y',tight=True)
