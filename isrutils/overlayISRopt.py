@@ -1,6 +1,9 @@
-from pathlib import Path
-from isrutils.plasmaline import readplasmaline#,plotplasmaline
-from isrutils.summed import sumlongpulse,dojointplot
+#!/usr/bin/env python
+from . import Path
+#
+from .plasmaline import readplasmaline#,plotplasmaline
+from .summed import sumlongpulse,dojointplot
+#
 from GeoData.utilityfuncs import readNeoCMOS
 #
 heightkm=110.

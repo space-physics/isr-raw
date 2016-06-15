@@ -1,7 +1,7 @@
 .. image:: https://travis-ci.org/scienceopen/isrutils.svg?branch=master
     :target: https://travis-ci.org/scienceopen/isrutils
-.. image:: https://coveralls.io/repos/github/scienceopen/isrutils/badge.svg?branch=master 
-    :target: https://coveralls.io/github/scienceopen/isrutils?branch=master 
+.. image:: https://coveralls.io/repos/github/scienceopen/isrutils/badge.svg?branch=master
+    :target: https://coveralls.io/github/scienceopen/isrutils?branch=master
 
 ========================
 AMISR raw data utilities
@@ -11,8 +11,6 @@ Utilities for working with Incoherent Scatter Radar data, especially from Poker 
 We work with the complex I+jQ voltage samples, the lowest level data available from the radar (after integration of several pulses, perhaps on the 0.1 milliscond time scale).
 
 Coming soon, simultaneous plots with high speed multi-camera synchronized video.
-
-Tested on Python 3.5
 
 .. contents::
 
@@ -29,7 +27,9 @@ See Dropbox/aurora_data/Study Events folder for the dates you want.
 
 File Types
 ==========
-Currently, these raw data files are *not* currently contained on `Madrigal <http://isr.sri.com/madrigal>`_, you will have to email SRI staff to get them manually.
+Currently, raw ISR data files are *not* currently contained on `Madrigal <http://isr.sri.com/madrigal>`_, you will have to email SRI staff to get them manually.
+`Here is a limited selection of raw ISR data. <https://drive.google.com/folderview?id=0B7P8Xeeyo_YIVTlfMk9wY0YtbzQ&usp=sharing>`_
+It is indexed by date; under each date look for the ISR folder. You will typically want to download all four file types noted in the table below.
 
 ===========   ==================
 File ext.      Data Type
