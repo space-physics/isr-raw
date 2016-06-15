@@ -1,11 +1,13 @@
-from pathlib import Path
+#!/usr/bin/env python
+from . import Path
 from pandas import concat
 #
-from isrutils.common import ftype
-from isrutils.rawacf import readACF
-from isrutils.plasmaline import readplasmaline,plotplasmaline
-from isrutils.snrpower import (readpower_samples,plotsnr,readsnr_int,snrvtime_fit,
-                               plotsnr1d,plotsnrmesh)
+from .common import ftype
+from .rawacf import readACF
+from .plasmaline import readplasmaline,plotplasmaline
+from .snrpower import readpower_samples,readsnr_int,snrvtime_fit
+from .plots import plotsnr,plotsnr1d,plotsnrmesh
+
 
 
 def isrstacker(flist,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
@@ -71,8 +73,9 @@ def isrselect(fn,beamid,tlim,zlim,t0,acf,samples):
         except KeyError as e:
             print('integrated pulse data not found {}  {}'.format(fn,e))
 #%% 30 second integration plots
-    snr30int=None
     if fn.stem.rsplit('_',1)[-1] == '30sec':
         snr30int = snrvtime_fit(fn,beamid)
+    else:
+        snr30int=None
 
     return spec,freq,snrsamp,azel,isrlla,snrint,snr30int

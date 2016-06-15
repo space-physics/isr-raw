@@ -1,7 +1,7 @@
 from numpy.testing import run_module_suite
 #
-from isrutils.snrpower import (readpower_samples,plotsnr,readsnr_int,snrvtime_fit,
-                               plotsnr1d,plotsnrmesh)
+from isrutils.snrpower import (readpower_samples,readsnr_int,snrvtime_fit)
+from isrutils.plots import plotsnr,plotsnr1d,plotsnrmesh
 from isrutils.rawacf import readACF
 from isrutils.plasmaline import readplasmaline
 
