@@ -1,4 +1,6 @@
-from pathlib import Path
+from __future__ import division
+from six import integer_types
+from . import Path
 import h5py
 from pandas import DataFrame
 from numpy import (empty,zeros,complex64,complex128,conj,append,sin,radians,linspace,
@@ -50,8 +52,7 @@ def readACF(fn,bid,makeplot,odir,tlim=(None,None),vlim=(None,None)):
     """
     dns=1071/3 #todo scalefactor
     fn = Path(fn).expanduser()
-    assert isinstance(bid,int) # a scalar integer!
-    fn = fn.expanduser()
+    assert isinstance(bid,integer_types) # a scalar integer!
 
     tInd = list(range(20,30,1)) #TODO pick indices by datetime
     with h5py.File(str(fn),'r',libver='latest') as f:
