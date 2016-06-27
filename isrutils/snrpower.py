@@ -42,7 +42,7 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
 
     return DataFrame(index=srng, columns=t, data=power[zind,:])
 
-def readpower_samples(fn,bid,tlim,zlim):
+def readpower_samples(fn,bid,zlim,tlim=(None,None)):
     """
     reads samples (lowest level data) and computes power for a particular beam.
     returns a Pandas DataFrame containing power measurements

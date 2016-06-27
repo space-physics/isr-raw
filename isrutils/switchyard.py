@@ -62,7 +62,7 @@ def isrselect(fn,beamid,tlim,zlim,t0,acf,samples):
     snrsamp=azel=isrlla=None
     if ft in ('dt0','dt3') and samples:
         try:
-            snrsamp,azel,isrlla = readpower_samples(fn,beamid,tlim,zlim)
+            snrsamp,azel,isrlla = readpower_samples(fn,beamid,zlim,tlim)
         except KeyError as e:
             print('raw pulse data not found {}  {}'.format(fn,e))
 #%% multi-second integration (numerous integrated pulses)
