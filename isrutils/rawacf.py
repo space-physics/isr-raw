@@ -78,9 +78,11 @@ def readACF(fn,bid,makeplot=[],odir=None,tlim=(None,None),vlim=(None,None)):
             spectrum,acf = compacf(f[rk+'Data/Acf/Data'],noiseall,
                                srng.size,dns,bstride,i,tInd)
             specdf = DataFrame(index=srng,data=spectrum)
-
-            plotacf(specdf,fn,azel,t[tInd[i]],tlim=tlim,vlim=vlim,ctxt='dB',
+            try:
+                plotacf(specdf,fn,azel,t[tInd[i]],tlim=tlim,vlim=vlim,ctxt='dB',
                     makeplot=makeplot,odir=odir)
+            except Exception as e:
+                print('failed to plot ACF due to {}'.format(e))
 
 def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt='',makeplot=[],odir=''):
     #%% plot axes
