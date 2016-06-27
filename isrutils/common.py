@@ -113,7 +113,8 @@ def ut2dt(ut):
         T=ut[:,0]
     return array([datetime.fromtimestamp(t,tz=UTC) for t in T])
 
-def findstride(beammat:Dataset,bid:int):
+#def findstride(beammat:Dataset,bid:int):
+def findstride(beammat, bid):
     assert isinstance(bid,int)
     assert beammat.ndim==2
     #FIXME is using just first row OK? other rows were identical for me.
@@ -144,7 +145,8 @@ def expfn(fn):
     elif ftype(fn)=='dt3':
         return 'long pulse'
 
-def sampletime(T,Np:int)->float:
+#def sampletime(T,Np:int)->float:
+def sampletime(T,Np):
     assert isinstance(T,(ndarray,Dataset))
     assert T.ndim == 2 and T.shape[1] == 2
     assert isinstance(Np,(int,int32)), 'any integer will do'
@@ -168,7 +170,8 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
         if 'show' not in makeplot:
             close(fg)
 
-def timeticks(tdiff:timedelta ):
+#def timeticks(tdiff:timedelta ):
+def timeticks(tdiff ):
     assert isinstance(tdiff,timedelta)
 
     if tdiff>timedelta(minutes=20):

@@ -46,7 +46,7 @@ def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
 
     return spec,acf
 
-def readACF(fn,bid,makeplot,odir,tlim=(None,None),vlim=(None,None)):
+def readACF(fn,bid,makeplot=[],odir=None,tlim=(None,None),vlim=(None,None)):
     """
     reads incoherent scatter radar autocorrelation function (ACF)
     """

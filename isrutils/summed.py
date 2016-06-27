@@ -119,7 +119,7 @@ def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
 
 #%% dt3
 def sumlongpulse(fn,beamid,tlim,zlim):
-    snrsamp,azel,lla = readpower_samples(fn,beamid,tlim,zlim)
+    snrsamp,azel,lla = readpower_samples(fn,beamid,zlim,tlim)
     assert isinstance(snrsamp,DataFrame)
 
     return snrsamp.sum(axis=0),azel,lla
