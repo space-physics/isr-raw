@@ -1,5 +1,6 @@
 from h5py import Dataset
-from numpy import (array,nonzero,empty,ndarray,int32,unravel_index,datetime64,
+from numpy import (array,nonzero,empty,ndarray,int32,unravel_index,
+                   datetime64,timedelta64,
                    asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from . import Path
@@ -10,6 +11,7 @@ from pandas import Timestamp
 from matplotlib.pyplot import close
 from matplotlib.dates import MinuteLocator,SecondLocator
 from argparse import ArgumentParser
+from xarray import DataArray
 #
 from pymap3d.haversine import angledist
 from pymap3d.coordconv3d import aer2ecef,ecef2aer
@@ -171,8 +173,10 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
             close(fg)
 
 #def timeticks(tdiff:timedelta ):
-def timeticks(tdiff ):
-    assert isinstance(tdiff,timedelta)
+def timeticks(tdiff):
+    if isinstance(tdiff,DataArray): #len==1
+        tdiff = timedelta(microseconds=tdiff.item()/1e3)
+    assert isinstance(tdiff,timedelta),'expecting datetime.timedelta'
 
     if tdiff>timedelta(minutes=20):
         return MinuteLocator(interval=5)

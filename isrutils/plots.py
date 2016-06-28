@@ -16,7 +16,7 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
         return
 
 
-    assert snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
+    assert snr.ndim==2 and snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
 
     fg = figure(figsize=(15,12))
     ax =fg.gca()
@@ -28,7 +28,7 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     ax.set_xlim(tlim)
     ax.set_ylim(zlim)
 
-    ax.set_ylabel('altitude [km]')
+    ax.set_ylabel('slant range [km]')
 
     ax.set_xlabel('Time [UTC]')
     ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
