@@ -19,10 +19,8 @@ tlim2=(datetime(2013,4,14,8,tzinfo=UTC),
 
 P={'path':'~/data/2013-04-14/ISR',
    'beamid': 64157,
-   't0':None, #datetime(2013,4,14,8,54,tzinfo=UTC)
    'showacf':False,
    'showsamples':True,
-   'makeplot': []
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = ('d0346834.dt3.h5', #long pulse
