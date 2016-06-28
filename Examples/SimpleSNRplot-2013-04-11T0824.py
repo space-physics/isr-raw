@@ -1,8 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 reading PFISR data down to IQ samples
-
-See README.rst for the data types this file handles.
 """
 from tempfile import gettempdir
 from datetime import datetime
