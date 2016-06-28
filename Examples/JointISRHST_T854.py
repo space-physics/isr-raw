@@ -7,7 +7,7 @@ from collections import namedtuple
 from matplotlib.pyplot import show
 from pytz import UTC
 from datetime import datetime
-from tempdir import gettempdir
+from tempfile import gettempdir
 #
 from isrutils.overlayISRopt import overlayisrhist
 
