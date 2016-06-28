@@ -3,7 +3,7 @@ from six import integer_types
 from . import Path
 from numpy import empty,ones
 import h5py
-from pandas import DataFrame
+from xarray import DataArray
 #
 from .common import ut2dt,findstride,sampletime
 
@@ -39,8 +39,11 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
         tind &= t<=tlim[1]
     t = t[tind]
     power = power[:,tind]
+    power = power[zind,:]
 
-    return DataFrame(index=srng, columns=t, data=power[zind,:])
+    #return DataFrame(index=srng, columns=t, data=power[zind,:])
+    return DataArray(data=power,
+                     coords={'srng':srng,'time':t})
 
 def readpower_samples(fn,bid,zlim,tlim=(None,None)):
     """
@@ -74,7 +77,8 @@ def readsnr_int(fn,bid):
         power = f['/Raw11/Raw/Power/Data'][:,bind,:].squeeze().T
         srng  = f['/Raw11/Raw/Power/Range'].value.squeeze()/1e3
 #%% return requested beam data only
-    return DataFrame(index=srng,columns=t,data=power)
+    return DataArray(data=power,
+                     coords={'srng':srng,'time':t})
 
 def snrvtime_fit(fn,bid):
     fn = Path(fn).expanduser()

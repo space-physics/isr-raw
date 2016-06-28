@@ -3,7 +3,7 @@ from datetime import datetime
 from dateutil.parser import parse
 from numpy import log10,absolute, meshgrid
 from numpy.ma import masked_invalid
-from pandas import DataFrame
+from xarray import DataArray
 #
 from matplotlib.pyplot import figure
 from mpl_toolkits.mplot3d import Axes3D
@@ -12,7 +12,7 @@ from matplotlib.dates import SecondLocator, DateFormatter
 from .common import expfn,timeticks
 
 def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
-    if not isinstance(snr,DataFrame):
+    if not isinstance(snr,DataArray):
         return
 
 
@@ -20,7 +20,7 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
 
     fg = figure(figsize=(15,12))
     ax =fg.gca()
-    h=ax.pcolormesh(snr.columns.values,snr.index.values,
+    h=ax.pcolormesh(snr.time, snr.srng,
                      10*masked_invalid(log10(snr.values)),
                      vmin=vlim[0], vmax=vlim[1],cmap='jet')
     ax.autoscale(True,tight=True)
@@ -35,7 +35,7 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
 #%% date ticks
     fg.autofmt_xdate()
     if tlim is None or tlim[0] is None:
-        tdiff = snr.columns[-1] - snr.columns[0]
+        tdiff = snr.time[-1] - snr.time[0]
     else:
         if isinstance(tlim[0],str):
             tlim[0],tlim[1] = parse(tlim[0]), parse(tlim[1])
@@ -51,20 +51,22 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     c=fg.colorbar(h,ax=ax,fraction=0.075,shrink=0.5)
     c.set_label(ctxt)
 
-    ts = snr.columns[1] - snr.columns[0]
-    ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(expfn(fn), snr.columns[0].strftime('%Y-%m-%d'),ts.total_seconds()))
+    Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
+    ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(expfn(fn),
+                 datetime.utcfromtimestamp(snr.time[0].item()/1e9).strftime('%Y-%m-%d'),
+                 Ts.item()/1e9))
 
 
     #last command
     fg.tight_layout()
 
 def plotsnr1d(snr,fn,t0,zlim=(90,None)):
-    assert isinstance(snr,DataFrame)
-    tind=absolute(snr.columns-t0).argmin()
+    assert isinstance(snr,DataArray)
+    tind=absolute(snr.time-t0).argmin()
     tind = range(tind-1,tind+2)
-    t1 = snr.columns[tind]
+    t1 = snr.time[tind]
 
-    S = 10*log10(snr.loc[snr.index>=zlim[0],t1])
+    S = 10*log10(snr[snr.srng>=zlim[0],t1])
     z = S.index
 
     ax = figure().gca()
@@ -81,15 +83,15 @@ def plotsnr1d(snr,fn,t0,zlim=(90,None)):
     ax.set_ylabel('altitude [km]')
 
 def plotsnrmesh(snr,fn,t0,vlim,zlim=(90,None)):
-    assert isinstance(snr,DataFrame)
-    tind=absolute(snr.columns-t0).argmin()
+    assert isinstance(snr,DataArray)
+    tind=absolute(snr.time-t0).argmin()
     tind=range(tind-5,tind+6)
-    t1 = snr.columns[tind]
+    t1 = snr.time[tind]
 
-    S = 10*log10(snr.loc[snr.index>=zlim[0],t1])
+    S = 10*log10(snr[snr.srng>=zlim[0],t1])
     z = S.index
 
-    x,y = meshgrid(S.columns.values.astype(float),z)
+    x,y = meshgrid(S.time.values.astype(float),z)
 
     ax3 = figure().gca(projection='3d')
 
