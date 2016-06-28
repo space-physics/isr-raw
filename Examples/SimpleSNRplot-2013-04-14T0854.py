@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """
-2013-04-14 08:54 UT event
+2013-04-14 08:54:54 UT event
 """
-from isrutils import Path
 from datetime import datetime
 from pytz import UTC
 from matplotlib.pyplot import show
@@ -10,7 +9,7 @@ import seaborn as sns
 sns.set_context('talk',1.5)
 #
 from isrutils.looper import simpleloop
-#%%
+#%% users param
 zlim=(90, 400)
 tlim=(datetime(2013,4,14,8,54,10,tzinfo=UTC),
       datetime(2013,4,14,8,54,50,tzinfo=UTC))
@@ -18,12 +17,12 @@ tlim=(datetime(2013,4,14,8,54,10,tzinfo=UTC),
 tlim2=(datetime(2013,4,14,8,tzinfo=UTC),
       datetime(2013,4,14,9,tzinfo=UTC))
 
-P={'path':Path('~/data/2013-04-14/ISR'),
+P={'path':'~/data/2013-04-14/ISR',
    'beamid': 64157,
    't0':None, #datetime(2013,4,14,8,54,tzinfo=UTC)
    'showacf':False,
    'showsamples':True,
-   'makeplot': ('show')
+   'makeplot': []
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = ('d0346834.dt3.h5', #long pulse
