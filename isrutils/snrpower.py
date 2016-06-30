@@ -16,10 +16,14 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     Only one indexing vector or array is currently allowed for advanced selection
     """
     assert sampiq.ndim == 4
-    assert isinstance(zlim[0],(float,integer_types)) and isinstance(zlim[1],(float,integer_types)),'you must specify altitude summation limits --zlim'
 
     Nr = srng.size
-    zind = (zlim[0] <= srng) & (srng <= zlim[1])
+
+    zind = ones(Nr,dtype=bool)
+    if zlim[0] is not None:
+        zind &= zlim[0]<=srng
+    if zlim[1] is not None:
+        zind &= srng<=zlim[1]
     srng = srng[zind]
 
     Nt = ut.size
@@ -43,6 +47,7 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
 
     #return DataFrame(index=srng, columns=t, data=power[zind,:])
     return DataArray(data=power,
+                     dims=['srng','time'],
                      coords={'srng':srng,'time':t})
 
 def readpower_samples(fn,bid,zlim,tlim=(None,None)):
@@ -78,6 +83,7 @@ def readsnr_int(fn,bid):
         srng  = f['/Raw11/Raw/Power/Range'].value.squeeze()/1e3
 #%% return requested beam data only
     return DataArray(data=power,
+                     dims=['srng','time'],
                      coords={'srng':srng,'time':t})
 
 def snrvtime_fit(fn,bid):
