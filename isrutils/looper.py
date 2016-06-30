@@ -3,7 +3,7 @@ from . import Path
 from .switchyard import isrselect
 from .plots import plotsnr
 
-def simpleloop(flist,tlim,zlim,P):
+def simpleloop(flist,tlim,zlim,vlim,P):
 
     path = Path(P['path'])
     try:
@@ -16,6 +16,6 @@ def simpleloop(flist,tlim,zlim,P):
             path/f, P['beamid'], tlim, zlim, t0, P['showacf'],
             P['showsamples'])
         # 15 sec integration
-        plotsnr(snrint,f,tlim)
+        plotsnr(snrint,f,tlim,vlim)
         # 200 ms integration
-        plotsnr(snrsamp,f,tlim)
+        plotsnr(snrsamp,f,tlim,vlim)
