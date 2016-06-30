@@ -58,7 +58,8 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
     fn=Path(fn).expanduser()
     assert isinstance(bid,integer_types) # a scalar integer!
 
-    with h5py.File(str(fn),'r',libver='latest') as f:
+    try:
+      with h5py.File(str(fn),'r',libver='latest') as f:
 #        Nt = f['/Time/UnixTime'].shape[0]
         isrlla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
         Np = f['/Raw11/Raw/PulsesIntegrated'][0,0] #FIXME is this correct in general?
@@ -69,6 +70,9 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
 #%% return az,el of this beam
         azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
         azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
+    except OSError as e: #problem with file
+        print('{} reading error {}'.format(fn,e))
+        return (None,)*3
 
     return power,azel,isrlla
 
