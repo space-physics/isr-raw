@@ -14,6 +14,8 @@ def isrstacker(flist,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
 
     for fn in flist:
         fn = Path(fn).expanduser()
+        if not fn.is_file():
+            continue
 
         spec,freq,snrsamp,azel,isrlla,snrint,snr30int = isrselect(fn,beamid,tlim,zlim,t0,acf,samples)
         if fn.samefile(flist[0]):
@@ -52,6 +54,8 @@ def isrselect(fn,beamid,tlim,zlim,t0,acf,samples):
     the desired data based on filename and user requests.
     """
     fn = Path(fn).expanduser() #need this here
+    if not fn.is_file():
+        return (None,)*7
 #%% handle path, detect file type
     ft = ftype(fn)
 #%% plasma line
