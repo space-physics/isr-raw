@@ -19,16 +19,12 @@ zlim = (None,None)
 tlim=(None,None)
 
 
-P={'path':'~/data/2013-05-01/isr',
+P={'path':'~/data/2013-04-26/isr',
    'beamid': 64157,
    'showacf':False,
    'showsamples':True,
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
-#flist = ( #long pulse
-#         'd0349102.dt0.h5',  ) #alt code
-##flist = ('d0349104.dt0.h5', #long pulse
-##         'd0349104.dt3.h5' ) #alt code
 
 flist = [x for x in Path(P['path']).expanduser().iterdir() if x.suffix=='.h5']
 
