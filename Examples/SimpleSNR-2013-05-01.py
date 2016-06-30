@@ -23,8 +23,10 @@ P={'path':'~/data/2013-05-01/isr',
    'showsamples':True,
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
-flist = ('d0349103.dt0.h5', #long pulse
-         'd0349103.dt3.h5' ) #alt code
+#flist = ('d0349103.dt0.h5', #long pulse
+#         'd0349103.dt3.h5' ) #alt code
+flist = ('d0349104.dt0.h5', #long pulse
+         'd0349104.dt3.h5' ) #alt code
 
 simpleloop(flist,tlim,zlim,P)
 
