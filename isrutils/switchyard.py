@@ -55,6 +55,7 @@ def isrselect(fn,beamid,tlim,zlim,t0,acf,samples):
     """
     fn = Path(fn).expanduser() #need this here
     if not fn.is_file():
+        print('{} not found'.format(fn))
         return (None,)*7
 #%% handle path, detect file type
     ft = ftype(fn)
@@ -65,17 +66,11 @@ def isrselect(fn,beamid,tlim,zlim,t0,acf,samples):
 #%% 0.234 second raw altcode and longpulse
     snrsamp=azel=isrlla=None
     if ft in ('dt0','dt3') and samples:
-        try:
-            snrsamp,azel,isrlla = readpower_samples(fn,beamid,zlim,tlim)
-        except KeyError as e:
-            print('raw pulse data not found {}  {}'.format(fn,e))
+        snrsamp,azel,isrlla = readpower_samples(fn,beamid,zlim,tlim)
 #%% multi-second integration (numerous integrated pulses)
     snrint=None
     if ft in ('dt0','dt3'):
-        try:
-            snrint = readsnr_int(fn,beamid)
-        except KeyError as e:
-            print('integrated pulse data not found {}  {}'.format(fn,e))
+        snrint = readsnr_int(fn,beamid)
 #%% 30 second integration plots
     if fn.stem.rsplit('_',1)[-1] == '30sec':
         snr30int = snrvtime_fit(fn,beamid)

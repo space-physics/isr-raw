@@ -56,39 +56,56 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
     returns a Pandas DataFrame containing power measurements
     """
     fn=Path(fn).expanduser()
-    assert isinstance(bid,integer_types) # a scalar integer!
+    assert isinstance(bid,integer_types),'beam specificationg must be a scalar integer!'
 
     try:
       with h5py.File(str(fn),'r',libver='latest') as f:
 #        Nt = f['/Time/UnixTime'].shape[0]
         isrlla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
-        Np = f['/Raw11/Raw/PulsesIntegrated'][0,0] #FIXME is this correct in general?
+
+        rawkey = _filekey(f)
+        Np = f['/Raw11/'+rawkey+'/PulsesIntegrated'][0,0] #FIXME is this correct in general?
         ut = sampletime(f['/Time/UnixTime'],Np)
-        srng  = f['/Raw11/Raw/Power/Range'].value.squeeze()/1e3
-        bstride = findstride(f['/Raw11/Raw/RadacHeader/BeamCode'],bid)
-        power = samplepower(f['/Raw11/Raw/Samples/Data'],bstride,Np,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
+        srng  = f['/Raw11/'+rawkey+'/Power/Range'].value.squeeze()/1e3
+        bstride = findstride(f['/Raw11/'+rawkey+'/RadacHeader/BeamCode'],bid)
+        power = samplepower(f['/Raw11/'+rawkey+'/Samples/Data'],bstride,Np,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
 #%% return az,el of this beam
         azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
         azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
     except OSError as e: #problem with file
         print('{} reading error {}'.format(fn,e))
         return (None,)*3
+    except KeyError as e:
+        print('raw pulse data not found {}  {}'.format(fn,e))
 
     return power,azel,isrlla
 
 def readsnr_int(fn,bid):
     fn = Path(fn).expanduser()
-    assert isinstance(bid,integer_types) # a scalar integer!
+    assert isinstance(bid,integer_types),'beam specificationg must be a scalar integer!'
 
-    with h5py.File(str(fn),'r',libver='latest') as f:
+    try:
+      with h5py.File(str(fn),'r',libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
-        bind  = f['/Raw11/Raw/Beamcodes'][0,:] == bid
-        power = f['/Raw11/Raw/Power/Data'][:,bind,:].squeeze().T
-        srng  = f['/Raw11/Raw/Power/Range'].value.squeeze()/1e3
+        rawkey = _filekey(f)
+        bind  = f['/Raw11/'+rawkey+'/Beamcodes'][0,:] == bid
+        power = f['/Raw11/'+rawkey+'/Power/Data'][:,bind,:].squeeze().T
+        srng  = f['/Raw11/'+rawkey+'/Power/Range'].value.squeeze()/1e3
+    except KeyError as e:
+      print('integrated pulse data not found {}  {}'.format(fn,e))
 #%% return requested beam data only
     return DataArray(data=power,
                      dims=['srng','time'],
                      coords={'srng':srng,'time':t})
+
+def _filekey(f):
+    # detect old and new HDF5 AMISR files -- 2011: old. 2013: new.
+    if '/Raw11/Raw/PulsesIntegrated' in f: #new
+        return 'Raw'
+    elif '/Raw11/RawData/PulsesIntegrated' in f: #old
+        return 'RawData'
+    else:
+        raise KeyError('not an old or new file?')
 
 def snrvtime_fit(fn,bid):
     fn = Path(fn).expanduser()
