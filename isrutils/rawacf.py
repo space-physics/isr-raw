@@ -2,13 +2,12 @@ from __future__ import division
 from six import integer_types
 from . import Path
 import h5py
-from pandas import DataFrame
-from numpy import (empty,zeros,complex64,complex128,conj,append,sin,radians,linspace,
-                   log10,absolute)
+from xarray import DataArray
+from numpy import (empty,zeros,complex64,complex128,conj,append,linspace)
 from numpy.fft import fft,fftshift
-from matplotlib.pyplot import figure,close
 #
-from .common import ftype,ut2dt,findstride,expfn,writeplots
+from .common import ftype,ut2dt,findstride
+from .plots import plotacf
 
 def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
     bstride=bstride.squeeze()
@@ -50,9 +49,9 @@ def readACF(fn,bid,makeplot=[],odir=None,tlim=(None,None),vlim=(None,None)):
     """
     reads incoherent scatter radar autocorrelation function (ACF)
     """
-    dns=1071/3 #todo scalefactor
+    dns=1071/3 #TODO scalefactor
     fn = Path(fn).expanduser()
-    assert isinstance(bid,integer_types) # a scalar integer!
+    assert isinstance(bid,integer_types),'beam specification must be a scalar integer'
 
     tInd = list(range(20,30,1)) #TODO pick indices by datetime
     with h5py.File(str(fn),'r',libver='latest') as f:
@@ -69,39 +68,21 @@ def readACF(fn,bid,makeplot=[],odir=None,tlim=(None,None),vlim=(None,None)):
 
         srng = f[rk + 'Data/Acf/Range'].value.squeeze()
         bstride = findstride(f[rk+'Data/Beamcodes'],bid)
-        bcodemap = DataFrame(index=f['/Setup/BeamcodeMap'][:,0].astype(int),
-                             columns=['az','el'],
-                             data=f['/Setup/BeamcodeMap'][:,1:3])
+        bcodemap = DataArray(data=f['/Setup/BeamcodeMap'][:,1:3],
+                             dims=['beamcode','azel'],
+                             coords={'beamcode':f['/Setup/BeamcodeMap'][:,0].astype(int),
+                                     'azel':['az','el']}
+                            )
         azel = bcodemap.loc[bid,:]
 
         for i in range(len(tInd)):
             spectrum,acf = compacf(f[rk+'Data/Acf/Data'],noiseall,
                                srng.size,dns,bstride,i,tInd)
-            specdf = DataFrame(index=srng,data=spectrum)
+            specdf = DataArray(data=spectrum,
+                               dims=['srng','freq'],
+                               coords={'srng':srng,'freq':linspace(-100/6,100/6,spectrum.shape[1])})
             try:
                 plotacf(specdf,fn,azel,t[tInd[i]],tlim=tlim,vlim=vlim,ctxt='dB',
                     makeplot=makeplot,odir=odir)
             except Exception as e:
                 print('failed to plot ACF due to {}'.format(e))
-
-def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt='',makeplot=[],odir=''):
-    #%% plot axes
-    goodz =spec.index.values*sin(radians(azel['el'])) > 60e3
-    z = spec.index[goodz].values/1e3 #altitude over N km
-    xfreq = linspace(-100/6,100/6,spec.shape[1]) #kHz
-
-    fg = figure()
-    ax = fg.gca()
-    h=ax.pcolormesh(xfreq,z,10*log10(absolute(spec.values[goodz,:])),
-                  vmin=vlim[0],vmax=vlim[1],cmap='cubehelix_r')
-    c=fg.colorbar(h,ax=ax)
-    c.set_label(ctxt)
-    ax.set_xlabel('frequency [kHz]')
-    ax.set_ylabel('altitude [km]')
-    ax.set_title('{} {}'.format(expfn(fn),t))
-    ax.autoscale(True,'both',tight=True)
-
-    writeplots(fg,t,odir,makeplot)
-
-    if not 'show' in makeplot:
-        close(fg)
