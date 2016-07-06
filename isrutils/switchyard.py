@@ -63,10 +63,13 @@ def isrselect(fn,beamid,tlim,zlim,t0,acf,samples):
     spec=freq=None
     if ft in ('dt1','dt2'):
         spec,freq = readplasmaline(fn,beamid,tlim)
-#%% 0.234 second raw altcode and longpulse
+#%% ~ 200 millisecond raw altcode and longpulse
     snrsamp=azel=isrlla=None
     if ft in ('dt0','dt3') and samples:
         snrsamp,azel,isrlla = readpower_samples(fn,beamid,zlim,tlim)
+#%% ACF
+    if ft in ('dt0','dt3') and acf:
+        readACF(fn,beamid,tlim=tlim)
 #%% multi-second integration (numerous integrated pulses)
     snrint=None
     if ft in ('dt0','dt3'):
