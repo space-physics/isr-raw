@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from . import Path
 from .switchyard import isrselect
-from .plots import plotsnr
+from .plots import plotsnr,plotplasmaline
 
 def simpleloop(flist,tlim,zlim,vlim,P):
 
@@ -19,3 +19,6 @@ def simpleloop(flist,tlim,zlim,vlim,P):
         plotsnr(snrint,f,tlim,vlim)
         # 200 ms integration
         plotsnr(snrsamp,f,tlim,vlim)
+
+        # plasma line spectrum
+        plotplasmaline(spec,freq,f,tlim)

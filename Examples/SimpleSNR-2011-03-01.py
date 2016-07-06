@@ -26,7 +26,7 @@ zlim=(90, 400)
 tlim=(None,None)
 
 
-P={'path':'c:/data/2011-03-01/isr',
+P={'path':'~/data/2011-03-01/isr',
    'beamid': 64157,
    'showacf':False,
    'showsamples':True,
@@ -35,8 +35,9 @@ P={'path':'c:/data/2011-03-01/isr',
 flist = (
 #'d0245965.dt3.h5',
 #'d0245965.dt0.h5',
-#'d0245966.dt3.h5',
-#'d0245966.dt0.h5',
+'d0245966.dt3.h5',
+'d0245966.dt2.h5',
+'d0245966.dt0.h5',
 #'d0245967.dt3.h5',
 #'d0245967.dt0.h5',
 #'d0245968.dt3.h5',
@@ -47,9 +48,9 @@ flist = (
 #'d0245970.dt0.h5',
 #'d0245971.dt3.h5',
 #'d0245971.dt0.h5',
-'d0245972.dt3.h5',
-'d0245972.dt0.h5')
-
+#'d0245972.dt3.h5',
+#'d0245972.dt0.h5'
+)
 simpleloop(flist,tlim,zlim,vlim,P)
 
 show()
