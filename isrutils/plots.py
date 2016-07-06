@@ -5,11 +5,11 @@ from numpy import log10,absolute, meshgrid
 from numpy.ma import masked_invalid
 from xarray import DataArray
 #
-from matplotlib.pyplot import figure
+from matplotlib.pyplot import figure,subplots,show,close
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import SecondLocator, DateFormatter
 #
-from .common import expfn,timeticks
+from .common import expfn,timeticks,writeplots
 
 def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     if not isinstance(snr,DataArray):
@@ -61,7 +61,9 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     fg.tight_layout()
 
 def plotsnr1d(snr,fn,t0,zlim=(90,None)):
-    assert isinstance(snr,DataArray)
+    if not isinstance(snr,DataArray):
+        return
+
     tind=absolute(snr.time-t0).argmin()
     tind = range(tind-1,tind+2)
     t1 = snr.time[tind]
@@ -83,7 +85,9 @@ def plotsnr1d(snr,fn,t0,zlim=(90,None)):
     ax.set_ylabel('altitude [km]')
 
 def plotsnrmesh(snr,fn,t0,vlim,zlim=(90,None)):
-    assert isinstance(snr,DataArray)
+    if not isinstance(snr,DataArray):
+        return
+
     tind=absolute(snr.time-t0).argmin()
     tind=range(tind-5,tind+6)
     t1 = snr.time[tind]
@@ -103,3 +107,106 @@ def plotsnrmesh(snr,fn,t0,vlim,zlim=(90,None)):
     ax3.set_ylabel('altitude [km]')
     ax3.set_xlabel('time')
     ax3.autoscale(True,'y',tight=True)
+
+
+def plotplasmaline(spec,Freq,fn, tlim=None,vlim=(None,None),zlim=(None,None),makeplot=[],odir=''):
+    if not isinstance(spec,DataArray):
+        return
+
+    ptype=None#'mesh'
+    Nshift = spec.freqshift.size
+
+    for t in spec.time:
+        if ptype in ('mesh','surf'): #cannot use subplots for 3d with matplotlib 1.4
+            axs=[None,None]
+
+            fg = figure(figsize=(15,5))
+            axs[0] = fg.add_subplot(1,Nshift,1,projection='3d')
+            if Nshift>1:
+                axs[1] = fg.add_subplot(1,Nshift,2,projection='3d')
+
+            fg.suptitle('{} {}'.format(fn.name,t.to_pydatetime()))
+        else: #pcolor
+            fg,axs = subplots(1,Nshift,figsize=(15,5),sharey=True)
+
+        if Nshift == 1:
+            axs = [axs]
+#%%
+        for s,ax,F in zip(spec.freqshift,axs,Freq.freqshift):
+            if ptype in ('mesh','surf'):
+                plotplasmamesh(spec.loc[s,t,:,:],Freq.loc[:,F].values,fg,ax,vlim,zlim,ptype)
+            else: #pcolor
+                plotplasmatime(spec.loc[s,t,:,:],Freq.loc[:,F].values,t,fn,
+                               fg,ax,tlim,vlim,s,makeplot)
+
+
+        writeplots(fg,t,odir,makeplot,'plasmaLine')
+        if not odir or 'show' in makeplot:
+            show()
+        else:
+            close(fg)
+
+def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot):
+    if not isinstance(spec,DataArray):
+        return
+
+    if not fg and not ax:
+        fg = figure()
+        ax = fg.gca()
+        isown = False
+    elif fg and not ax:
+        ax = fg.gca()
+        isown = False
+    else:
+        isown = True
+
+    srng = spec.srng.values
+    zgood = srng > 60. # above N km
+
+    h=ax.pcolormesh(freq/1e6,srng[zgood],10*log10(spec[zgood,:].values),
+                    vmin=vlim[0],vmax=vlim[1])#,cmap='jet')#'cubehelix_r')
+
+    if not isown or ctxt.item().startswith('down'):
+        ax.set_ylabel('slant range [km]')
+
+    c=fg.colorbar(h,ax=ax)
+    c.set_label('Power [dB]')
+
+    ax.set_xlabel('Doppler frequency [MHz]')
+    ax.set_title('{} {}'.format(expfn(fn), datetime.fromtimestamp(t.item()/1e9)))
+    ax.tick_params(axis='both', which='both', direction='out')
+    ax.autoscale(True,'both',tight=True)
+    fg.tight_layout()
+
+def plotplasmamesh(spec,freq,fg,ax,vlim,zlim=(90,None),ptype=''):
+    if not isinstance(spec,DataArray):
+        return
+
+    if not fg and not ax:
+        fg = figure()
+        ax = fg.gca()
+    elif fg and not ax:
+        ax = fg.gca()
+
+    srng = spec.index.values
+    zgood = srng>zlim[0] # above N km
+
+    S = 10*log10(spec.loc[zgood,:])
+    z = S.index.values
+
+    x,y = meshgrid(freq/1e6,z)
+
+#    ax3 = figure().gca(projection='3d')
+#
+#    ax3.scatter(x,y,S.values)
+    if ptype==  'surf':
+        ax.plot_surface(x,y,S.values,cmap='jet')
+    elif ptype=='mesh':
+        ax.plot_wireframe(x,y,S.values)
+
+    ax.set_zlim(vlim)
+    ax.set_zlabel('Power [dB]')
+    ax.set_ylabel('altitude [km]')
+    ax.set_xlabel('Frequency [MHz]')
+    ax.autoscale(True,'y',tight=True)
+    fg.tight_layout()
