@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from datetime import datetime
 from dateutil.parser import parse
-from numpy import log10,absolute, meshgrid
+from numpy import log10,absolute, meshgrid, sin, radians, linspace
 from numpy.ma import masked_invalid
 from xarray import DataArray
 #
@@ -107,6 +107,28 @@ def plotsnrmesh(snr,fn,t0,vlim,zlim=(90,None)):
     ax3.set_ylabel('altitude [km]')
     ax3.set_xlabel('time')
     ax3.autoscale(True,'y',tight=True)
+
+
+def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt='',makeplot=[],odir=''):
+    #%% plot axes
+    goodz = spec.srng * sin(radians(azel.loc['el'])) > 60e3
+    z = spec.srng[goodz].values / 1e3 #altitude over N km
+
+    fg = figure()
+    ax = fg.gca()
+    h=ax.pcolormesh(spec.freq.values,z,10*log10(absolute(spec[goodz,:].values)),
+                  vmin=vlim[0],vmax=vlim[1])#,cmap='cubehelix_r')
+    c=fg.colorbar(h,ax=ax)
+    c.set_label(ctxt)
+    ax.set_xlabel('frequency [kHz]')
+    ax.set_ylabel('altitude [km]')
+    ax.set_title('{} {}'.format(expfn(fn),t))
+    ax.autoscale(True,'both',tight=True)
+
+    writeplots(fg,t,odir,makeplot)
+
+    if odir and not 'show' in makeplot:
+        close(fg)
 
 
 def plotplasmaline(spec,Freq,fn, tlim=None,vlim=(None,None),zlim=(None,None),makeplot=[],odir=''):
