@@ -4,9 +4,9 @@ from pandas import concat
 #
 from .common import ftype
 from .rawacf import readACF
-from .plasmaline import readplasmaline,plotplasmaline
+from .plasmaline import readplasmaline
 from .snrpower import readpower_samples,readsnr_int,snrvtime_fit
-from .plots import plotsnr,plotsnr1d,plotsnrmesh
+from .plots import plotsnr,plotsnr1d,plotsnrmesh,plotplasmaline
 
 
 

@@ -56,7 +56,7 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
     returns a Pandas DataFrame containing power measurements
     """
     fn=Path(fn).expanduser()
-    assert isinstance(bid,integer_types),'beam specificationg must be a scalar integer!'
+    assert isinstance(bid,integer_types),'beam specification must be a scalar integer!'
 
     try:
       with h5py.File(str(fn),'r',libver='latest') as f:
@@ -82,7 +82,7 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
 
 def readsnr_int(fn,bid):
     fn = Path(fn).expanduser()
-    assert isinstance(bid,integer_types),'beam specificationg must be a scalar integer!'
+    assert isinstance(bid,integer_types),'beam specification must be a scalar integer!'
 
     try:
       with h5py.File(str(fn),'r',libver='latest') as f:
