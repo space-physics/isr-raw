@@ -28,8 +28,8 @@ tlim=(None,None)
 
 P={'path':'~/data/2011-03-01/isr',
    'beamid': 64157,
-   'showacf':False,
-   'showsamples':True,
+   'showacf': True,
+   'showsamples': True,
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (

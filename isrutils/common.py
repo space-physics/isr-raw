@@ -163,7 +163,7 @@ def sampletime(T,Np):
 
 def writeplots(fg,t,odir,makeplot,ctxt=''):
 
-    if 'png' in makeplot:
+    if odir:
         odir = Path(odir).expanduser()
         odir.mkdir(parents=True,exist_ok=True)
         ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]+'.png')
