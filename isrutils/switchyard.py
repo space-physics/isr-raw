@@ -35,7 +35,7 @@ def isrstacker(flist,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
     plotsnr(snrsamps,fn,tlim=tlim,vlim=vlim,ctxt='Power [dB]')
 #%% ACF
     vlim = vlim if vlim else (20,45)
-    readACF(fn,beamid,makeplot,odir,tlim=tlim,vlim=vlim)
+    readACF(fn,P)
 
     vlim = vlim if vlim else (47,80)
     plotsnr(snrints,fn,vlim=vlim,ctxt='SNR [dB]')
@@ -44,11 +44,11 @@ def isrstacker(flist,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
     if t0 is not None:
         plotsnr1d(snr30ints,fn,t0,zlim)
     plotsnr(snr30ints,fn,tlim,vlim)
-    #plotsnrmesh(snr,fn,t0,vlim,zlim)
+    #plotsnrmesh(snr,fn,P)
 
 
 
-def isrselect(fn,beamid,tlim,zlim,t0,acf,samples):
+def isrselect(fn,beamid,P):
     """
     this function is a switchyard to pick the right function to read and plot
     the desired data based on filename and user requests.
@@ -62,14 +62,14 @@ def isrselect(fn,beamid,tlim,zlim,t0,acf,samples):
 #%% plasma line
     spec=freq=None
     if ft in ('dt1','dt2'):
-        spec,freq = readplasmaline(fn,beamid,tlim)
+        spec,freq = readplasmaline(fn,beamid,P['tlim'])
 #%% ~ 200 millisecond raw altcode and longpulse
     snrsamp=azel=isrlla=None
-    if ft in ('dt0','dt3') and samples:
-        snrsamp,azel,isrlla = readpower_samples(fn,beamid,zlim,tlim)
+    if ft in ('dt0','dt3') and P['samples']:
+        snrsamp,azel,isrlla = readpower_samples(fn,beamid,P['zlim'],P['tlim'])
 #%% ACF
-    if ft in ('dt0','dt3') and acf:
-        readACF(fn,beamid,tlim=tlim)
+    if ft in ('dt0','dt3') and P['acf']:
+        readACF(fn,P)
 #%% multi-second integration (numerous integrated pulses)
     snrint=None
     if ft in ('dt0','dt3'):

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 from datetime import datetime
 from dateutil.parser import parse
-from numpy import log10,absolute, meshgrid, sin, radians, linspace
+from numpy import log10,absolute, meshgrid, sin, radians
 from numpy.ma import masked_invalid
 from xarray import DataArray
 #
-from matplotlib.pyplot import figure,subplots,show,close
+from matplotlib.pyplot import figure,subplots
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import SecondLocator, DateFormatter
 #
@@ -84,15 +84,15 @@ def plotsnr1d(snr,fn,t0,zlim=(90,None)):
     ax.set_xlabel('SNR [dB]')
     ax.set_ylabel('altitude [km]')
 
-def plotsnrmesh(snr,fn,t0,vlim,zlim=(90,None)):
+def plotsnrmesh(snr,fn,P):
     if not isinstance(snr,DataArray):
         return
 
-    tind=absolute(snr.time-t0).argmin()
+    tind=absolute(snr.time-P['t0']).argmin()
     tind=range(tind-5,tind+6)
     t1 = snr.time[tind]
 
-    S = 10*log10(snr[snr.srng>=zlim[0],t1])
+    S = 10*log10(snr[snr.srng >= P['zlim'][0],t1])
     z = S.index
 
     x,y = meshgrid(S.time.values.astype(float),z)
@@ -102,34 +102,38 @@ def plotsnrmesh(snr,fn,t0,vlim,zlim=(90,None)):
 #    ax3.plot_wireframe(x,y,S.values)
 #    ax3.scatter(x,y,S.values)
     ax3.plot_surface(x,y,S.values,cmap='jet')
-    ax3.set_zlim(vlim)
+    ax3.set_zlim(P['vlim'])
     ax3.set_zlabel('SNR [dB]')
     ax3.set_ylabel('altitude [km]')
     ax3.set_xlabel('time')
     ax3.autoscale(True,'y',tight=True)
 
 
-def plotacf(spec,fn,azel,t,tlim=(None,None),vlim=(None,None),ctxt='',makeplot=[],odir=''):
+def plotacf(spec,fn,azel,t,P,ctxt=''):
     #%% plot axes
-    goodz = spec.srng * sin(radians(azel.loc['el'])) > 60e3
+    goodz = spec.srng * sin(radians(azel.loc['el'])) > 60e3 #actual altitude > 60km
     z = spec.srng[goodz].values / 1e3 #altitude over N km
 
     fg = figure()
     ax = fg.gca()
     h=ax.pcolormesh(spec.freq.values,z,10*log10(absolute(spec[goodz,:].values)),
-                  vmin=vlim[0],vmax=vlim[1])#,cmap='cubehelix_r')
+                                                         vmin=P['vlimacf'][0],
+                                                         vmax=P['vlimacf'][1],
+                                                         cmap='jet')#cmap='cubehelix_r')
+
+    if P['zlim'][1] is not None:
+        ytop = min(z[-1], P['zlim'][1])
+
+    ax.set_ylim(P['zlim'][0],ytop)
+
     c=fg.colorbar(h,ax=ax)
     c.set_label(ctxt)
     ax.set_xlabel('frequency [kHz]')
     ax.set_ylabel('altitude [km]')
-    ax.set_title('{} {}'.format(expfn(fn),t))
-    ax.autoscale(True,'both',tight=True)
+    ax.set_title('{} {}'.format(expfn(fn),t.strftime('%Y-%m-%dT%H:%M:%S')))
+    ax.autoscale(True,axis='x',tight=True)
 
-    writeplots(fg,t,odir,makeplot)
-
-    if odir and not 'show' in makeplot:
-        close(fg)
-
+    writeplots(fg,t,P['odir'],P['makeplot'])
 
 def plotplasmaline(spec,Freq,fn, tlim=None,vlim=(None,None),zlim=(None,None),makeplot=[],odir=''):
     if not isinstance(spec,DataArray):
@@ -161,12 +165,7 @@ def plotplasmaline(spec,Freq,fn, tlim=None,vlim=(None,None),zlim=(None,None),mak
                 plotplasmatime(spec.loc[s,t,:,:],Freq.loc[:,F].values,t,fn,
                                fg,ax,tlim,vlim,s,makeplot)
 
-
         writeplots(fg,t,odir,makeplot,'plasmaLine')
-        if not odir or 'show' in makeplot:
-            show()
-        else:
-            close(fg)
 
 def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot):
     if not isinstance(spec,DataArray):
@@ -186,7 +185,7 @@ def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot):
     zgood = srng > 60. # above N km
 
     h=ax.pcolormesh(freq/1e6,srng[zgood],10*log10(spec[zgood,:].values),
-                    vmin=vlim[0],vmax=vlim[1])#,cmap='jet')#'cubehelix_r')
+                    vmin=vlim[0],vmax=vlim[1],cmap='jet')#'cubehelix_r')
 
     if not isown or ctxt.item().startswith('down'):
         ax.set_ylabel('slant range [km]')

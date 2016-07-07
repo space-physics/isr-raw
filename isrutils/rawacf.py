@@ -45,13 +45,13 @@ def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
 
     return spec,acf
 
-def readACF(fn,bid,makeplot=[],odir=None,tlim=(None,None),vlim=(None,None)):
+def readACF(fn,P):
     """
     reads incoherent scatter radar autocorrelation function (ACF)
     """
     dns=1071/3 #TODO scalefactor
     fn = Path(fn).expanduser()
-    assert isinstance(bid,integer_types),'beam specification must be a scalar integer'
+    assert isinstance(P['beamid'],integer_types),'beam specification must be a scalar integer'
 
     tInd = list(range(20,30,1)) #TODO pick indices by datetime
     with h5py.File(str(fn),'r',libver='latest') as f:
@@ -67,13 +67,13 @@ def readACF(fn,bid,makeplot=[],odir=None,tlim=(None,None),vlim=(None,None)):
             raise TypeError('unexpected file type {}'.format(ft))
 
         srng = f[rk + 'Data/Acf/Range'].value.squeeze()
-        bstride = findstride(f[rk+'Data/Beamcodes'],bid)
+        bstride = findstride(f[rk+'Data/Beamcodes'],P['beamid'])
         bcodemap = DataArray(data=f['/Setup/BeamcodeMap'][:,1:3],
                              dims=['beamcode','azel'],
                              coords={'beamcode':f['/Setup/BeamcodeMap'][:,0].astype(int),
                                      'azel':['az','el']}
                             )
-        azel = bcodemap.loc[bid,:]
+        azel = bcodemap.loc[P['beamid'],:]
 
         for i in range(len(tInd)):
             spectrum,acf = compacf(f[rk+'Data/Acf/Data'],noiseall,
@@ -82,7 +82,6 @@ def readACF(fn,bid,makeplot=[],odir=None,tlim=(None,None),vlim=(None,None)):
                                dims=['srng','freq'],
                                coords={'srng':srng,'freq':linspace(-100/6,100/6,spectrum.shape[1])})
             try:
-                plotacf(specdf,fn,azel,t[tInd[i]],tlim=tlim,vlim=vlim,ctxt='dB',
-                    makeplot=makeplot,odir=odir)
+                plotacf(specdf,fn,azel,t[tInd[i]], P, ctxt='dB')
             except Exception as e:
                 print('failed to plot ACF due to {}'.format(e))
