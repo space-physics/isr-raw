@@ -7,10 +7,18 @@ def simpleloop(flist,P):
 
     tlim,vlim = P['tlim'],P['vlim']
 
-    path = Path(P['path'])
+    try:
+        P['odir']
+    except KeyError:
+        P['odir'] = None
+
+    try:
+        P['makeplot']
+    except KeyError:
+        P['makeplot'] = []
 
     for f in flist:
-        spec,freq,snrsamp,azel,isrlla,snrint,snr30int = isrselect(path/f, P['beamid'], P)
+        spec,freq,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P['beamid'], P)
         # 15 sec integration
         plotsnr(snrint,f,tlim,vlim)
         # 200 ms integration
