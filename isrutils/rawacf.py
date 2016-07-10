@@ -65,7 +65,11 @@ def readACF(fn,P):
         ft = ftype(fn)
         if ft == 'dt3':
             rk = '/S/'
-            noiseall = f[rk+'Noise/Acf/Data']
+            try:
+                noiseall = f[rk+'Noise/Acf/Data']
+            except KeyError:
+                logging.warning('{} does not exist in {}'.format(rk,fn))
+                return
         elif ft == 'dt0':
             rk = '/IncohCodeFl/'
             noiseall = None #TODO hack for dt0
