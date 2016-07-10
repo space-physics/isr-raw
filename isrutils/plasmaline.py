@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-from six import integer_types,string_types
+import logging
+from six import integer_types
 from pathlib import Path
 from numpy import nonzero,empty
 import h5py
@@ -21,7 +22,7 @@ def readplasmaline(fn,beamid,tlim):
     fn = Path(fn).expanduser()
     assert isinstance(beamid,integer_types),'beam specification must be a scalar integer'
 
-    dshift=('downshift','upshift') # by definition of dt1,dt2
+    dshift=['downshift','upshift'] # by definition of dt1,dt2
     fiter = (('dt1',-5e6),('dt2',5e6))
     spec = None
     fshift=[]
@@ -47,18 +48,23 @@ def readplasmaline(fn,beamid,tlim):
             tind = nonzero((tlim[0] <= T) & (T<=tlim[1]))[0]
 
         if spec is None:
-#            spec = Panel4D(labels=fshift,items=T[tind], major_axis=srng,minor_axis=range(freq.size))
- #           Freq = DataFrame(columns=fshift)
-            spec = DataArray(data = empty((len(fshift),len(tind),srng.size,freq.size)),
+            spec = DataArray(data = empty((len(dshift),len(tind),srng.size,freq.size)),
                              dims=['freqshift','time','srng','freq'],
-                             coords={'freqshift':fshift, 'time':T[tind],'srng':srng})
-            Freq = DataArray(data = empty((freq.size,len(fshift))),
+                             coords={'freqshift':dshift, 'time':T[tind],'srng':srng})
+            Freq = DataArray(data = empty((freq.size,len(dshift))),
                              dims=['freq','freqshift'],
-                             coords={'freqshift':fshift})
+                             coords={'freqshift':dshift})
         Freq.loc[:,s] = freq
 
         for ti,t in zip(tind,T[tind]):
-            for i,r in enumerate(srng):
-                spec.loc[s,t,r,:] = data[i,:,ti]
+            try:
+                for i,r in enumerate(srng):
+                    spec.loc[s,t,r,:] = data[i,:,ti]
+            except KeyError:
+                logging.error('problem reading {} at {}'.format(s,t))
+
+#%% in case up or down not used
+    spec = spec.loc[fshift,...]
+    Freq = Freq.loc[:,fshift]
 
     return spec,Freq

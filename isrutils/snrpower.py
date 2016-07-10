@@ -64,11 +64,11 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
         isrlla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
 
         rawkey = _filekey(f)
-        Np = f['/Raw11/'+rawkey+'/PulsesIntegrated'][0,0] #FIXME is this correct in general?
+        Np = f[rawkey+'/PulsesIntegrated'][0,0] #FIXME is this correct in general?
         ut = sampletime(f['/Time/UnixTime'],Np)
-        srng  = f['/Raw11/'+rawkey+'/Power/Range'].value.squeeze()/1e3
-        bstride = findstride(f['/Raw11/'+rawkey+'/RadacHeader/BeamCode'],bid)
-        power = samplepower(f['/Raw11/'+rawkey+'/Samples/Data'],bstride,Np,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
+        srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
+        bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],bid)
+        power = samplepower(f[rawkey+'/Samples/Data'],bstride,Np,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
 #%% return az,el of this beam
         azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
         azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
@@ -88,11 +88,12 @@ def readsnr_int(fn,bid):
       with h5py.File(str(fn),'r',libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
         rawkey = _filekey(f)
-        bind  = f['/Raw11/'+rawkey+'/Beamcodes'][0,:] == bid
-        power = f['/Raw11/'+rawkey+'/Power/Data'][:,bind,:].squeeze().T
-        srng  = f['/Raw11/'+rawkey+'/Power/Range'].value.squeeze()/1e3
+        bind  = f[rawkey+'/Beamcodes'][0,:] == bid
+        power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
+        srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
     except KeyError as e:
       print('integrated pulse data not found {}  {}'.format(fn,e))
+      return
 #%% return requested beam data only
     return DataArray(data=power,
                      dims=['srng','time'],
@@ -101,9 +102,11 @@ def readsnr_int(fn,bid):
 def _filekey(f):
     # detect old and new HDF5 AMISR files -- 2011: old. 2013: new.
     if '/Raw11/Raw/PulsesIntegrated' in f: #new
-        return 'Raw'
+        return '/Raw11/Raw'
     elif '/Raw11/RawData/PulsesIntegrated' in f: #old
-        return 'RawData'
+        return '/Raw11/RawData'
+    elif '/S/Data/PulsesIntegrated' in f:
+        return '/S/Data'
     else:
         raise KeyError('not an old or new file?')
 
@@ -116,4 +119,6 @@ def snrvtime_fit(fn,bid):
         snr = f['/NeFromPower/SNR'][:,bind,:].squeeze().T
         z = f['/NeFromPower/Altitude'][bind,:].squeeze()/1e3
 #%% return requested beam data only
-    return DataFrame(index=z,columns=t,data=snr)
+        return DataArray(data=snr,
+                         dims=['alt','time'],
+                         coords={'alt':z,'time':t})
