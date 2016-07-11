@@ -17,15 +17,15 @@ if not fn.is_file():
         f.extract(name,str(path))
 
 
-bid=64157 #magnetic zenith beam id for PFISR for experiments I know of  ~ 2011-2016
+P={'beamid':64157}
 
 zlim=(200,300) #km
 
 def test_readpowersnr():
-    readpower_samples(fn,bid,zlim)
+    readpower_samples(fn,P['beamid'],zlim)
 
 def test_readacf():
-    readACF(fn,bid)
+    readACF(fn,P)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import logging
 from six import integer_types
-from pathlib import Path
+from . import Path
 from numpy import nonzero,empty
 import h5py
 from xarray import DataArray
