@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import tarfile
 from isrutils import Path
 from numpy.testing import run_module_suite
 #
@@ -12,9 +11,6 @@ rdir = Path(__file__).parents[1]
 name = 'test.dt3.h5'
 path = rdir/'tests'
 fn = path/name
-if not fn.is_file():
-    with tarfile.open(str(fn) + '.xz','r') as f:
-        f.extract(name,str(path))
 
 
 P={'beamid':64157}
