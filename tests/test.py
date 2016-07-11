@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import tarfile
 from isrutils import Path
 from numpy.testing import run_module_suite
 #
