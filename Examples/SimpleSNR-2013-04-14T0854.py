@@ -12,7 +12,7 @@ from isrutils.looper import simpleloop
 #%% users param
 
 
-P={'path':'~/data/2013-04-14/ISR',
+P={'path':'~/data/2013-04-14/isr',
    'makeplot': [],
    'beamid': 64157,
    'acf': True,
@@ -27,7 +27,7 @@ P={'path':'~/data/2013-04-14/ISR',
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (
 'd0346834.dt3.h5', #long pulse
-'d0346834.dt0.h5', #alt code
+#'d0346834.dt0.h5', #alt code
 #'20130413.001_ac_30sec.h5',
 #'20130413.001_lp_30sec.h5'
 )

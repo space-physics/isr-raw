@@ -11,7 +11,7 @@ sns.set_context('talk',1.5)
 #
 from isrutils.looper import simpleloop
 #%% users param
-P={'path':'~/data/2007-03-23',
+P={'path':'~/data/2007-03-23/isr',
    'makeplot': [],
    'beamid': 64157,
    'acf': False,
