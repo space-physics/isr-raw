@@ -21,8 +21,8 @@ P={'path':'~/data/2013-04-14/isr',
    'odir': 'out/try2',
    'vlim': (22,55),
    'zlim': (90, 400),
-   'tlim': (datetime(2013,4,14,8,54,20,tzinfo=UTC),
-            datetime(2013,4,14,8,54,30,tzinfo=UTC)),
+   'tlim': (datetime(2013,4,14,8,54,10,tzinfo=UTC),
+            datetime(2013,4,14,8,54,50,tzinfo=UTC)),
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (
