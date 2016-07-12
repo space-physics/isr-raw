@@ -45,7 +45,6 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     power = power[:,tind]
     power = power[zind,:]
 
-    #return DataFrame(index=srng, columns=t, data=power[zind,:])
     return DataArray(data=power,
                      dims=['srng','time'],
                      coords={'srng':srng,'time':t})
@@ -64,10 +63,20 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
         isrlla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
 
         rawkey = _filekey(f)
-        Np = f[rawkey+'/PulsesIntegrated'][0,0] #FIXME is this correct in general?
+
+        try:
+            bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],bid)
+        except KeyError:
+            bstride = findstride(f['/RadacHeader/BeamCode'],bid) # old 2007 files
+
+        try:
+            Np = f[rawkey+'/PulsesIntegrated'][0,0] #FIXME is this correct in general?
+        except KeyError:
+            Np=None
         ut = sampletime(f['/Time/UnixTime'],Np)
+
         srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
-        bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],bid)
+
         power = samplepower(f[rawkey+'/Samples/Data'],bstride,Np,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
 #%% return az,el of this beam
         azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
@@ -100,11 +109,13 @@ def readsnr_int(fn,bid):
                      coords={'srng':srng,'time':t})
 
 def _filekey(f):
-    # detect old and new HDF5 AMISR files -- 2011: old. 2013: new.
-    if '/Raw11/Raw/PulsesIntegrated' in f: #new
+    # detect old and new HDF5 AMISR files
+    if   '/Raw11/Raw/PulsesIntegrated' in f:        # new 2013
         return '/Raw11/Raw'
-    elif '/Raw11/RawData/PulsesIntegrated' in f: #old
+    elif '/Raw11/RawData/PulsesIntegrated' in f:    # old 2011
         return '/Raw11/RawData'
+    elif '/RAW10/Data/Samples' in f:                # older 2007
+        return '/RAW10/Data/'
     elif '/S/Data/PulsesIntegrated' in f:
         return '/S/Data'
     else:
