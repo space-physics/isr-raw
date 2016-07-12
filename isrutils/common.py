@@ -1,6 +1,6 @@
 from h5py import Dataset
-from numpy import (array,nonzero,empty,ndarray,int32,unravel_index,
-                   datetime64,timedelta64,
+from numpy import (array,empty,ndarray,int32,unravel_index,
+                   datetime64,
                    asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from . import Path
@@ -63,7 +63,7 @@ def timesync(tisr,topt,tlim):
         f = interp1d(tisr,range(tisr.size),'nearest',assume_sorted=True)
 
         # optical:  typically treq = topt
-        ioptreq = nonzero((tstart<=topt) & (topt<=tend))[0]
+        ioptreq = ((tstart<=topt) & (topt<=tend)).nonzero()[0]
 
         toptreq = topt[ioptreq]
         iisrreq = f(toptreq).astype(int)
@@ -71,7 +71,7 @@ def timesync(tisr,topt,tlim):
         #tisrreq = tisr[(tstart<=tisr) & (tisr<=tend)]
     else:
         ioptreq = (None,)*tisr.size
-        iisrreq = nonzero((tstart<=tisr) & (tisr<=tend))[0]
+        iisrreq = ((tstart<=tisr) & (tisr<=tend)).nonzero()[0]
 
 
     return iisrreq,ioptreq
@@ -119,12 +119,13 @@ def ut2dt(ut):
 def findstride(beammat, bid):
     assert isinstance(bid,int)
     assert beammat.ndim==2
-    #FIXME is using just first row OK? other rows were identical for me.
+    # NOTE: Pre-2013 files have distinct rows, so touch each value in beamcode!
+
 #    Nt = beammat.shape[0]
 #    index = empty((Nt,Np),dtype=int)
 #    for i,b in enumerate(beammat):
 #        index[i,:] = nonzero(b==bid)[0] #NOTE: candidate for np.s_ ?
-    return nonzero(beammat[0,:]==bid)[0]
+    return (beammat[:]==bid).nonzero()[0]
 
 #def ftype(fn)->str:
 def ftype(fn):
