@@ -5,8 +5,6 @@ from .plots import plotsnr,plotplasmaline
 
 def simpleloop(flist,P):
 
-    tlim,vlim = P['tlim'],P['vlim']
-
     try:
         P['odir']
     except KeyError:
@@ -20,9 +18,9 @@ def simpleloop(flist,P):
     for f in flist:
         specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P['beamid'], P)
         # 15 sec integration
-        plotsnr(snrint,f,tlim,vlim)
+        plotsnr(snrint,f,P,ctxt='Power [dB]')
         # 200 ms integration
-        plotsnr(snrsamp,f,tlim,vlim)
+        plotsnr(snrsamp,f,P,ctxt='Power [dB]')
 
         # plasma line spectrum
         plotplasmaline(specdown,specup,f,P)

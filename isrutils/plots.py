@@ -13,7 +13,7 @@ from matplotlib.dates import SecondLocator, DateFormatter
 from histutils.findnearest import find_nearest as findnearest
 from .common import expfn,timeticks,writeplots
 
-def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
+def plotsnr(snr,fn,P,ctxt=''):
     if not isinstance(snr,DataArray):
         return
 
@@ -24,11 +24,11 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     ax =fg.gca()
     h=ax.pcolormesh(snr.time, snr.srng,
                      10*masked_invalid(log10(snr.values)),
-                     vmin=vlim[0], vmax=vlim[1],cmap='jet')
+                     vmin=P['vlim'][0], vmax=P['vlim'][1],cmap='jet')
     ax.autoscale(True,tight=True)
 
-    ax.set_xlim(tlim)
-    ax.set_ylim(zlim)
+    ax.set_xlim(P['tlim'])
+    ax.set_ylim(P['zlim'])
 
     ax.set_ylabel('slant range [km]')
 
@@ -36,14 +36,13 @@ def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
     ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
 #%% date ticks
     fg.autofmt_xdate()
-    if tlim is None or tlim[0] is None:
+    if P['tlim'][0] is None or P['tlim'][1] is None:
         tdiff = snr.time[-1] - snr.time[0]
     else:
-        if isinstance(tlim[0],str):
-            tlim[0],tlim[1] = parse(tlim[0]), parse(tlim[1])
-            tdiff = tlim[1]-tlim[0]
-        elif isinstance(tlim[0],datetime):
-            tdiff = tlim[1]-tlim[0]
+        if isinstance(P['tlim'][0],str):
+            tdiff = parse(P['tlim'][1]) - P['tlim'][0]
+        elif isinstance(P['tlim'][0],datetime):
+            tdiff = P['tlim'][1] - P['tlim'][0]
 
     ticker = timeticks(tdiff)
 
@@ -192,7 +191,7 @@ def plotplasmatime(spec,t,fn,fg,ax,P,ctxt,makeplot):
         if not isown or ctxt.startswith('down'):
             ax.set_ylabel('Power [dB]')
 
-        ax.set_title('{} at {:.0f} km slant range\n{}'.format(expfn(fn), alt, datetime.fromtimestamp(t.item()/1e9)))
+        fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt, datetime.fromtimestamp(t.item()/1e9)))
 
     else:
         srng = spec.srng.values
@@ -207,7 +206,7 @@ def plotplasmatime(spec,t,fn,fg,ax,P,ctxt,makeplot):
         c=fg.colorbar(h,ax=ax)
         c.set_label('Power [dB]')
 
-        ax.set_title('{} {}'.format(expfn(fn), datetime.fromtimestamp(t.item()/1e9)))
+        ax.set_title('Plasma line {}'.format(datetime.fromtimestamp(t.item()/1e9)))
 
 
     ax.set_xlabel('Doppler frequency [MHz]')

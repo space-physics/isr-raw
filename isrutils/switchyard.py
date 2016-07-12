@@ -32,18 +32,18 @@ def isrstacker(flist,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
     plotplasmaline(specdowns,specups,flist,P,makeplot=makeplot,odir=odir)
 
     vlim = vlim if vlim else (30,60)
-    plotsnr(snrsamps,fn,tlim=tlim,vlim=vlim,ctxt='Power [dB]')
+    plotsnr(snrsamps,fn,P,ctxt='Power [dB]')
 #%% ACF
     vlim = vlim if vlim else (20,45)
     readACF(fn,P)
 
     vlim = vlim if vlim else (47,80)
-    plotsnr(snrints,fn,vlim=vlim,ctxt='SNR [dB]')
+    plotsnr(snrints,fn,P,ctxt='SNR [dB]')
 
     vlim = vlim if vlim else (-20,None)
     if t0 is not None:
         plotsnr1d(snr30ints,fn,t0,zlim)
-    plotsnr(snr30ints,fn,tlim,vlim)
+    plotsnr(snr30ints,fn,P)
     #plotsnrmesh(snr,fn,P)
 
 

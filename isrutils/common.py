@@ -141,9 +141,9 @@ def expfn(fn):
     if ftype(fn)=='dt0':
         return 'alternating code'
     elif ftype(fn)=='dt1':
-        return 'downshifted plasma line'
+        return 'downshift plasma line'
     elif ftype(fn)=='dt2':
-        return 'upshifted plasma line'
+        return 'upshift plasma line'
     elif ftype(fn)=='dt3':
         return 'long pulse'
 
