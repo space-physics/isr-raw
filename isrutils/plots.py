@@ -116,9 +116,10 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
     fg = figure()
     ax = fg.gca()
 
-
-    goodz = spec.srng * sin(radians(azel.loc['el'])) > 60e3 #actual altitude > 60km
+    assert 10 <= azel[1] <= 90
+    goodz = spec.srng * sin(radians(azel[1])) > 60e3 #actual altitude > 60km
     z = spec.srng[goodz].values / 1e3 #altitude over N km
+
     h=ax.pcolormesh(spec.freq.values,
                     z,
                     10*log10(absolute(spec[goodz,:].values)),

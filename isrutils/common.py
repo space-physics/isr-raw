@@ -1,7 +1,7 @@
+from six import integer_types
 from h5py import Dataset
 from numpy import (array,empty,ndarray,int32,unravel_index,
-                   datetime64,
-                   asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
+                   datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from . import Path
 from datetime import datetime,timedelta
@@ -117,7 +117,7 @@ def ut2dt(ut):
 
 #def findstride(beammat:Dataset,bid:int):
 def findstride(beammat, bid):
-    assert isinstance(bid,int)
+    assert isinstance(bid,integer_types)
     assert beammat.ndim==2
     # NOTE: Pre-2013 files have distinct rows, so touch each value in beamcode!
 
@@ -125,7 +125,9 @@ def findstride(beammat, bid):
 #    index = empty((Nt,Np),dtype=int)
 #    for i,b in enumerate(beammat):
 #        index[i,:] = nonzero(b==bid)[0] #NOTE: candidate for np.s_ ?
-    return (beammat[:]==bid).nonzero()[0]
+
+#    return column_stack(beammat[:]==bid).nonzero()
+    return beammat[:]==bid #boolean
 
 #def ftype(fn)->str:
 def ftype(fn):
