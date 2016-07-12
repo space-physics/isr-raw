@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from six import integer_types
 from datetime import datetime
 from dateutil.parser import parse
 from numpy import log10,absolute, meshgrid, sin, radians
@@ -9,6 +10,7 @@ from matplotlib.pyplot import figure,subplots
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import SecondLocator, DateFormatter
 #
+from histutils.findnearest import find_nearest as findnearest
 from .common import expfn,timeticks,writeplots
 
 def plotsnr(snr,fn,tlim=None,vlim=(None,None),zlim=(90,None),ctxt=''):
@@ -111,15 +113,19 @@ def plotsnrmesh(snr,fn,P):
 
 def plotacf(spec,fn,azel,t,P,ctxt=''):
     #%% plot axes
-    goodz = spec.srng * sin(radians(azel.loc['el'])) > 60e3 #actual altitude > 60km
-    z = spec.srng[goodz].values / 1e3 #altitude over N km
 
     fg = figure()
     ax = fg.gca()
-    h=ax.pcolormesh(spec.freq.values,z,10*log10(absolute(spec[goodz,:].values)),
-                                                         vmin=P['vlimacf'][0],
-                                                         vmax=P['vlimacf'][1],
-                                                         cmap='jet')#cmap='cubehelix_r')
+
+
+    goodz = spec.srng * sin(radians(azel.loc['el'])) > 60e3 #actual altitude > 60km
+    z = spec.srng[goodz].values / 1e3 #altitude over N km
+    h=ax.pcolormesh(spec.freq.values,
+                    z,
+                    10*log10(absolute(spec[goodz,:].values)),
+                    vmin=P['vlimacf'][0],
+                    vmax=P['vlimacf'][1],
+                    cmap='jet')#cmap='cubehelix_r')
 
     if P['zlim'][1] is not None:
         ytop = min(z[-1], P['zlim'][1])
@@ -128,46 +134,43 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
 
     c=fg.colorbar(h,ax=ax)
     c.set_label(ctxt)
-    ax.set_xlabel('frequency [kHz]')
     ax.set_ylabel('altitude [km]')
     ax.set_title('{} {}'.format(expfn(fn),t.strftime('%Y-%m-%dT%H:%M:%S')))
     ax.autoscale(True,axis='x',tight=True)
+    ax.set_xlabel('frequency [kHz]')
 
-    writeplots(fg,t,P['odir'],P['makeplot'])
 
-def plotplasmaline(spec,Freq,fn, tlim=None,vlim=(None,None),zlim=(None,None),makeplot=[],odir=''):
-    if not isinstance(spec,DataArray):
+    writeplots(fg,t,P['odir'],P['makeplot'],'acf')
+
+def plotplasmaline(specdown,specup,fn, P, makeplot=[],odir=''):
+    if not (isinstance(specdown,DataArray) or isinstance(specup,DataArray)):
         return
 
-    ptype=None#'mesh'
-    Nshift = spec.freqshift.size
+    T = specdown.time
+    assert (T==specup.time).all(),'times do not match for downshift and upshift plasma spectrum'
 
-    for t in spec.time:
+    ptype=None#'mesh'
+
+    for t in T:
         if ptype in ('mesh','surf'): #cannot use subplots for 3d with matplotlib 1.4
             axs=[None,None]
 
             fg = figure(figsize=(15,5))
-            axs[0] = fg.add_subplot(1,Nshift,1,projection='3d')
-            if Nshift>1:
-                axs[1] = fg.add_subplot(1,Nshift,2,projection='3d')
+            axs[0] = fg.add_subplot(1,2,1,projection='3d')
 
             fg.suptitle('{} {}'.format(fn.name,t.to_pydatetime()))
         else: #pcolor
-            fg,axs = subplots(1,Nshift,figsize=(15,5),sharey=True)
-
-        if Nshift == 1:
-            axs = [axs]
+            fg,axs = subplots(1,2,figsize=(15,5),sharey=True)
 #%%
-        for s,ax,F in zip(spec.freqshift,axs,Freq.freqshift):
+        for s,ax,fshift in zip((specdown,specup),axs,('down','up')):
             if ptype in ('mesh','surf'):
-                plotplasmamesh(spec.loc[s,t,:,:],Freq.loc[:,F].values,fg,ax,vlim,zlim,ptype)
+                plotplasmamesh(s.loc[t,:,:], fg,ax,P,ptype)
             else: #pcolor
-                plotplasmatime(spec.loc[s,t,:,:],Freq.loc[:,F].values,t,fn,
-                               fg,ax,tlim,vlim,s,makeplot)
+                plotplasmatime(s.loc[t,:,:],t,fn, fg,ax,P,fshift,makeplot)
 
         writeplots(fg,t,odir,makeplot,'plasmaLine')
 
-def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot):
+def plotplasmatime(spec,t,fn,fg,ax,P,ctxt,makeplot):
     if not isinstance(spec,DataArray):
         return
 
@@ -181,25 +184,38 @@ def plotplasmatime(spec,freq,t,fn,fg,ax,tlim,vlim,ctxt,makeplot):
     else:
         isown = True
 
-    srng = spec.srng.values
-    zgood = srng > 60. # above N km
+    if P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,integer_types)):
+        ialt,alt = findnearest(spec.srng.values,P['zlim_pl'])
+        ax.plot(spec.freq.values/1e6,
+                10*log10(spec[ialt,:].values))
 
-    h=ax.pcolormesh(freq/1e6,srng[zgood],10*log10(spec[zgood,:].values),
-                    vmin=vlim[0],vmax=vlim[1],cmap='jet')#'cubehelix_r')
+        if not isown or ctxt.startswith('down'):
+            ax.set_ylabel('Power [dB]')
 
-    if not isown or ctxt.item().startswith('down'):
-        ax.set_ylabel('slant range [km]')
+        ax.set_title('{} at {:.0f} km slant range\n{}'.format(expfn(fn), alt, datetime.fromtimestamp(t.item()/1e9)))
 
-    c=fg.colorbar(h,ax=ax)
-    c.set_label('Power [dB]')
+    else:
+        srng = spec.srng.values
+        zgood = srng > 60. # above N km
+
+        h=ax.pcolormesh(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
+                        vmin=P['vlim'][0],vmax=P['vlim'][1],cmap='jet')#'cubehelix_r')
+
+        if not isown or ctxt.item().startswith('down'):
+            ax.set_ylabel('slant range [km]')
+
+        c=fg.colorbar(h,ax=ax)
+        c.set_label('Power [dB]')
+
+        ax.set_title('{} {}'.format(expfn(fn), datetime.fromtimestamp(t.item()/1e9)))
+
 
     ax.set_xlabel('Doppler frequency [MHz]')
-    ax.set_title('{} {}'.format(expfn(fn), datetime.fromtimestamp(t.item()/1e9)))
     ax.tick_params(axis='both', which='both', direction='out')
     ax.autoscale(True,'both',tight=True)
     fg.tight_layout()
 
-def plotplasmamesh(spec,freq,fg,ax,vlim,zlim=(90,None),ptype=''):
+def plotplasmamesh(spec,fg,ax,P,ptype=''):
     if not isinstance(spec,DataArray):
         return
 
@@ -210,12 +226,12 @@ def plotplasmamesh(spec,freq,fg,ax,vlim,zlim=(90,None),ptype=''):
         ax = fg.gca()
 
     srng = spec.index.values
-    zgood = srng>zlim[0] # above N km
+    zgood = srng>P['zlim'][0] # above N km
 
     S = 10*log10(spec.loc[zgood,:])
     z = S.index.values
 
-    x,y = meshgrid(freq/1e6,z)
+    x,y = meshgrid(spec.freq.values/1e6,z)
 
 #    ax3 = figure().gca(projection='3d')
 #
@@ -225,7 +241,7 @@ def plotplasmamesh(spec,freq,fg,ax,vlim,zlim=(90,None),ptype=''):
     elif ptype=='mesh':
         ax.plot_wireframe(x,y,S.values)
 
-    ax.set_zlim(vlim)
+    ax.set_zlim(P['vlim'])
     ax.set_zlabel('Power [dB]')
     ax.set_ylabel('altitude [km]')
     ax.set_xlabel('Frequency [MHz]')

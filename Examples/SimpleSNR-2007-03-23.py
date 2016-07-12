@@ -10,16 +10,17 @@ sns.set_context('talk',1.5)
 #
 from isrutils.looper import simpleloop
 #%% users param
-P={'path':'~/data/2007-03-17',
+P={'path':'~/data/2007-03-23',
    'makeplot': [],
    'beamid': 64157,
-   'acf': True,
+   'acf': False,
    'vlimacf': (20,50),
    'samples': False,
    'odir': 'out/acf',
-   'vlim': (22,55),
+   'zlim_pl': 230.,
+   'vlim': (None,None),
    'zlim': (90, 400),
-   'tlim': (None,None),
+   'tlim': (None,datetime(2007,3,23,11,11,30,tzinfo=UTC)),
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = sorted(Path(P['path']).expanduser().glob('*.dt*.h5'))

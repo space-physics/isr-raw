@@ -8,10 +8,12 @@ except Exception:
     pass
 
 setup(name='isrutils',
-	  description='Utilities for working with Incoherent Scatter Radar raw data (initially targeted for PFISR)',
+	  description='Utilities for Incoherent Scatter Radar raw data (initially targeted for PFISR)',
 	  url='https://github.com/scienceopen/isrutils',
-	  install_requires=['pathlib2','pymap3d','GeoData'],
-      dependency_links = ['https://github.com/scienceopen/pymap3d/tarball/master#egg=pymap3d',
+	  install_requires=['pathlib2',
+                         'histutils','pymap3d','GeoData'],
+      dependency_links = ['https://github.com/scienceopen/histutils/tarball/master#egg=histutils',
+                          'https://github.com/scienceopen/pymap3d/tarball/master#egg=pymap3d',
                           'https://github.com/jswoboda/GeoDataPython/tarball/master#egg=GeoData',],
       packages=['isrutils'],
 	  )
