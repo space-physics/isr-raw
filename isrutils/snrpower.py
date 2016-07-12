@@ -25,13 +25,6 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     if zlim[1] is not None:
         zind &= srng<=zlim[1]
     srng = srng[zind]
-#%% load only small bits of the hdf5 file, using advanced indexing. So fast!
-    power = empty((Nr, ut.size))
-    for it,b in zip(range(ut.size//Np),bstride):
-        power[:,Np*it:Np*(it+1)] = (sampiq[it,b,:,0]**2 +
-                                    sampiq[it,b,:,1]**2).T
-
-    power = power[zind,:]
 #%% filter by time
     t = ut2dt(ut)
 
@@ -43,12 +36,10 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
         tind &= t<=tlim[1]
     t = t[tind]
 
-    power = power[:,tind]
-
-    #sampiq = sampiq.value[bstride,:,:]
-    #sampiq = sampiq[:,zind,:]
-    #sampiq = sampiq[tind,:,:]
-    #power = (sampiq[...,0]**2. + sampiq[...,1]**2.).T
+    sampiq = sampiq.value[bstride,:,:]
+    sampiq = sampiq[:,zind,:]
+    sampiq = sampiq[tind,:,:]
+    power = (sampiq[...,0]**2. + sampiq[...,1]**2.).T
 
 
     return DataArray(data=power,
