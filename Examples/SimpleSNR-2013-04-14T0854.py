@@ -12,17 +12,17 @@ from isrutils.looper import simpleloop
 #%% users param
 
 
-P={'path':'~/data/2013-04-14/ISR',
+P={'path':'~/data/2013-04-14/isr',
    'makeplot': [],
    'beamid': 64157,
    'acf': True,
    'vlimacf': (20,50),
    'samples': True,
-   'odir': 'out/acf',
+   'odir': 'out/try',
    'vlim': (22,55),
    'zlim': (90, 400),
    'tlim': (datetime(2013,4,14,8,54,20,tzinfo=UTC),
-            datetime(2013,4,14,8,54,30,tzinfo=UTC)),
+            datetime(2013,4,14,8,54,21,tzinfo=UTC)),
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (
