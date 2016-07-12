@@ -36,7 +36,7 @@ def readplasma(fn,beamid,fshift,tlim):
     try:
         with h5py.File(str(fn),'r',libver='latest') as f:
             T     = ut2dt(f['/Time/UnixTime'].value)
-            bind  = findstride(f['/PLFFTS/Data/Beamcodes'], beamid) #NOTE: what if beam pattern changes during file?
+            bind  = findstride(f['/PLFFTS/Data/Beamcodes'], beamid)
             data = f['/PLFFTS/Data/Spectra/Data'][:,bind,:,:].squeeze().T
             srng  = f['/PLFFTS/Data/Spectra/Range'].value.squeeze()/1e3
             freq  = f['/PLFFTS/Data/Spectra/Frequency'].value.squeeze() + fshift
