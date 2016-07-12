@@ -23,6 +23,9 @@ def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
         acf_noise = None
         spec_noise= 0.
 
+#    acfall = acfall.value[bstride,:,:,:]
+#    acf = (acfall[...,0] + 1j*acfall[...,1]).sum(axis=0).T / dns / 2.
+
     for i in range(tInd[ti]-1,tInd[ti]+1):
         acf += (   acfall[i,bstride,:,:,0] +
                 1j*acfall[i,bstride,:,:,1]).T
