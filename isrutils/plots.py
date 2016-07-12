@@ -199,9 +199,9 @@ def plotplasmatime(spec,t,fn,fg,ax,P,ctxt,makeplot):
         zgood = srng > 60. # above N km
 
         h=ax.pcolormesh(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
-                        vmin=P['vlim'][0],vmax=P['vlim'][1],cmap='jet')#'cubehelix_r')
+                        vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='jet')#'cubehelix_r')
 
-        if not isown or ctxt.item().startswith('down'):
+        if not isown or ctxt.startswith('down'):
             ax.set_ylabel('slant range [km]')
 
         c=fg.colorbar(h,ax=ax)

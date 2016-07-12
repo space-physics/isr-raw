@@ -17,6 +17,8 @@ P={'path':'~/data/2013-04-14/isr',
    'beamid': 64157,
    'acf': False,
    'vlimacf': (20,50),
+   'zlim_pl': (None,None),
+   'vlim_pl': (None,None),
    'samples': True,
    'odir': 'out/try2',
    'vlim': (22,55),
@@ -26,8 +28,9 @@ P={'path':'~/data/2013-04-14/isr',
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (
-'d0346834.dt3.h5', #long pulse
+#'d0346834.dt3.h5', #long pulse
 #'d0346834.dt0.h5', #alt code
+'d0346834.dt1.h5',
 #'20130413.001_ac_30sec.h5',
 #'20130413.001_lp_30sec.h5'
 )
