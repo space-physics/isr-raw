@@ -26,7 +26,7 @@ def overlayisrhist(isrfn,odir,tlim,zlim,P):
 #    plsum = sumplasmaline(isrfn,p.beamid,p.flim,tlim,zlim)
 #    plotsumplasmaline(plsum)
     spec,freq = readplasmaline(isrfn,P.beamid,tlim)
-    #plotplasmaline(spec,freq,isrfn)
+    #plotplasmaline(spec,freq,isrfn,P)
 #%% (2-3) read ISR long pulse
     lpsum,beamazel,isrlla = sumlongpulse(isrfn,P.beamid,tlim,zlim)
 #%% (4) load optical data

@@ -18,11 +18,11 @@ def simpleloop(flist,P):
         P['makeplot'] = []
 
     for f in flist:
-        spec,freq,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P['beamid'], P)
+        specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P['beamid'], P)
         # 15 sec integration
         plotsnr(snrint,f,tlim,vlim)
         # 200 ms integration
         plotsnr(snrsamp,f,tlim,vlim)
 
         # plasma line spectrum
-        plotplasmaline(spec,freq,f,tlim)
+        plotplasmaline(specdown,specup,f,P)

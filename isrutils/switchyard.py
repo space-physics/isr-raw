@@ -17,9 +17,9 @@ def isrstacker(flist,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
         if not fn.is_file():
             continue
 
-        spec,freq,snrsamp,azel,isrlla,snrint,snr30int = isrselect(fn,beamid,tlim,zlim,t0,acf,samples)
+        specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(fn,beamid,tlim,zlim,t0,acf,samples)
         if fn.samefile(flist[0]):
-            specs=spec; freqs=freq
+            specdowns=specdown; specups=specup
             snrsamps = snrsamp
             snrints = snrint
             snr30ints = snr30int
@@ -29,7 +29,7 @@ def isrstacker(flist,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
             #TOOD other concat
 #%% plots
     vlim = vlim if vlim else (30,70) #(70,100)
-    plotplasmaline(specs,freqs,flist,vlim=vlim,zlim=zlim,makeplot=makeplot,odir=odir)
+    plotplasmaline(specdowns,specups,flist,P,makeplot=makeplot,odir=odir)
 
     vlim = vlim if vlim else (30,60)
     plotsnr(snrsamps,fn,tlim=tlim,vlim=vlim,ctxt='Power [dB]')
@@ -60,9 +60,9 @@ def isrselect(fn,beamid,P):
 #%% handle path, detect file type
     ft = ftype(fn)
 #%% plasma line
-    spec=freq=None
+    specdown=specup=None
     if ft in ('dt1','dt2'):
-        spec,freq = readplasmaline(fn,beamid,P['tlim'])
+        specdown,specup = readplasmaline(fn,beamid,P['tlim'])
 #%% ~ 200 millisecond raw altcode and longpulse
     snrsamp=azel=isrlla=None
     if ft in ('dt0','dt3') and P['samples']:
@@ -80,4 +80,4 @@ def isrselect(fn,beamid,P):
     else:
         snr30int=None
 
-    return spec,freq,snrsamp,azel,isrlla,snrint,snr30int
+    return specdown,specup,snrsamp,azel,isrlla,snrint,snr30int
