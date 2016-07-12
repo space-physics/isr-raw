@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from six import integer_types
 from . import Path
-from numpy import empty,ones
+from numpy import ones,empty
 import h5py
 from xarray import DataArray
 #
@@ -25,6 +25,13 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     if zlim[1] is not None:
         zind &= srng<=zlim[1]
     srng = srng[zind]
+#%% load only small bits of the hdf5 file, using advanced indexing. So fast!
+    power = empty((Nr, ut.size))
+    for it,b in zip(range(ut.size//Np),bstride):
+        power[:,Np*it:Np*(it+1)] = (sampiq[it,b,:,0]**2 +
+                                    sampiq[it,b,:,1]**2).T
+
+    power = power[zind,:]
 #%% filter by time
     t = ut2dt(ut)
 
@@ -35,11 +42,14 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     if tlim[1] is not None:
         tind &= t<=tlim[1]
     t = t[tind]
-#%% load only small bits of the hdf5 file, using advanced indexing. So fast!
-    sampiq = sampiq[:,:,zind,:]
-    sampiq = sampiq[bstride,:,:]
-    sampiq = sampiq[tind,:,:]
-    power = (sampiq[...,0]**2. + sampiq[...,1]**2.).T
+
+    power = power[:,tind]
+
+    #sampiq = sampiq.value[bstride,:,:]
+    #sampiq = sampiq[:,zind,:]
+    #sampiq = sampiq[tind,:,:]
+    #power = (sampiq[...,0]**2. + sampiq[...,1]**2.).T
+
 
     return DataArray(data=power,
                      dims=['srng','time'],
@@ -48,7 +58,7 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
 def readpower_samples(fn,bid,zlim,tlim=(None,None)):
     """
     reads samples (lowest level data) and computes power for a particular beam.
-    returns a Pandas DataFrame containing power measurements
+    returns power measurements
     """
     fn=Path(fn).expanduser()
     assert isinstance(bid,integer_types),'beam specification must be a scalar integer!'
