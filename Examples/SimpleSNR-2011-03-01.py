@@ -19,7 +19,7 @@ sns.set_context('talk',1.5)
 #
 from isrutils.looper import simpleloop
 #%% users param
-P={'path':'/mnt/c/data/2011-03-01/isr',
+P={'path':'~/data/2011-03-01/isr',
    'beamid': 64157,
    'acf': True,
    'samples': True,
@@ -34,7 +34,7 @@ flist = (
 #'d0245965.dt0.h5',
 'd0245966.dt3.h5',
 #'d0245966.dt2.h5',
-'d0245966.dt0.h5',
+#'d0245966.dt0.h5',
 #'d0245967.dt3.h5',
 #'d0245967.dt0.h5',
 #'d0245968.dt3.h5',

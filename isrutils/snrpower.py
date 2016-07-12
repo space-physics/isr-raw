@@ -12,27 +12,20 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     returns I**2 + Q**2 of radar received amplitudes
     FIXME: what are sample units?
 
-    I can't index by stride and slant range simultaneously, since h5py 2.5 says
-    Only one indexing vector or array is currently allowed for advanced selection
+    speed up indexing by downselecting by altitude, then time
     """
     assert sampiq.ndim == 4
+    assert bstride.ndim== 2 and sampiq.shape[:2] == bstride.shape and bstride.dtype==bool
 
+#%% filter by range
     Nr = srng.size
-
     zind = ones(Nr,dtype=bool)
     if zlim[0] is not None:
         zind &= zlim[0]<=srng
     if zlim[1] is not None:
         zind &= srng<=zlim[1]
     srng = srng[zind]
-
-    Nt = ut.size
-#%% load only small bits of the hdf5 file, using advanced indexing. So fast!
-    power = empty((Nr,Nt))
-    for it in range(Nt//Np):
-        power[:,Np*it:Np*(it+1)] = (sampiq[it,bstride,:,0]**2 +
-                                    sampiq[it,bstride,:,1]**2).T
-#%% NOTE: could also index by read, start with pulse batch before request and end with batch after last request.
+#%% filter by time
     t = ut2dt(ut)
 
     tind = ones(t.size,dtype=bool)
@@ -42,8 +35,11 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
     if tlim[1] is not None:
         tind &= t<=tlim[1]
     t = t[tind]
-    power = power[:,tind]
-    power = power[zind,:]
+#%% load only small bits of the hdf5 file, using advanced indexing. So fast!
+    sampiq = sampiq[:,:,zind,:]
+    sampiq = sampiq[bstride,:,:]
+    sampiq = sampiq[tind,:,:]
+    power = (sampiq[...,0]**2. + sampiq[...,1]**2.).T
 
     return DataArray(data=power,
                      dims=['srng','time'],
