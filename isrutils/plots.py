@@ -57,9 +57,9 @@ def plotsnr(snr,fn,P,ctxt=''):
                  datetime.utcfromtimestamp(snr.time[0].item()/1e9).strftime('%Y-%m-%d'),
                  Ts.item()/1e9))
 
-
-    #last command
     fg.tight_layout()
+
+    writeplots(fg,datetime.fromtimestamp(snr.time[0].item()/1e9),P['odir'],P['makeplot'],'snr'+ctxt)
 
 def plotsnr1d(snr,fn,t0,zlim=(90,None)):
     if not isinstance(snr,DataArray):
