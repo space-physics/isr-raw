@@ -5,14 +5,10 @@ from .plots import plotsnr,plotplasmaline
 
 def simpleloop(flist,P):
 
-    try:
-        P['odir']
-    except KeyError:
+    if not 'odir' in P:
         P['odir'] = None
 
-    try:
-        P['makeplot']
-    except KeyError:
+    if not 'makeplot' in P:
         P['makeplot'] = []
 
     for f in flist:

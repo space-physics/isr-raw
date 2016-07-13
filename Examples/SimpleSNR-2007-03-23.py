@@ -14,7 +14,7 @@ from isrutils.looper import simpleloop
 P={'path':'~/data/2007-03-23/isr',
    'makeplot': [],
    'beamid': 64157,
-   'acf': False,
+   'acf': True,
    'vlimacf': (20,50),
    'samples': True,
    'odir': 'out/2007-03-23',
