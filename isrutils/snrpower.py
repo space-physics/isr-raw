@@ -66,8 +66,6 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
             bstride = findstride(f['/RadacHeader/BeamCode'],bid) # old 2007 files
             ut = sampletime(f['/RadacHeader/RadacTime'],bstride)
 
-
-
         srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
 
         power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
