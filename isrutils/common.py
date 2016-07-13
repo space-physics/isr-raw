@@ -154,19 +154,17 @@ def sampletime(t,bstride):
     """
     read the time of the pulses to the microsecond level
     """
-    assert isinstance(t,(ndarray,Dataset))
+    assert isinstance(t,Dataset),'hdf5 only'
     assert t.ndim == 2
 
-    ut = t.value[bstride]
-
-    return ut
+    return t.value[bstride]
 
 def writeplots(fg,t,odir,makeplot,ctxt=''):
 
     if odir:
         odir = Path(odir).expanduser()
         odir.mkdir(parents=True,exist_ok=True)
-        ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]+'.png')
+        ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H-%M-%S.%f')[:-3]+'.png')
         print('saving {}'.format(ppth))
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
         if 'show' not in makeplot:
