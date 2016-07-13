@@ -85,15 +85,19 @@ def readsnr_int(fn,bid):
     assert isinstance(bid,integer_types),'beam specification must be a scalar integer!'
 
     try:
-      with h5py.File(str(fn),'r',libver='latest') as f:
-        t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
-        rawkey = _filekey(f)
-        bind  = f[rawkey+'/Beamcodes'][0,:] == bid
-        power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
-        srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
+        with h5py.File(str(fn),'r',libver='latest') as f:
+            t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
+            rawkey = _filekey(f)
+            try:
+                bind  = f[rawkey+'/Beamcodes'][0,:] == bid
+                power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
+            except KeyError:
+                power = f[rawkey+'/Power/Data'].value.T
+
+            srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
     except KeyError as e:
-      print('integrated pulse data not found {}  {}'.format(fn,e))
-      return
+        print('integrated pulse data not found {}  {}'.format(fn,e))
+        return
 #%% return requested beam data only
     return DataArray(data=power,
                      dims=['srng','time'],
