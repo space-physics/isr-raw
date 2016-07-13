@@ -15,10 +15,12 @@ from isrutils.looper import simpleloop
 P={'path':'~/data/2013-04-14/isr',
    'makeplot': [],
    'beamid': 64157,
-   'acf': False,
+   'acf': True,
    'vlimacf': (20,50),
+   'zlim_pl': (None,None),
+   'vlim_pl': (None,None),
    'samples': True,
-   'odir': 'out/try',
+   'odir': None, #'out/try2',
    'vlim': (22,55),
    'zlim': (90, 400),
    'tlim': (datetime(2013,4,14,8,54,10,tzinfo=UTC),
@@ -28,6 +30,7 @@ P={'path':'~/data/2013-04-14/isr',
 flist = (
 'd0346834.dt3.h5', #long pulse
 #'d0346834.dt0.h5', #alt code
+#'d0346834.dt1.h5',
 #'20130413.001_ac_30sec.h5',
 #'20130413.001_lp_30sec.h5'
 )
