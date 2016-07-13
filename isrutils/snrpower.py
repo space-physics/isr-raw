@@ -7,7 +7,7 @@ from xarray import DataArray
 #
 from .common import ut2dt,findstride,sampletime
 
-def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
+def samplepower(sampiq,bstride,ut,srng,tlim,zlim):
     """
     returns I**2 + Q**2 of radar received amplitudes
     FIXME: what are sample units?
@@ -56,25 +56,21 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
 
     try:
       with h5py.File(str(fn),'r',libver='latest') as f:
-#        Nt = f['/Time/UnixTime'].shape[0]
         isrlla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
 
         rawkey = _filekey(f)
-
         try:
             bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],bid)
+            ut = sampletime(f[rawkey+'/RadacHeader/RadacTime'],bstride)
         except KeyError:
             bstride = findstride(f['/RadacHeader/BeamCode'],bid) # old 2007 files
+            ut = sampletime(f['/RadacHeader/RadacTime'],bstride)
 
-        try:
-            Np = f[rawkey+'/PulsesIntegrated'][0,0] #FIXME is this correct in general?
-        except KeyError:
-            Np=None
-        ut = sampletime(f['/Time/UnixTime'],Np)
+
 
         srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
 
-        power = samplepower(f[rawkey+'/Samples/Data'],bstride,Np,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
+        power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
 #%% return az,el of this beam
         azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
         azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()

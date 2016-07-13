@@ -150,19 +150,16 @@ def expfn(fn):
     elif ftype(fn)=='dt3':
         return 'long pulse'
 
-#def sampletime(T,Np:int)->float:
-def sampletime(T,Np):
-    assert isinstance(T,(ndarray,Dataset))
-    assert T.ndim == 2 and T.shape[1] == 2
-    assert isinstance(Np,(int,int32)), 'any integer will do'
-    dtime = empty(Np*T.shape[0])
-    i=0
-    for t in T: #each row
-        dt=(t[1]-t[0]) / Np
-        for j in range(Np):
-            dtime[i]=t[0]+j*dt
-            i+=1
-    return dtime
+def sampletime(t,bstride):
+    """
+    read the time of the pulses to the microsecond level
+    """
+    assert isinstance(t,(ndarray,Dataset))
+    assert t.ndim == 2
+
+    ut = t.value[bstride]
+
+    return ut
 
 def writeplots(fg,t,odir,makeplot,ctxt=''):
 
