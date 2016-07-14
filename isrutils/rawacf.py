@@ -1,8 +1,8 @@
 from __future__ import division
 from six import integer_types
 from . import Path
-import logging
 import h5py
+import logging
 from xarray import DataArray
 from numpy import (empty,zeros,complex128,conj,append,linspace,column_stack)
 from numpy import correlate as xcorr
@@ -28,24 +28,13 @@ def compacf(acfall,noiseall,Nr,dns):
         acf = acfall / dns / 2.
 
     try:
-        acf_noise = zeros((noiseall.shape[3],Nlag),complex64)
-    except AttributeError:
-        acf_noise = None
+        acf_noise = (noiseall[...,0] + 1j*noiseall[...,1]).T / dns / 2.
+    except TypeError:
+        acf_noise= None
         spec_noise= 0.
-
-    for i in range(tInd[ti]-1,tInd[ti]+1):
-        acf += (   acfall[i,bstride,:,:,0] +
-                1j*acfall[i,bstride,:,:,1]).T
-        if acf_noise is not None: #must be is not None
-            acf_noise += (   noiseall[i,bstride,:,:,0] +
-                          1j*noiseall[i,bstride,:,:,1]).T
-
-    acf = acf/dns/(i-(tInd[ti]-1)+1) #NOT /=
-    if acf_noise is not None: #must be is not None
-        acf_noise = acf_noise/dns / (i-(tInd[ti]-1)+1)
 #%% spectrum noise
     if acf_noise is not None:
-        spec_noise= zeros(2*Nlag-1,complex128)
+        spec_noise = zeros(2*Nlag-1,complex128)
         for i in range(Nlag):
             spec_noise += fftshift(fft(append(conj(acf_noise[i,1:][::-1]),acf_noise[i,:])))
         #
@@ -53,7 +42,6 @@ def compacf(acfall,noiseall,Nr,dns):
 #%% spectrum from ACF
     for i in range(Nr):
         spec[i,:] = fftshift(fft(append(conj(acf[i,1:][::-1]), acf[i,:])))-spec_noise
-
 
     return spec,acf
 
