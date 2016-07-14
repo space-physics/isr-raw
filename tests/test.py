@@ -14,7 +14,8 @@ path = rdir/'tests'
 fn = path/name
 
 
-P={'beamid':64157}
+P={'beamid':64157,
+   'tlim':(None,None),}
 
 zlim=(200,300) #km
 
