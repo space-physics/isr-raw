@@ -8,7 +8,7 @@ from numpy import (empty,zeros,complex128,conj,append,linspace,column_stack)
 from numpy import correlate as xcorr
 from numpy.fft import fft,fftshift
 #
-from .common import ftype,ut2dt,findstride
+from .common import ftype,ut2dt,findstride,cliptlim
 from .plots import plotacf
 from .snrpower import filekey
 
@@ -67,11 +67,15 @@ def readACF(fn,P):
                 acfkey = f[rk+'Data/Acf/Data']
                 noisekey = f[rk+'Noise/Acf/Data']
             except KeyError:
-                acfkey = f[filekey(f)+'/Samples/Data']
+                acfkey = f[filekey(f)+'/Samples/Data'] #2007 dt3 raw data
 #%%
         elif ft == 'dt0':
-            rk = '/IncohCodeFl/'
-            acfkey = f[rk+'Data/Acf/Data']
+            try:
+                rk = '/IncohCodeFl/'
+                acfkey = f[rk+'Data/Acf/Data']
+            except KeyError:
+                rk = '/S/'
+                acfkey = f[rk+'Data/Acf/Data'] # 2007 dt0 acf data
         else:
             raise TypeError('unexpected file type {}'.format(ft))
 #%%
@@ -85,7 +89,9 @@ def readACF(fn,P):
         i = (P['beamid'] == f['/Setup/BeamcodeMap'][:,0]).nonzero()[0].item()
         azel = f['/Setup/BeamcodeMap'][i,1:3]
 
-        istride = column_stack(bstride.nonzero())
+        t,tind = cliptlim(t,P['tlim'])
+
+        istride = column_stack(bstride[tind,:].nonzero())
         for tt,s in zip(t,istride):
             if noisekey is not None:
                 spectrum,acf = compacf(acfkey[s[0],s[1],...],

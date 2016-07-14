@@ -1,12 +1,10 @@
 #!/usr/bin/env python
-import logging
 from six import integer_types
 from . import Path
-from numpy import nonzero,empty,ones
 import h5py
 from xarray import DataArray
 #
-from .common import findstride,ut2dt
+from .common import findstride,ut2dt,cliptlim
 
 def readplasmaline(fn,beamid,tlim):
     """
@@ -44,12 +42,7 @@ def readplasma(fn,beamid,fshift,tlim):
         print('{} reading error {}'.format(fn,e))
         return
 #%% spectrum compute
-    tind = ones(T.size,dtype=bool)
-    if tlim[0] is not None:
-        tind &= tlim[0]<= T
-    if tlim[1] is not None:
-        tind &= T <= tlim[1]
-
+    T,tind = cliptlim(T,tlim)
 
     return DataArray(data = data[:,:,tind].transpose(2,0,1),
                      dims=['time','srng','freq'],
