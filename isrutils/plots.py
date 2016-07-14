@@ -127,8 +127,8 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
                     vmax=P['vlimacf'][1],
                     cmap='jet')#cmap='cubehelix_r')
 
-    if P['zlim'][1] is not None:
-        ytop = min(z[-1], P['zlim'][1])
+    ytop = min(z[-1], P['zlim'][1])  if P['zlim'][1] is not None else z[-1]
+
 
     ax.set_ylim(P['zlim'][0],ytop)
 

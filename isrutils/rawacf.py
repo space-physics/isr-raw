@@ -49,7 +49,7 @@ def readACF(fn,P):
     """
     reads incoherent scatter radar autocorrelation function (ACF)
     """
-    freqscalefact=100/2  #100/6
+    freqscalefact=100/6  #100/2
 
     dns=1071/3 #TODO scalefactor
     fn = Path(fn).expanduser()
@@ -102,6 +102,7 @@ def readACF(fn,P):
                                    noisekey,
                                    srng.size, dns)
             elif acfkey.ndim==4: #raw samples from 2007 file
+                return
                 logging.critical('TODO this code not complete--need to have all the lags as a dimension')
                 tdat = acfkey[s[0],s[1],:,0] + 1j*acfkey[s[0],s[1],:,1]
                 acfall = xcorr(tdat, tdat, 'full')
