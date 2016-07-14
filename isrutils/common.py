@@ -1,6 +1,6 @@
 from six import integer_types
 from h5py import Dataset
-from numpy import (array,ndarray,unravel_index,
+from numpy import (array,ndarray,unravel_index,ones,
                    datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from . import Path
@@ -31,7 +31,7 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
 
     return {'az':az,'el':el,'srng':srng}
 
-def timesync(tisr,topt,tlim):
+def timesync(tisr,topt,tlim=(None,None)):
     """
     TODO: for now, assume optical is always faster
     inputs
@@ -51,8 +51,6 @@ def timesync(tisr,topt,tlim):
         tisr = array([t.timestamp() for t in tisr]) #must be ndarray
     assert isinstance(tisr[0],float), 'datetime64 is not wanted here, lets use ut1_unix float for minimum conversion effort'
 
-    if tlim is None:
-        tlim = (nan,nan)
     if topt is None:
         topt = (nan,nan)
 #%% interpolate isr indices to opt (assume opt is faster, a lot of duplicates iisr)
@@ -73,8 +71,17 @@ def timesync(tisr,topt,tlim):
         ioptreq = (None,)*tisr.size
         iisrreq = ((tstart<=tisr) & (tisr<=tend)).nonzero()[0]
 
-
     return iisrreq,ioptreq
+
+def cliptlim(t,tlim):
+    tind = ones(t.size,dtype=bool)
+
+    if tlim[0] is not None:
+        tind &= tlim[0] <= t
+    if tlim[1] is not None:
+        tind &= t <= tlim[1]
+
+    return t[tind],tind
 
 
 def findindex2Dsphere(azimg,elimg,az,el):

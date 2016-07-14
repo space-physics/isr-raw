@@ -5,7 +5,7 @@ from numpy import ones
 import h5py
 from xarray import DataArray
 #
-from .common import ut2dt,findstride,sampletime
+from .common import ut2dt,findstride,sampletime,cliptlim
 
 def samplepower(sampiq,bstride,ut,srng,tlim,zlim):
     """
@@ -28,13 +28,7 @@ def samplepower(sampiq,bstride,ut,srng,tlim,zlim):
 #%% filter by time
     t = ut2dt(ut)
 
-    tind = ones(t.size,dtype=bool)
-
-    if tlim[0] is not None:
-        tind &= tlim[0]<=t
-    if tlim[1] is not None:
-        tind &= t<=tlim[1]
-    t = t[tind]
+    t,tind = cliptlim(t,tlim)
 
     sampiq = sampiq.value[bstride,:,:]
     sampiq = sampiq[:,zind,:]
@@ -63,12 +57,16 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
             bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],bid)
             ut = sampletime(f[rawkey+'/RadacHeader/RadacTime'],bstride)
         except KeyError:
-            bstride = findstride(f['/RadacHeader/BeamCode'],bid) # old 2007 files
+            bstride = findstride(f['/RadacHeader/BeamCode'],bid) # old 2007 DT3 files (DT0 2007 didn't have raw data?)
             ut = sampletime(f['/RadacHeader/RadacTime'],bstride)
+
 
         srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
 
-        power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
+        try:
+            power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
+        except KeyError:
+            return (None,)*3
 #%% return az,el of this beam
         azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
         azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
@@ -77,6 +75,7 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
         return (None,)*3
     except KeyError as e:
         print('raw pulse data not found {}  {}'.format(fn,e))
+        return (None,)*3
 
     return power,azel,isrlla
 
