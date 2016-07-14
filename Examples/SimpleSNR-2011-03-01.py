@@ -23,10 +23,10 @@ P={'path':'~/data/2011-03-01/isr',
    'beamid': 64157,
    'acf': True,
    'samples': True,
-   'vlim':  (22,55),
-   'vlimacf': (20,50),
-    'zlim': (90, 400),
-    'tlim': (None,datetime(2011,3,1,10,6,tzinfo=UTC))
+   'vlim':    [22,55],
+   'vlimacf': [20,50],
+    'zlim':   [90, 400],
+    'tlim': (None, datetime(2011,3,1,10,6,tzinfo=UTC))
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (

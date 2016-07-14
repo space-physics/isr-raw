@@ -1,6 +1,6 @@
 from six import integer_types
 from h5py import Dataset
-from numpy import (array,empty,ndarray,int32,unravel_index,
+from numpy import (array,ndarray,unravel_index,
                    datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from . import Path

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from six import integer_types
 from . import Path
-from numpy import ones,empty
+from numpy import ones
 import h5py
 from xarray import DataArray
 #
@@ -58,7 +58,7 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
       with h5py.File(str(fn),'r',libver='latest') as f:
         isrlla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
 
-        rawkey = _filekey(f)
+        rawkey = filekey(f)
         try:
             bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],bid)
             ut = sampletime(f[rawkey+'/RadacHeader/RadacTime'],bstride)
@@ -87,7 +87,7 @@ def readsnr_int(fn,bid):
     try:
         with h5py.File(str(fn),'r',libver='latest') as f:
             t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
-            rawkey = _filekey(f)
+            rawkey = filekey(f)
             try:
                 bind  = f[rawkey+'/Beamcodes'][0,:] == bid
                 power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
@@ -103,7 +103,7 @@ def readsnr_int(fn,bid):
                      dims=['srng','time'],
                      coords={'srng':srng,'time':t})
 
-def _filekey(f):
+def filekey(f):
     # detect old and new HDF5 AMISR files
     if   '/Raw11/Raw/PulsesIntegrated' in f:        # new 2013
         return '/Raw11/Raw'
