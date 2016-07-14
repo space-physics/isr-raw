@@ -1,51 +1,41 @@
 #!/usr/bin/env python
 from six import integer_types
 from . import Path
-from numpy import empty,ones
+from numpy import ones
 import h5py
 from xarray import DataArray
 #
-from .common import ut2dt,findstride,sampletime
+from .common import ut2dt,findstride,sampletime,cliptlim
 
-def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
+def samplepower(sampiq,bstride,ut,srng,tlim,zlim):
     """
     returns I**2 + Q**2 of radar received amplitudes
     FIXME: what are sample units?
 
-    I can't index by stride and slant range simultaneously, since h5py 2.5 says
-    Only one indexing vector or array is currently allowed for advanced selection
+    speed up indexing by downselecting by altitude, then time
     """
     assert sampiq.ndim == 4
+    assert bstride.ndim== 2 and sampiq.shape[:2] == bstride.shape and bstride.dtype==bool
 
+#%% filter by range
     Nr = srng.size
-
     zind = ones(Nr,dtype=bool)
     if zlim[0] is not None:
         zind &= zlim[0]<=srng
     if zlim[1] is not None:
         zind &= srng<=zlim[1]
     srng = srng[zind]
-
-    Nt = ut.size
-#%% load only small bits of the hdf5 file, using advanced indexing. So fast!
-    power = empty((Nr,Nt))
-    for it in range(Nt//Np):
-        power[:,Np*it:Np*(it+1)] = (sampiq[it,bstride,:,0]**2 +
-                                    sampiq[it,bstride,:,1]**2).T
-#%% NOTE: could also index by read, start with pulse batch before request and end with batch after last request.
+#%% filter by time
     t = ut2dt(ut)
 
-    tind = ones(t.size,dtype=bool)
+    t,tind = cliptlim(t,tlim)
 
-    if tlim[0] is not None:
-        tind &= tlim[0]<=t
-    if tlim[1] is not None:
-        tind &= t<=tlim[1]
-    t = t[tind]
-    power = power[:,tind]
-    power = power[zind,:]
+    sampiq = sampiq.value[bstride,:,:]
+    sampiq = sampiq[:,zind,:]
+    sampiq = sampiq[tind,:,:]
+    power = (sampiq[...,0]**2. + sampiq[...,1]**2.).T
 
-    #return DataFrame(index=srng, columns=t, data=power[zind,:])
+
     return DataArray(data=power,
                      dims=['srng','time'],
                      coords={'srng':srng,'time':t})
@@ -53,22 +43,30 @@ def samplepower(sampiq,bstride,Np,ut,srng,tlim,zlim):
 def readpower_samples(fn,bid,zlim,tlim=(None,None)):
     """
     reads samples (lowest level data) and computes power for a particular beam.
-    returns a Pandas DataFrame containing power measurements
+    returns power measurements
     """
     fn=Path(fn).expanduser()
     assert isinstance(bid,integer_types),'beam specification must be a scalar integer!'
 
     try:
       with h5py.File(str(fn),'r',libver='latest') as f:
-#        Nt = f['/Time/UnixTime'].shape[0]
         isrlla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
 
-        rawkey = _filekey(f)
-        Np = f[rawkey+'/PulsesIntegrated'][0,0] #FIXME is this correct in general?
-        ut = sampletime(f['/Time/UnixTime'],Np)
+        rawkey = filekey(f)
+        try:
+            bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],bid)
+            ut = sampletime(f[rawkey+'/RadacHeader/RadacTime'],bstride)
+        except KeyError:
+            bstride = findstride(f['/RadacHeader/BeamCode'],bid) # old 2007 DT3 files (DT0 2007 didn't have raw data?)
+            ut = sampletime(f['/RadacHeader/RadacTime'],bstride)
+
+
         srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
-        bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],bid)
-        power = samplepower(f[rawkey+'/Samples/Data'],bstride,Np,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
+
+        try:
+            power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
+        except KeyError:
+            return (None,)*3
 #%% return az,el of this beam
         azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
         azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
@@ -77,6 +75,7 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
         return (None,)*3
     except KeyError as e:
         print('raw pulse data not found {}  {}'.format(fn,e))
+        return (None,)*3
 
     return power,azel,isrlla
 
@@ -85,26 +84,32 @@ def readsnr_int(fn,bid):
     assert isinstance(bid,integer_types),'beam specification must be a scalar integer!'
 
     try:
-      with h5py.File(str(fn),'r',libver='latest') as f:
-        t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
-        rawkey = _filekey(f)
-        bind  = f[rawkey+'/Beamcodes'][0,:] == bid
-        power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
-        srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
+        with h5py.File(str(fn),'r',libver='latest') as f:
+            t = ut2dt(f['/Time/UnixTime'].value) #yes .value is needed for .ndim
+            rawkey = filekey(f)
+            try:
+                bind  = f[rawkey+'/Beamcodes'][0,:] == bid
+                power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
+            except KeyError:
+                power = f[rawkey+'/Power/Data'].value.T
+
+            srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
     except KeyError as e:
-      print('integrated pulse data not found {}  {}'.format(fn,e))
-      return
+        print('integrated pulse data not found {}  {}'.format(fn,e))
+        return
 #%% return requested beam data only
     return DataArray(data=power,
                      dims=['srng','time'],
                      coords={'srng':srng,'time':t})
 
-def _filekey(f):
-    # detect old and new HDF5 AMISR files -- 2011: old. 2013: new.
-    if '/Raw11/Raw/PulsesIntegrated' in f: #new
+def filekey(f):
+    # detect old and new HDF5 AMISR files
+    if   '/Raw11/Raw/PulsesIntegrated' in f:        # new 2013
         return '/Raw11/Raw'
-    elif '/Raw11/RawData/PulsesIntegrated' in f: #old
+    elif '/Raw11/RawData/PulsesIntegrated' in f:    # old 2011
         return '/Raw11/RawData'
+    elif '/RAW10/Data/Samples' in f:                # older 2007
+        return '/RAW10/Data/'
     elif '/S/Data/PulsesIntegrated' in f:
         return '/S/Data'
     else:

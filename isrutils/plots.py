@@ -57,9 +57,9 @@ def plotsnr(snr,fn,P,ctxt=''):
                  datetime.utcfromtimestamp(snr.time[0].item()/1e9).strftime('%Y-%m-%d'),
                  Ts.item()/1e9))
 
-
-    #last command
     fg.tight_layout()
+
+    writeplots(fg,datetime.fromtimestamp(snr.time[0].item()/1e9),P['odir'],P['makeplot'],'snr'+ctxt)
 
 def plotsnr1d(snr,fn,t0,zlim=(90,None)):
     if not isinstance(snr,DataArray):
@@ -116,9 +116,10 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
     fg = figure()
     ax = fg.gca()
 
-
-    goodz = spec.srng * sin(radians(azel.loc['el'])) > 60e3 #actual altitude > 60km
+    assert 10 <= azel[1] <= 90
+    goodz = spec.srng * sin(radians(azel[1])) > 60e3 #actual altitude > 60km
     z = spec.srng[goodz].values / 1e3 #altitude over N km
+
     h=ax.pcolormesh(spec.freq.values,
                     z,
                     10*log10(absolute(spec[goodz,:].values)),
@@ -126,8 +127,8 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
                     vmax=P['vlimacf'][1],
                     cmap='jet')#cmap='cubehelix_r')
 
-    if P['zlim'][1] is not None:
-        ytop = min(z[-1], P['zlim'][1])
+    ytop = min(z[-1], P['zlim'][1])  if P['zlim'][1] is not None else z[-1]
+
 
     ax.set_ylim(P['zlim'][0],ytop)
 
@@ -198,9 +199,9 @@ def plotplasmatime(spec,t,fn,fg,ax,P,ctxt,makeplot):
         zgood = srng > 60. # above N km
 
         h=ax.pcolormesh(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
-                        vmin=P['vlim'][0],vmax=P['vlim'][1],cmap='jet')#'cubehelix_r')
+                        vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='jet')#'cubehelix_r')
 
-        if not isown or ctxt.item().startswith('down'):
+        if not isown or ctxt.startswith('down'):
             ax.set_ylabel('slant range [km]')
 
         c=fg.colorbar(h,ax=ax)

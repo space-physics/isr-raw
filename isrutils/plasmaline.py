@@ -1,12 +1,10 @@
 #!/usr/bin/env python
-import logging
 from six import integer_types
 from . import Path
-from numpy import nonzero,empty,ones
 import h5py
 from xarray import DataArray
 #
-from .common import findstride,ut2dt
+from .common import findstride,ut2dt,cliptlim
 
 def readplasmaline(fn,beamid,tlim):
     """
@@ -36,20 +34,15 @@ def readplasma(fn,beamid,fshift,tlim):
     try:
         with h5py.File(str(fn),'r',libver='latest') as f:
             T     = ut2dt(f['/Time/UnixTime'].value)
-            bind  = findstride(f['/PLFFTS/Data/Beamcodes'], beamid) #NOTE: what if beam pattern changes during file?
-            data = f['/PLFFTS/Data/Spectra/Data'][:,bind,:,:].squeeze().T
+            bind  = findstride(f['/PLFFTS/Data/Beamcodes'], beamid)
+            data = f['/PLFFTS/Data/Spectra/Data'].value[bind,:,:].squeeze().T
             srng  = f['/PLFFTS/Data/Spectra/Range'].value.squeeze()/1e3
             freq  = f['/PLFFTS/Data/Spectra/Frequency'].value.squeeze() + fshift
     except OSError as e: #problem with file
         print('{} reading error {}'.format(fn,e))
         return
 #%% spectrum compute
-    tind = ones(T.size,dtype=bool)
-    if tlim[0] is not None:
-        tind &= tlim[0]<= T
-    if tlim[1] is not None:
-        tind &= T <= tlim[1]
-
+    T,tind = cliptlim(T,tlim)
 
     return DataArray(data = data[:,:,tind].transpose(2,0,1),
                      dims=['time','srng','freq'],
