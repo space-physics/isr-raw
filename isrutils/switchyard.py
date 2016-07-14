@@ -54,9 +54,6 @@ def isrselect(fn,beamid,P):
     the desired data based on filename and user requests.
     """
     fn = Path(fn).expanduser() #need this here
-    if not fn.is_file():
-        print('{} not found'.format(fn))
-        return (None,)*7
 #%% handle path, detect file type
     ft = ftype(fn)
 #%% plasma line
@@ -72,7 +69,7 @@ def isrselect(fn,beamid,P):
         readACF(fn,P)
 #%% multi-second integration (numerous integrated pulses)
     snrint=None
-    if ft in ('dt0','dt3'):
+    if ft in ('dt0','dt3') and P['int']:
         snrint = readsnr_int(fn,beamid)
 #%% 30 second integration plots
     if fn.stem.rsplit('_',1)[-1] == '30sec':

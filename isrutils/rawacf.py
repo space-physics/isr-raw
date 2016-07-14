@@ -4,27 +4,34 @@ from . import Path
 import logging
 import h5py
 from xarray import DataArray
-from numpy import (empty,zeros,complex64,complex128,conj,append,linspace)
+from numpy import (empty,zeros,complex128,conj,append,linspace,column_stack)
+from numpy import correlate as xcorr
 from numpy.fft import fft,fftshift
 #
-from .common import ftype,ut2dt,findstride
+from .common import ftype,ut2dt,findstride,cliptlim
 from .plots import plotacf
+from .snrpower import filekey
 
-def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
-    bstride=bstride.item()
+def compacf(acfall,noiseall,Nr,dns):
+    """
+    acf all:  Nlag x Nslantrange x real/comp
 
-    Nlag = acfall.shape[2]
-    acf  = zeros((Nr,Nlag),complex64) #NOT empty, note complex64 is single complex float
+    """
+    assert acfall.ndim in (3,2)
+
+    Nlag = acfall.shape[0]
     spec = empty((Nr,2*Nlag-1),complex128)
+
+    if acfall.ndim == 3: # last dim real,cplx
+        acf = (acfall[...,0] + 1j*acfall[...,1]).T / dns / 2.
+    elif acfall.ndim == 2:
+        acf = acfall / dns / 2.
+
     try:
         acf_noise = zeros((noiseall.shape[3],Nlag),complex64)
-        spec_noise= zeros(2*Nlag-1,complex128)
     except AttributeError:
         acf_noise = None
         spec_noise= 0.
-
-#    acfall = acfall.value[bstride,:,:,:]
-#    acf = (acfall[...,0] + 1j*acfall[...,1]).sum(axis=0).T / dns / 2.
 
     for i in range(tInd[ti]-1,tInd[ti]+1):
         acf += (   acfall[i,bstride,:,:,0] +
@@ -38,10 +45,10 @@ def compacf(acfall,noiseall,Nr,dns,bstride,ti,tInd):
         acf_noise = acf_noise/dns / (i-(tInd[ti]-1)+1)
 #%% spectrum noise
     if acf_noise is not None:
+        spec_noise= zeros(2*Nlag-1,complex128)
         for i in range(Nlag):
             spec_noise += fftshift(fft(append(conj(acf_noise[i,1:][::-1]),acf_noise[i,:])))
-
-
+        #
         spec_noise = spec_noise / Nlag
 #%% spectrum from ACF
     for i in range(Nr):
@@ -54,7 +61,7 @@ def readACF(fn,P):
     """
     reads incoherent scatter radar autocorrelation function (ACF)
     """
-    freqscalefact=100/2  #100/6
+    freqscalefact=100/6  #100/2
 
     dns=1071/3 #TODO scalefactor
     fn = Path(fn).expanduser()
@@ -63,46 +70,63 @@ def readACF(fn,P):
     with h5py.File(str(fn),'r',libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'].value)
 
-        tInd = range(1,t.size-1) #list(range(20,30,1)) #TODO pick indices by datetime
-
         ft = ftype(fn)
+        noisekey = None
+#%%
         if ft == 'dt3':
             rk = '/S/'
             try:
-                noiseall = f[rk+'Noise/Acf/Data']
+                acfkey = f[rk+'Data/Acf/Data']
+                noisekey = f[rk+'Noise/Acf/Data']
             except KeyError:
-                logging.warning('{} does not exist in {}'.format(rk,fn))
-                return
+                acfkey = f[filekey(f)+'/Samples/Data'] #2007 dt3 raw data
+#%%
         elif ft == 'dt0':
-            rk = '/IncohCodeFl/'
-            noiseall = None #TODO hack for dt0
+            try:
+                rk = '/IncohCodeFl/'
+                acfkey = f[rk+'Data/Acf/Data']
+            except KeyError:
+                rk = '/S/'
+                acfkey = f[rk+'Data/Acf/Data'] # 2007 dt0 acf data
         else:
             raise TypeError('unexpected file type {}'.format(ft))
-
+#%%
         try:
-            f[rk]
-        except KeyError:
-           logging.warning('{} does not exist in {}'.format(rk,fn))
-           return
+            srng = f[rk + 'Data/Acf/Range']
+            bstride = findstride(f[rk+'Data/Beamcodes'],P['beamid'])
+        except KeyError: # old 2007 files
+            srng = f[filekey(f)+'/Power/Range']
+            bstride = findstride(f['/RadacHeader/BeamCode'],P['beamid'])
 
-        srng = f[rk + 'Data/Acf/Range'].value.squeeze()
-        bstride = findstride(f[rk+'Data/Beamcodes'],P['beamid'])
-        bcodemap = DataArray(data=f['/Setup/BeamcodeMap'][:,1:3],
-                             dims=['beamcode','azel'],
-                             coords={'beamcode':f['/Setup/BeamcodeMap'][:,0].astype(int),
-                                     'azel':['az','el']}
-                            )
-        azel = bcodemap.loc[P['beamid'],:]
+        i = (P['beamid'] == f['/Setup/BeamcodeMap'][:,0]).nonzero()[0].item()
+        azel = f['/Setup/BeamcodeMap'][i,1:3]
 
-        for i in range(len(tInd)):
-            spectrum,acf = compacf(f[rk+'Data/Acf/Data'],
-                                   noiseall,
-                                   srng.size,dns,bstride,i,tInd)
+        t,tind = cliptlim(t,P['tlim'])
+
+        istride = column_stack(bstride[tind,:].nonzero())
+        for tt,s in zip(t,istride):
+            if noisekey is not None:
+                spectrum,acf = compacf(acfkey[s[0],s[1],...],
+                                   noisekey[s[0],s[1],...],
+                                   srng.size, dns)
+            elif acfkey.ndim==5:
+                spectrum,acf = compacf(acfkey[s[0],s[1],...],
+                                   noisekey,
+                                   srng.size, dns)
+            elif acfkey.ndim==4: #raw samples from 2007 file
+                return
+                logging.critical('TODO this code not complete--need to have all the lags as a dimension')
+                tdat = acfkey[s[0],s[1],:,0] + 1j*acfkey[s[0],s[1],:,1]
+                acfall = xcorr(tdat, tdat, 'full')
+                spectrum,acf = compacf(acfall,
+                                   noisekey,
+                                   srng.size, dns)
+
             specdf = DataArray(data=spectrum,
                                dims=['srng','freq'],
-                               coords={'srng':srng,
+                               coords={'srng':srng.value.squeeze(),
                                        'freq':linspace(-freqscalefact,freqscalefact,spectrum.shape[1])})
             try:
-                plotacf(specdf,fn,azel,t[tInd[i]], P, ctxt='dB')
+                plotacf(specdf,fn,azel,tt, P, ctxt='dB')
             except Exception as e:
                 print('failed to plot ACF due to {}'.format(e))

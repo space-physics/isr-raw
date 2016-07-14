@@ -1,7 +1,7 @@
+from six import integer_types
 from h5py import Dataset
-from numpy import (array,nonzero,empty,ndarray,int32,unravel_index,
-                   datetime64,timedelta64,
-                   asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
+from numpy import (array,ndarray,unravel_index,ones,
+                   datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from . import Path
 from datetime import datetime,timedelta
@@ -31,7 +31,7 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
 
     return {'az':az,'el':el,'srng':srng}
 
-def timesync(tisr,topt,tlim):
+def timesync(tisr,topt,tlim=(None,None)):
     """
     TODO: for now, assume optical is always faster
     inputs
@@ -51,8 +51,6 @@ def timesync(tisr,topt,tlim):
         tisr = array([t.timestamp() for t in tisr]) #must be ndarray
     assert isinstance(tisr[0],float), 'datetime64 is not wanted here, lets use ut1_unix float for minimum conversion effort'
 
-    if tlim is None:
-        tlim = (nan,nan)
     if topt is None:
         topt = (nan,nan)
 #%% interpolate isr indices to opt (assume opt is faster, a lot of duplicates iisr)
@@ -63,7 +61,7 @@ def timesync(tisr,topt,tlim):
         f = interp1d(tisr,range(tisr.size),'nearest',assume_sorted=True)
 
         # optical:  typically treq = topt
-        ioptreq = nonzero((tstart<=topt) & (topt<=tend))[0]
+        ioptreq = ((tstart<=topt) & (topt<=tend)).nonzero()[0]
 
         toptreq = topt[ioptreq]
         iisrreq = f(toptreq).astype(int)
@@ -71,10 +69,19 @@ def timesync(tisr,topt,tlim):
         #tisrreq = tisr[(tstart<=tisr) & (tisr<=tend)]
     else:
         ioptreq = (None,)*tisr.size
-        iisrreq = nonzero((tstart<=tisr) & (tisr<=tend))[0]
-
+        iisrreq = ((tstart<=tisr) & (tisr<=tend)).nonzero()[0]
 
     return iisrreq,ioptreq
+
+def cliptlim(t,tlim):
+    tind = ones(t.size,dtype=bool)
+
+    if tlim[0] is not None:
+        tind &= tlim[0] <= t
+    if tlim[1] is not None:
+        tind &= t <= tlim[1]
+
+    return t[tind],tind
 
 
 def findindex2Dsphere(azimg,elimg,az,el):
@@ -117,14 +124,17 @@ def ut2dt(ut):
 
 #def findstride(beammat:Dataset,bid:int):
 def findstride(beammat, bid):
-    assert isinstance(bid,int)
+    assert isinstance(bid,integer_types)
     assert beammat.ndim==2
-    #FIXME is using just first row OK? other rows were identical for me.
+    # NOTE: Pre-2013 files have distinct rows, so touch each value in beamcode!
+
 #    Nt = beammat.shape[0]
 #    index = empty((Nt,Np),dtype=int)
 #    for i,b in enumerate(beammat):
 #        index[i,:] = nonzero(b==bid)[0] #NOTE: candidate for np.s_ ?
-    return nonzero(beammat[0,:]==bid)[0]
+
+#    return column_stack(beammat[:]==bid).nonzero()
+    return beammat[:]==bid #boolean
 
 #def ftype(fn)->str:
 def ftype(fn):
@@ -147,19 +157,14 @@ def expfn(fn):
     elif ftype(fn)=='dt3':
         return 'long pulse'
 
-#def sampletime(T,Np:int)->float:
-def sampletime(T,Np):
-    assert isinstance(T,(ndarray,Dataset))
-    assert T.ndim == 2 and T.shape[1] == 2
-    assert isinstance(Np,(int,int32)), 'any integer will do'
-    dtime = empty(Np*T.shape[0])
-    i=0
-    for t in T: #each row
-        dt=(t[1]-t[0]) / Np
-        for j in range(Np):
-            dtime[i]=t[0]+j*dt
-            i+=1
-    return dtime
+def sampletime(t,bstride):
+    """
+    read the time of the pulses to the microsecond level
+    """
+    assert isinstance(t,Dataset),'hdf5 only'
+    assert t.ndim == 2
+
+    return t.value[bstride]
 
 def writeplots(fg,t,odir,makeplot,ctxt=''):
 

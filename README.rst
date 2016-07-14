@@ -22,8 +22,26 @@ Install
 
 Examples
 ========
+From the Akbari GRL 2012: Anomalous ISR echoes preceding auroral breakup: 
+Evidence for strong Langmuir turbulence  doi:10.1029/2011GL050288
 
-See Dropbox/aurora_data/Study Events folder for the dates you want.
+.. image:: gfx/Akbari2012_fig1a.png
+    :scale: 50 %
+    :alt: Figure 1a Akbari 2012
+
+.. image:: gfx/Akbari2012_fig3a.png
+    :scale: 40 %
+    :alt: Figure 3a Akbari 2012
+
+.. image:: gfx/Akbari2012_fig3b.png
+    :scale: 40 %
+    :alt: Figure 3b Akbari 2012
+
+.. image:: gfx/Akbari2012_fig3c.png
+    :scale: 50 %
+    :alt: Figure 3c Akbari 2012
+
+
 
 File Types
 ==========
