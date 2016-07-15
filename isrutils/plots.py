@@ -160,6 +160,11 @@ def plotplasmaline(specdown,specup,fn, P):
             axs[0] = fg.add_subplot(1,2,1,projection='3d')
 
             fg.suptitle('{} {}'.format(fn.name,t.to_pydatetime()))
+        elif P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,integer_types)): #lineplot
+            fg = figure()
+            plotplasmaoverlay(specdown.loc[t,:,:],specup.loc[t,:,:],t,fg,P)
+            writeplots(fg,t,P['odir'],P['makeplot'],'plasmaLine')
+            continue
         else: #pcolor
             fg,axs = subplots(1,2,figsize=(15,5),sharey=True)
 #%%
@@ -168,72 +173,79 @@ def plotplasmaline(specdown,specup,fn, P):
                 if ptype in ('mesh','surf'):
                     plotplasmamesh(s.loc[t,:,:], fg,ax,P,ptype)
                 else: #pcolor
-                    plotplasmatime(s.loc[t,:,:],t,fn, fg,ax,P,fshift)
+                    plotplasmatime(s.loc[t,:,:],t, fg,ax,P,fshift)
             except KeyError as e:
                 print('E: {} plotting {} {}'.format(e,fshift,t))
             
         # write plots here else you'll double write plots        
         writeplots(fg,t,P['odir'],P['makeplot'],'plasmaLine')
 
+def plotplasmaoverlay(specdown,specup,t,fg,P):
 
-def plotplasmatime(spec,t,fn,fg,ax,P,ctxt):
+    ax = fg.gca()
+
+    ialt,alt = findnearest(specdown.srng.values,P['zlim_pl'])
+
+    dBdown = 10*log10(specdown[ialt,:].values)
+    if len(P['vlim_pl'])>=4 and P['vlim_pl'][2] is not None:
+        dBdown += P['vlim_pl'][2]
+
+    dBup = 10*log10(specup[ialt,:].values)
+    if len(P['vlim_pl'])>=4 and P['vlim_pl'][3] is not None:
+        dBup += P['vlim_pl'][3]
+
+    ax.plot(-specdown.freq.values/1e6, dBdown)
+
+    ax.plot(specup.freq.values/1e6, dBup)
+
+    ax.set_ylabel('Power [dB]')
+    ax.set_xlabel('Doppler frequency [MHz]') 
+
+    ax.set_ylim(P['vlim_pl'][:2])
+    ax.set_xlim(P['flim_pl'])
+    
+    fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt, 
+                                            datetime.fromtimestamp(t.item()/1e9)))
+
+
+def plotplasmatime(spec,t,fg,ax,P,ctxt):
     if not isinstance(spec,DataArray):
         return
 
-    if not fg and not ax:
-        fg = figure()
-        ax = fg.gca()
-        isown = False
-    elif fg and not ax:
-        ax = fg.gca()
-        isown = False
-    else:
-        isown = True
+    srng = spec.srng.values
+    zgood = srng > 60. # above N km
 
-    if P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,integer_types)):
-        ialt,alt = findnearest(spec.srng.values,P['zlim_pl'])
-        ax.plot(spec.freq.values/1e6,
-                10*log10(spec[ialt,:].values))
+    h=ax.pcolormesh(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
+                    vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='jet')#'cubehelix_r')
 
-        if not isown or ctxt.startswith('down'):
-            ax.set_ylabel('Power [dB]')
+    ax.set_xlabel('Doppler frequency [MHz]')    
+    if ctxt.startswith('down'):
+        ax.set_ylabel('slant range [km]')
+    
+    c=fg.colorbar(h,ax=ax)
+    c.set_label('Power [dB]')
+    
+    ax.autoscale(True,'both',tight=True) #before manual lim setting
+    ax.set_ylim(P['zlim_pl'])
+   
+    ax.set_title('Plasma line {}'.format(datetime.fromtimestamp(t.item()/1e9, tz=UTC)))
+#%%
+    xfreq(ax,spec)
 
-        fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt, datetime.fromtimestamp(t.item()/1e9, tz=UTC)))
-
-    else:
-        srng = spec.srng.values
-        zgood = srng > 60. # above N km
-
-        h=ax.pcolormesh(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
-                        vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='jet')#'cubehelix_r')
-
-        if not isown or ctxt.startswith('down'):
-            ax.set_ylabel('slant range [km]')
-
-        c=fg.colorbar(h,ax=ax)
-        c.set_label('Power [dB]')
-        
-        ax.autoscale(True,'both',tight=True) #before manual lim setting
-        
-        ax.set_ylim(P['zlim_pl'])
-        
-        if spec.freq.values[0] < 0 : # downshift
-            flim=[None,None]
-            if P['flim_pl'][0] is not None:
-                flim[1] = -P['flim_pl'][0]
-            if P['flim_pl'][1] is not None:
-                flim[0] = -P['flim_pl'][1]
-        else: #upshift
-            flim = P['flim_pl']
-            
-        ax.set_xlim(flim)
-
-        ax.set_title('Plasma line {}'.format(datetime.fromtimestamp(t.item()/1e9, tz=UTC)))
-
-
-    ax.set_xlabel('Doppler frequency [MHz]')
     ax.tick_params(axis='both', which='both', direction='out')
     fg.tight_layout()
+
+def xfreq(ax,spec):
+    if spec.freq.values[0] < 0 : # downshift
+        flim=[None,None]
+        if P['flim_pl'][0] is not None:
+            flim[1] = -P['flim_pl'][0]
+        if P['flim_pl'][1] is not None:
+            flim[0] = -P['flim_pl'][1]
+    else: #upshift
+        flim = P['flim_pl']
+        
+    ax.set_xlim(flim)
 
 
 def plotplasmamesh(spec,fg,ax,P,ptype=''):
