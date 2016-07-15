@@ -16,21 +16,23 @@ from isrutils.looper import simpleloop
 P={'path':'~/data/2007-03-23/isr',
    'makeplot': [],
    'beamid': 64157,
-   'acf': True,
+   'acf': False,
    'vlimacf': (25,50),
    'int': False,
    'samples': True,
    'odir': 'out/2007-03-23',
-   'zlim_pl': 230.,
+   'zlim_pl': [None,None],#230.,
+   'vlim_pl': [None,None], # FIXME different scale for up and down shift
+   'flim_pl': [None,None], # [MHz]
    'vlim': [35,65],
    'zlim': (90, None),
-   'tlim': (None,#datetime(2007,3,23,11,20,0,tzinfo=UTC),
-            None)#datetime(2007,3,23,11,20,50,tzinfo=UTC)),
+   'tlim': (datetime(2007,3,23,11,20,0,tzinfo=UTC),
+            datetime(2007,3,23,11,20,50,tzinfo=UTC)),
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = [
         'd0019275.dt0.h5', #ion line of alt code
-        #'d0019275.dt1.h5', #plasma
+        'd0019275.dt1.h5', #plasma
         'd0019275.dt3.h5' # ion line of long pulse
         ]
 
