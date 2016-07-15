@@ -10,6 +10,7 @@ from pytz import UTC
 from matplotlib.pyplot import show
 import seaborn as sns
 sns.set_context('talk',1.5)
+sns.set_style('ticks')
 #
 from isrutils.looper import simpleloop
 #%% users param
@@ -21,9 +22,11 @@ P={'path':'~/data/2007-03-23/isr',
    'int': False,
    'samples': True,
    'odir': 'out/2007-03-23',
-   'zlim_pl': [None,None],#230.,
-   'vlim_pl': [None,None], # FIXME different scale for up and down shift
-   'flim_pl': [None,None], # [MHz]
+#  'zlim_pl': [None,400],
+#  'vlim_pl': [None,90], # FIXME different scale for up and down shift
+   'zlim_pl': 230.,
+   'vlim_pl': [71,78,0,-13], #last two numbers are offsets
+   'flim_pl': [4.45,4.8], # [MHz] #FIXME slightly different freq. scale than Akbari 2012--how to determine correct scale? Email/word of mouth or? RX/frequency in HDF5 is blank for these files, is used in new 2013 files.
    'vlim': [35,65],
    'zlim': (90, None),
    'tlim': (datetime(2007,3,23,11,20,0,tzinfo=UTC),
