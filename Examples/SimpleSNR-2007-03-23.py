@@ -22,10 +22,10 @@ P={'path':'~/data/2007-03-23/isr',
    'int': False,
    'samples': True,
    'odir': 'out/2007-03-23',
-#  'zlim_pl': [None,400],
-#  'vlim_pl': [None,90], # FIXME different scale for up and down shift
-   'zlim_pl': 230.,
-   'vlim_pl': [71,78,0,-13], #last two numbers are offsets
+  'zlim_pl': [None,400],
+  'vlim_pl': [None,90], # FIXME different scale for up and down shift
+ #  'zlim_pl': 230.,
+ #  'vlim_pl': [71,78,0,-13], #last two numbers are offsets
    'flim_pl': [4.45,4.8], # [MHz] #FIXME slightly different freq. scale than Akbari 2012--how to determine correct scale? Email/word of mouth or? RX/frequency in HDF5 is blank for these files, is used in new 2013 files.
    'vlim': [35,65],
    'zlim': (90, None),

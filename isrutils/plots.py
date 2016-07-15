@@ -163,7 +163,7 @@ def plotplasmaline(specdown,specup,fn, P):
         elif P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,integer_types)): #lineplot
             fg = figure()
             plotplasmaoverlay(specdown.loc[t,:,:],specup.loc[t,:,:],t,fg,P)
-            writeplots(fg,t,P['odir'],P['makeplot'],'plasmaLine')
+            writeplots(fg,t,P['odir'],P['makeplot'],'plasmaLineOverlay')
             continue
         else: #pcolor
             fg,axs = subplots(1,2,figsize=(15,5),sharey=True)
@@ -230,20 +230,20 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
    
     ax.set_title('Plasma line {}'.format(datetime.fromtimestamp(t.item()/1e9, tz=UTC)))
 #%%
-    xfreq(ax,spec)
+    xfreq(ax,spec,P['flim_pl'])
 
     ax.tick_params(axis='both', which='both', direction='out')
     fg.tight_layout()
 
-def xfreq(ax,spec):
+def xfreq(ax,spec,Pflim):
     if spec.freq.values[0] < 0 : # downshift
         flim=[None,None]
-        if P['flim_pl'][0] is not None:
-            flim[1] = -P['flim_pl'][0]
-        if P['flim_pl'][1] is not None:
-            flim[0] = -P['flim_pl'][1]
+        if Pflim[0] is not None:
+            flim[1] = -Pflim[0]
+        if Pflim[1] is not None:
+            flim[0] = -Pflim[1]
     else: #upshift
-        flim = P['flim_pl']
+        flim = Pflim
         
     ax.set_xlim(flim)
 
