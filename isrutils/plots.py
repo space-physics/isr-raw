@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from six import integer_types
 from datetime import datetime
+from pytz import UTC
 from dateutil.parser import parse
 from numpy import log10,absolute, meshgrid, sin, radians
 from numpy.ma import masked_invalid
@@ -54,12 +55,12 @@ def plotsnr(snr,fn,P,ctxt=''):
 
     Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
     ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(expfn(fn),
-                 datetime.utcfromtimestamp(snr.time[0].item()/1e9).strftime('%Y-%m-%d'),
+                 datetime.fromtimestamp(snr.time[0].item()/1e9, tz=UTC).strftime('%Y-%m-%d'),
                  Ts.item()/1e9))
 
     fg.tight_layout()
 
-    writeplots(fg,datetime.fromtimestamp(snr.time[0].item()/1e9),P['odir'],P['makeplot'],'snr'+ctxt)
+    writeplots(fg,datetime.fromtimestamp(snr.time[0].item()/1e9, tz=UTC),P['odir'],P['makeplot'],'snr'+ctxt)
 
 def plotsnr1d(snr,fn,t0,zlim=(90,None)):
     if not isinstance(snr,DataArray):
@@ -142,7 +143,7 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
 
     writeplots(fg,t,P['odir'],P['makeplot'],'acf')
 
-def plotplasmaline(specdown,specup,fn, P, makeplot=[],odir=''):
+def plotplasmaline(specdown,specup,fn, P):
     if not (isinstance(specdown,DataArray) or isinstance(specup,DataArray)):
         return
 
@@ -163,14 +164,19 @@ def plotplasmaline(specdown,specup,fn, P, makeplot=[],odir=''):
             fg,axs = subplots(1,2,figsize=(15,5),sharey=True)
 #%%
         for s,ax,fshift in zip((specdown,specup),axs,('down','up')):
-            if ptype in ('mesh','surf'):
-                plotplasmamesh(s.loc[t,:,:], fg,ax,P,ptype)
-            else: #pcolor
-                plotplasmatime(s.loc[t,:,:],t,fn, fg,ax,P,fshift,makeplot)
+            try:
+                if ptype in ('mesh','surf'):
+                    plotplasmamesh(s.loc[t,:,:], fg,ax,P,ptype)
+                else: #pcolor
+                    plotplasmatime(s.loc[t,:,:],t,fn, fg,ax,P,fshift)
+            except KeyError as e:
+                print('E: {} plotting {} {}'.format(e,fshift,t))
+            
+        # write plots here else you'll double write plots        
+        writeplots(fg,t,P['odir'],P['makeplot'],'plasmaLine')
 
-        writeplots(fg,t,odir,makeplot,'plasmaLine')
 
-def plotplasmatime(spec,t,fn,fg,ax,P,ctxt,makeplot):
+def plotplasmatime(spec,t,fn,fg,ax,P,ctxt):
     if not isinstance(spec,DataArray):
         return
 
@@ -192,7 +198,7 @@ def plotplasmatime(spec,t,fn,fg,ax,P,ctxt,makeplot):
         if not isown or ctxt.startswith('down'):
             ax.set_ylabel('Power [dB]')
 
-        fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt, datetime.fromtimestamp(t.item()/1e9)))
+        fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt, datetime.fromtimestamp(t.item()/1e9, tz=UTC)))
 
     else:
         srng = spec.srng.values
@@ -206,14 +212,29 @@ def plotplasmatime(spec,t,fn,fg,ax,P,ctxt,makeplot):
 
         c=fg.colorbar(h,ax=ax)
         c.set_label('Power [dB]')
+        
+        ax.autoscale(True,'both',tight=True) #before manual lim setting
+        
+        ax.set_ylim(P['zlim_pl'])
+        
+        if spec.freq.values[0] < 0 : # downshift
+            flim=[None,None]
+            if P['flim_pl'][0] is not None:
+                flim[1] = -P['flim_pl'][0]
+            if P['flim_pl'][1] is not None:
+                flim[0] = -P['flim_pl'][1]
+        else: #upshift
+            flim = P['flim_pl']
+            
+        ax.set_xlim(flim)
 
-        ax.set_title('Plasma line {}'.format(datetime.fromtimestamp(t.item()/1e9)))
+        ax.set_title('Plasma line {}'.format(datetime.fromtimestamp(t.item()/1e9, tz=UTC)))
 
 
     ax.set_xlabel('Doppler frequency [MHz]')
     ax.tick_params(axis='both', which='both', direction='out')
-    ax.autoscale(True,'both',tight=True)
     fg.tight_layout()
+
 
 def plotplasmamesh(spec,fg,ax,P,ptype=''):
     if not isinstance(spec,DataArray):

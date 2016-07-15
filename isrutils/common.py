@@ -171,7 +171,11 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
     if odir:
         odir = Path(odir).expanduser()
         odir.mkdir(parents=True,exist_ok=True)
+        
+        if isinstance(t,(DataArray)):
+            t = datetime.fromtimestamp(t.item()/1e9,tz=UTC)
         ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H-%M-%S.%f')[:-3]+'.png')
+        
         print('saving {}'.format(ppth))
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
         if 'show' not in makeplot:

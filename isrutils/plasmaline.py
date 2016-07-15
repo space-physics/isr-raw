@@ -35,7 +35,7 @@ def readplasma(fn,beamid,fshift,tlim):
         with h5py.File(str(fn),'r',libver='latest') as f:
             T     = ut2dt(f['/Time/UnixTime'].value)
             bind  = findstride(f['/PLFFTS/Data/Beamcodes'], beamid)
-            data = f['/PLFFTS/Data/Spectra/Data'].value[bind,:,:].squeeze().T
+            data = f['/PLFFTS/Data/Spectra/Data'].value[bind,:,:].T
             srng  = f['/PLFFTS/Data/Spectra/Range'].value.squeeze()/1e3
             freq  = f['/PLFFTS/Data/Spectra/Frequency'].value.squeeze() + fshift
     except OSError as e: #problem with file
@@ -46,4 +46,4 @@ def readplasma(fn,beamid,fshift,tlim):
 
     return DataArray(data = data[:,:,tind].transpose(2,0,1),
                      dims=['time','srng','freq'],
-                     coords={'time':T[tind], 'srng':srng, 'freq':freq})
+                     coords={'time':T, 'srng':srng, 'freq':freq})
