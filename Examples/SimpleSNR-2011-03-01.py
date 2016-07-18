@@ -21,12 +21,18 @@ from isrutils.looper import simpleloop
 #%% users param
 P={'path':'~/data/2011-03-01/isr',
    'beamid': 64157,
-   'acf': True,
+   'acf': False,
+   'zlim_pl': [None,None],
+   'vlim_pl': [None,None],
+   'flim_pl': [None,None],
+   'int': False,
    'samples': True,
-   'vlim':  (22,55),
+   'vlim':  [30,60],
    'vlimacf': (20,50),
     'zlim': (90, None),
-    'tlim': (None,None)
+    'tlim': (datetime(2011,3,1,10,6,34,tzinfo=UTC),
+             datetime(2011,3,1,10,6,39,tzinfo=UTC)),
+    'tmark': [],
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (
@@ -34,7 +40,7 @@ flist = (
 #'d0245965.dt0.h5',
 'd0245966.dt3.h5',
 #'d0245966.dt2.h5',
-'d0245966.dt0.h5',
+#'d0245966.dt0.h5',
 #'d0245967.dt3.h5',
 #'d0245967.dt0.h5',
 #'d0245968.dt3.h5',
