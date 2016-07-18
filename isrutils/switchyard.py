@@ -6,7 +6,7 @@ from .common import ftype
 from .rawacf import readACF
 from .plasmaline import readplasmaline
 from .snrpower import readpower_samples,readsnr_int,snrvtime_fit
-from .plots import plotsnr,plotsnr1d,plotsnrmesh,plotplasmaline
+from .plots import plotsnr,plotsnr1d,plotplasmaline
 
 
 
@@ -32,13 +32,13 @@ def isrstacker(flist,odir,beamid,tlim,vlim,zlim,t0,acf,samples,makeplot):
     plotplasmaline(specdowns,specups,flist,P,makeplot=makeplot,odir=odir)
 
     vlim = vlim if vlim else (30,60)
-    plotsnr(snrsamps,fn,P,ctxt='Power [dB]')
+    plotsnr(snrsamps,fn,P)
 #%% ACF
     vlim = vlim if vlim else (20,45)
     readACF(fn,P)
 
     vlim = vlim if vlim else (47,80)
-    plotsnr(snrints,fn,P,ctxt='SNR [dB]')
+    plotsnr(snrints,fn,P)
 
     vlim = vlim if vlim else (-20,None)
     if t0 is not None:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from copy import deepcopy
 from . import Path
+from .common import ftype
 from .switchyard import isrselect
 from .plots import plotsnr,plotplasmaline
 
@@ -16,12 +17,17 @@ def simpleloop(flist,P):
     if Pint['vlim'][0] is not None: Pint['vlim'][0] = Pint['vlim'][0] + 30
     if Pint['vlim'][1] is not None: Pint['vlim'][1] = Pint['vlim'][1] + 30
 
+    ax = {}
     for f in flist:
+        ft = ftype(f)
+        ax[ft] = {}
         specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P['beamid'], P)
         # 15 sec integration
-        plotsnr(snrint,f,Pint,ctxt='Power [dB]')
+        ax[ft]['snrint'] = plotsnr(snrint,f,Pint)
         # 200 ms integration
-        plotsnr(snrsamp,f,P,ctxt='Power [dB]')
+        ax[ft]['snrraw'] = plotsnr(snrsamp,f,P)
 
         # plasma line spectrum
         plotplasmaline(specdown,specup,f,P)
+
+    return ax
