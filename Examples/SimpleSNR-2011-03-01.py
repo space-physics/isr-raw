@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 """
+NOTE: this date's data files has ~ half-second data gaps that pcolormesh smears horizontally (this is in general expected pcolormesh behavior)
+to quickly mitigate, plot piecewise if wider time spans are necessary.
+
+optical/CMOS_110301_1006.avi is the companion video file
+
 2011-03-01 10:06
 d0245964 (quiescent)
 d0245965 10:04:40-10:05:47 (F-region turb)
@@ -30,9 +35,10 @@ P={'path':'~/data/2011-03-01/isr',
    'vlim':  [30,60],
    'vlimacf': (20,50),
     'zlim': (90, None),
-    'tlim': (datetime(2011,3,1,10,6,34,tzinfo=UTC),
+    'tlim': (datetime(2011,3,1,10,6,33,tzinfo=UTC),
              datetime(2011,3,1,10,6,39,tzinfo=UTC)),
     'tmark': [],
+    'odir': '',
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (
