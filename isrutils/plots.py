@@ -22,10 +22,11 @@ def plotsnr(snr,fn,P,ctxt=''):
     assert snr.ndim==2 and snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
 
     fg = figure(figsize=(15,12))
-    ax =fg.gca()
+    ax = fg.gca()
     h=ax.pcolormesh(snr.time, snr.srng,
                      10*masked_invalid(log10(snr.values)),
-                     vmin=P['vlim'][0], vmax=P['vlim'][1],cmap='jet')
+                     vmin=P['vlim'][0], vmax=P['vlim'][1],
+                     cmap='cubehelix_r')
     ax.autoscale(True,tight=True)
 
     ax.set_xlim(P['tlim'])
@@ -51,16 +52,29 @@ def plotsnr(snr,fn,P,ctxt=''):
     ax.tick_params(axis='both', which='both', direction='out')
 
     c=fg.colorbar(h,ax=ax,fraction=0.075,shrink=0.5)
-    c.set_label(ctxt)
+    c.set_label('Power [dB]')
 
     Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
     ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(expfn(fn),
                  datetime.fromtimestamp(snr.time[0].item()/1e9, tz=UTC).strftime('%Y-%m-%d'),
                  Ts.item()/1e9))
 
+    for m in P['tmark']:
+        try:
+            ax.annotate(m[2],m[:2],
+                        xytext=(m[3]*100,50), textcoords='offset points', color='white', ha='left',
+                        bbox={'alpha':.2},
+                        arrowprops={'facecolor':'white',
+                                    'arrowstyle':'-[',
+                                    'connectionstyle':"arc3,rad=0.2"})
+        except Exception as e:
+            print('failed to annotate {}'.format(e))
+
     fg.tight_layout()
 
-    writeplots(fg,datetime.fromtimestamp(snr.time[0].item()/1e9, tz=UTC),P['odir'],P['makeplot'],'snr'+ctxt)
+    writeplots(fg,datetime.fromtimestamp(snr.time[0].item()/1e9, tz=UTC),P['odir'],P['makeplot'],'power_'+expfn(fn)+ctxt)
+
+    return fg
 
 def plotsnr1d(snr,fn,t0,zlim=(90,None)):
     if not isinstance(snr,DataArray):
@@ -126,7 +140,7 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
                     10*log10(absolute(spec[goodz,:].values)),
                     vmin=P['vlimacf'][0],
                     vmax=P['vlimacf'][1],
-                    cmap='jet')#cmap='cubehelix_r')
+                    cmap='cubehelix_r')
 
     ytop = min(z[-1], P['zlim'][1])  if P['zlim'][1] is not None else z[-1]
 
@@ -176,8 +190,8 @@ def plotplasmaline(specdown,specup,fn, P):
                     plotplasmatime(s.loc[t,:,:],t, fg,ax,P,fshift)
             except KeyError as e:
                 print('E: {} plotting {} {}'.format(e,fshift,t))
-            
-        # write plots here else you'll double write plots        
+
+        # write plots here else you'll double write plots
         writeplots(fg,t,P['odir'],P['makeplot'],'plasmaLine')
 
 def plotplasmaoverlay(specdown,specup,t,fg,P):
@@ -199,12 +213,12 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
     ax.plot(specup.freq.values/1e6, dBup)
 
     ax.set_ylabel('Power [dB]')
-    ax.set_xlabel('Doppler frequency [MHz]') 
+    ax.set_xlabel('Doppler frequency [MHz]')
 
     ax.set_ylim(P['vlim_pl'][:2])
     ax.set_xlim(P['flim_pl'])
-    
-    fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt, 
+
+    fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt,
                                             datetime.fromtimestamp(t.item()/1e9)))
 
 
@@ -218,16 +232,16 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
     h=ax.pcolormesh(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
                     vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='jet')#'cubehelix_r')
 
-    ax.set_xlabel('Doppler frequency [MHz]')    
+    ax.set_xlabel('Doppler frequency [MHz]')
     if ctxt.startswith('down'):
         ax.set_ylabel('slant range [km]')
-    
+
     c=fg.colorbar(h,ax=ax)
     c.set_label('Power [dB]')
-    
+
     ax.autoscale(True,'both',tight=True) #before manual lim setting
     ax.set_ylim(P['zlim_pl'])
-   
+
     ax.set_title('Plasma line {}'.format(datetime.fromtimestamp(t.item()/1e9, tz=UTC)))
 #%%
     xfreq(ax,spec,P['flim_pl'])
@@ -244,7 +258,7 @@ def xfreq(ax,spec,Pflim):
             flim[0] = -Pflim[1]
     else: #upshift
         flim = Pflim
-        
+
     ax.set_xlim(flim)
 
 

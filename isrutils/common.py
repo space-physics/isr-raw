@@ -136,26 +136,28 @@ def findstride(beammat, bid):
 #    return column_stack(beammat[:]==bid).nonzero()
     return beammat[:]==bid #boolean
 
-#def ftype(fn)->str:
 def ftype(fn):
-    fn = Path(fn)
-    return fn.stem.rsplit('.',1)[-1]
+    """
+    returns file type i.e.  'dt0','dt1','dt2','dt3'
+    """
+    return Path(fn).stem.rsplit('.',1)[-1]
 
-#def expfn(fn:Path)->str:
 def expfn(fn):
     """
     returns text string based on file suffix
     """
-    fn=Path(fn)
+    ft = ftype(fn)
 
-    if ftype(fn)=='dt0':
+    if ft   == 'dt0':
         return 'alternating code'
-    elif ftype(fn)=='dt1':
+    elif ft == 'dt1':
         return 'downshift plasma line'
-    elif ftype(fn)=='dt2':
+    elif ft == 'dt2':
         return 'upshift plasma line'
-    elif ftype(fn)=='dt3':
+    elif ft == 'dt3':
         return 'long pulse'
+    else:
+        ValueError('unknown file type {}'.format(ft))
 
 def sampletime(t,bstride):
     """
@@ -171,11 +173,11 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
     if odir:
         odir = Path(odir).expanduser()
         odir.mkdir(parents=True,exist_ok=True)
-        
+
         if isinstance(t,(DataArray)):
             t = datetime.fromtimestamp(t.item()/1e9,tz=UTC)
-        ppth = odir/(ctxt+t.strftime('%Y-%m-%dT%H-%M-%S.%f')[:-3]+'.png')
-        
+        ppth = odir / (ctxt+t.strftime('%Y-%m-%dT%H-%M-%S.%f')[:-3]+'.png')
+
         print('saving {}'.format(ppth))
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
         if 'show' not in makeplot:
