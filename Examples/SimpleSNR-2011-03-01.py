@@ -19,6 +19,7 @@ d0245972 quiescent
 from matplotlib.pyplot import show
 import seaborn as sns
 sns.set_context('talk',1.5)
+sns.set_style('ticks')
 #
 from isrutils.looper import simpleloop
 #%% users param

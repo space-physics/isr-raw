@@ -189,8 +189,10 @@ def timeticks(tdiff):
         return MinuteLocator(interval=5)
     elif (timedelta64(1,'m')<tdiff) & (tdiff<=timedelta64(20,'m')):
         return MinuteLocator(interval=1)
-    else:
+    elif (timedelta64(30,'s')<tdiff) &(tdiff<=timedelta64(1,'m')):
         return SecondLocator(interval=5)
+    else:
+        return SecondLocator(interval=2)
 
 def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p = ArgumentParser(description=descr)
