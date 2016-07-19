@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import tarfile
 from isrutils import Path
 from numpy.testing import run_module_suite
 #
@@ -15,12 +14,11 @@ fn = path/name
 
 
 P={'beamid':64157,
-   'tlim':(None,None),}
-
-zlim=(200,300) #km
+   'tlim':[None,None],
+    'zlim':(200,300)} #km
 
 def test_readpowersnr():
-    readpower_samples(fn,P['beamid'],zlim)
+    readpower_samples(fn,P)
 
 def test_readacf():
     readACF(fn,P)

@@ -117,7 +117,7 @@ def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
 
 #%% dt3
 def sumlongpulse(P):
-    snrsamp,azel,lla = readpower_samples(P)
+    snrsamp,azel,lla = readpower_samples(P['isrfn'],P)
     assert isinstance(snrsamp,DataArray)
 
     return snrsamp.sum(axis=0),azel,lla
@@ -140,18 +140,18 @@ def plotsumlongpulse(dsum,ax,rmode,zlim):
     return ax
 
 #%% plasma line
-def sumplasmaline(fn,beamid,flim,tlim,zlim):
-    spec,freq = readplasmaline(fn,beamid,tlim)
+def sumplasmaline(fn,P):
+    spec,freq = readplasmaline(fn,P)
     assert isinstance(spec,DataArray) and spec.ndim==4
-    assert isinstance(flim[0],float)
+    assert isinstance(P['flim'][0],float)
 
     z = spec.srng
     specsum = DataArray(index=spec.items,columns=spec.labels)
 
-    zind = (zlim[0] <= z) & (z <= zlim[1])
+    zind = (P['zlim'][0] <= z) & (z <= P['zlim'][1])
 
     for s in spec:
-        find = (flim[0] <= absolute(freq[s]/1.e6)) & (absolute(freq[s]/1.e6) < flim[1])
+        find = (P['flim'][0] <= absolute(freq[s]/1.e6)) & (absolute(freq[s]/1.e6) < P['flim'][1])
         specsum.loc[:,s] = spec.loc[:,:,zind,find].sum(axis=3).sum(axis=2)
 
     return specsum

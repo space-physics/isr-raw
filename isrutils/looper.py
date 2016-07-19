@@ -21,7 +21,7 @@ def simpleloop(flist,P):
     for f in flist:
         ft = ftype(f)
         ax[ft] = {}
-        specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P['beamid'], P)
+        specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P)
         # 15 sec integration
         ax[ft]['snrint'] = plotsnr(snrint,f,Pint)
         # 200 ms integration

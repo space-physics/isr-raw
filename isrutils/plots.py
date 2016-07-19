@@ -74,15 +74,15 @@ def plotsnr(snr,fn,P,ctxt=''):
 
     return fg
 
-def plotsnr1d(snr,fn,t0,zlim=(90,None)):
+def plotsnr1d(snr,P):
     if not isinstance(snr,DataArray):
         return
 
-    tind=absolute(snr.time-t0).argmin()
+    tind=absolute(snr.time-P['t0']).argmin()
     tind = range(tind-1,tind+2)
     t1 = snr.time[tind]
 
-    S = 10*log10(snr[snr.srng>=zlim[0],t1])
+    S = 10*log10(snr[snr.srng >= P['zlim'][0],t1])
     z = S.index
 
     ax = figure().gca()
@@ -94,7 +94,7 @@ def plotsnr1d(snr,fn,t0,zlim=(90,None)):
     ax.set_xlim(-5)
     ax.legend()
 
-    ax.set_title(fn.name)
+    ax.set_title(P['fn'])
     ax.set_xlabel('SNR [dB]')
     ax.set_ylabel('altitude [km]')
 
