@@ -9,8 +9,8 @@ where alpha is the dissociative recombination rate assuming Ni~Ne
 """
 from isrutils import Path
 import h5py
-from pandas import DataFrame
-from numpy import empty_like
+from xarray import DataArray
+from numpy import empty_like,column_stack
 from matplotlib.pyplot import show,subplots
 import seaborn as sns
 sns.set_context('talk',font_scale=1.5)
@@ -34,7 +34,7 @@ def isrNe2q(Fwd):
     """
     From Wedlund 2013 Par. 40, Sheedhan and St.-Maurice 2004
     """
-    Te = Fwd['Te']
+    Te = Fwd.loc[:,'Te']
     hotind = Te.values>1200.
     alphaO2 = empty_like(hotind,dtype=float)
     alphaNO = empty_like(hotind,dtype=float)
@@ -48,40 +48,40 @@ def isrNe2q(Fwd):
     #NOTE: valid 100-250km altitude Wedlund 2013 Par. 42
     alpha = (0.478*alphaNO + 0.373*alphaO2) #[cm^3 s^-1]
 #%% now invoke quasi-static q=alpha*Ne**2
-    q = alpha * Fwd['Ne']**2
+    q = alpha * Fwd.loc[:,'Ne']**2
     return q
 
 def phantom(Z0,H,zkm):
-    Fwd = DataFrame(index=zkm,columns=['Ne','Te'])
-    Fwd['Ne'] = 1e5 * chapman_profile(p.nez0,zkm,p.H) #[electrons cm^-3]
+    Fwd = DataArray(data=column_stack(( 1e5 * chapman_profile(p.nez0,zkm,p.H), #[electrons cm^-3]
+                                        maxwellian(zkm,220,2e9)[0])),# this is a repurposing of the maxwellian normally used for energy
+                    dims=['altitude','type'],
+                    coords={'altitude':zkm,'type':['Ne','Te']})
     #Fwd['Ne'] += 5e4 * chapman_profile(300,zkm,50) # < 500eV
-    # this is a repurposing of the maxwellian normally used for energy
-    Fwd['Te'] = maxwellian(zkm,220,2e9)[0]
     return Fwd
 
 def doplot(Fwd,q,zlim):
     fg,axs = subplots(2,2,sharey=True)
 #%% electron number density
     ax = axs[0,0]
-    ax.plot(Fwd['Ne'].values,Fwd.index)
+    ax.plot(Fwd.loc[:,'Ne'], Fwd.altitude)
     ax.set_title('electron number density')
     ax.set_ylabel('altitude [km]')
     ax.set_xlabel('electron number density [e$^-$ cm$^{-3}$]')
 #%% Electron temperature
     ax = axs[0,1]
-    ax.plot(Fwd['Te'].values,Fwd.index)
+    ax.plot(Fwd.loc[:,'Te'], Fwd.altitude)
     ax.set_title('Electron Temperature')
     ax.set_xlabel('Tempature [K]')
 #%% production
     ax= axs[1,0]
-    ax.plot(q.values,q.index)
+    ax.plot(q, q.altitude)
     ax.set_title('Production')
     ax.set_ylabel('altitude [km]')
     ax.set_xlabel('ionization rate [cm$^{-3}$ s$^{-1}$]')
 
     [a.set_ylim(zlim) for a in axs.ravel()]
 
-    fg.suptitle('Forward Model',fontsize='xx-large')
+    fg.suptitle('Forward Model',fontsize='x-large')
 
 if __name__ == '__main__':
     from argparse import ArgumentParser

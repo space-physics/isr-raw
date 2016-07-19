@@ -40,12 +40,12 @@ def samplepower(sampiq,bstride,ut,srng,P):
                      dims=['srng','time'],
                      coords={'srng':srng,'time':t})
 
-def readpower_samples(P):
+def readpower_samples(fn,P):
     """
     reads samples (lowest level data) and computes power for a particular beam.
     returns power measurements
     """
-    fn=Path(P['isrfn']).expanduser()
+    fn=Path(fn).expanduser()
     assert isinstance(P['beamid'],integer_types),'beam specification must be a scalar integer!'
 
     try:
