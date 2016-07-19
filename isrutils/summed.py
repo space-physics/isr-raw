@@ -2,9 +2,8 @@
 """
 summed measurements and plots
 """
-from datetime import datetime
-from pandas import Panel4D,DataFrame,Series
-from numpy import absolute,nan,linspace,percentile
+from xarray import DataArray
+from numpy import absolute,nan,linspace,percentile,datetime64
 from matplotlib.pyplot import figure,draw,pause,show
 from matplotlib.cm import jet
 import matplotlib.gridspec as gridspec
@@ -19,21 +18,21 @@ from GeoData.plotting import plotazelscale
 vidnorm = LogNorm()
 
 #%% joint isr optical plot
-def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,isrfn,zlim,heightkm,utopt,utlim,makeplot,ofn):
+def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,utlim,P):
     """
     ds: radar data
 
     f1,a1: radar   figure,axes
     f2,a2: optical figure,axes
     """
-    assert isinstance(ds,(Series,DataFrame))
+    assert isinstance(ds,DataArray)
 
 #%% setup master figure
     fg = figure(figsize=(8,12))
     gs = gridspec.GridSpec(2, 1, height_ratios=[3,1])
 #%% setup radar plot(s)
     a1 = fg.add_subplot(gs[1])
-    plotsumlongpulse(ds,a1,expfn(isrfn),zlim)
+    plotsumlongpulse(ds,a1,expfn(P['isrfn']),P['zlim'])
 
     h1 = a1.axvline(nan,color='k',linestyle='--')
     t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
@@ -59,23 +58,22 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,isrfn,zlim,h
 
         #beam data, filled circle
         s0 = a0.scatter(bc,br,s=2700,alpha=0.6,linewidths=3,
-                        edgecolors=jet(linspace(ds.min(),ds.max())))
+                        edgecolors=jet(linspace(ds.min().item(), ds.max().item())))
 
         a0.autoscale(True,tight=True)
         fg.tight_layout()
 #%% time sync
-    tisr = ds.index#.to_pydatetime() #Timestamp() is fine, no need to make it datetime(). datetime64() is no good.
+    tisr = ds.time.values
     Iisr,Iopt = timesync(tisr,utopt,utlim)
 #%% iterate
     first = True
-    if 'movie' in makeplot:
-        print('writing {}'.format(ofn))
     Writer = anim.writers['ffmpeg']
     writer = Writer(fps=5,
                     metadata=dict(artist='Michael Hirsch'),
                     codec='ffv1')
 
-    with writer.saving(fg, str(ofn),150):
+    print('writing {}'.format(P['ofn']))
+    with writer.saving(fg, str(P['ofn']),150):
       for iisr,iopt in zip(Iisr,Iopt):
         ctisr = tisr[iisr]
 #%% update isr plot
@@ -83,25 +81,25 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,isrfn,zlim,h
         t1.set_text('isr: {}'.format(ctisr))
 #%% update hist plot
         if iopt is not None:
-            ctopt = datetime.utcfromtimestamp(utopt[iopt])
+            ctopt = datetime64(int(utopt[iopt]*1e3),'ms')
             h0.set_data(optical[iopt,...])
             t0.set_text('optical: {}'.format(ctopt))
-            s0.set_array(ds[ctisr]) #FIXME circle not changing magnetic zenith beam color? NOTE this is isr time index
+            s0.set_array(ds.loc[ctisr]) #FIXME circle not changing magnetic zenith beam color? NOTE this is isr time index
 #%% anim
-        if 'show' in makeplot: #FIXME should this be outside loop?
-            if first and iopt is not None:
-                plotazelscale(optical[iopt,...],azimg,elimg)
-                show()
-                first=False
-#
-            draw(); pause(0.01)
-        if 'movie' in makeplot:
-            writer.grab_frame(facecolor='k')
-        else: #png
+        if first and iopt is not None:
+            plotazelscale(optical[iopt,...],azimg,elimg)
+            show()
+            first=False
+        #
+        draw(); pause(0.01)
+
+        writer.grab_frame(facecolor='k')
+
+        if P['ofn'].suffix == '.png':
             try:
-                writeplots(fg,ctopt,ofn,makeplot,ctxt='joint')
+                writeplots(fg,ctopt,P['ofn'],P['makeplot'],ctxt='joint')
             except UnboundLocalError:
-                writeplots(fg,ctisr,ofn,makeplot,ctxt='isr')
+                writeplots(fg,ctisr,P['ofn'],P['makeplot'],ctxt='isr')
 
 def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
     """
@@ -118,14 +116,14 @@ def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
     return clim
 
 #%% dt3
-def sumlongpulse(fn,beamid,tlim,zlim):
-    snrsamp,azel,lla = readpower_samples(fn,beamid,zlim,tlim)
-    assert isinstance(snrsamp,DataFrame)
+def sumlongpulse(P):
+    snrsamp,azel,lla = readpower_samples(P)
+    assert isinstance(snrsamp,DataArray)
 
     return snrsamp.sum(axis=0),azel,lla
 
 def plotsumlongpulse(dsum,ax,rmode,zlim):
-    assert isinstance(dsum,Series)
+    assert isinstance(dsum,DataArray) and dsum.ndim==1
     if not ax:
         fg = figure()
         ax = fg.gca()
@@ -138,17 +136,17 @@ def plotsumlongpulse(dsum,ax,rmode,zlim):
     ax.set_yscale('log')
     ax.grid(True)
 
-    ax.xaxis.set_major_locator(timeticks(dsum.index[-1] - dsum.index[0]))
+    ax.xaxis.set_major_locator(timeticks(dsum.time[-1] - dsum.time[0]))
     return ax
 
 #%% plasma line
 def sumplasmaline(fn,beamid,flim,tlim,zlim):
     spec,freq = readplasmaline(fn,beamid,tlim)
-    assert isinstance(spec,Panel4D)
+    assert isinstance(spec,DataArray) and spec.ndim==4
     assert isinstance(flim[0],float)
 
-    z = spec.major_axis
-    specsum = DataFrame(index=spec.items,columns=spec.labels)
+    z = spec.srng
+    specsum = DataArray(index=spec.items,columns=spec.labels)
 
     zind = (zlim[0] <= z) & (z <= zlim[1])
 
@@ -159,7 +157,7 @@ def sumplasmaline(fn,beamid,flim,tlim,zlim):
     return specsum
 
 def plotsumplasmaline(plsum):
-    assert isinstance(plsum,DataFrame)
+    assert isinstance(plsum,DataArray)
 
     fg = figure()
     ax = fg.gca()
@@ -168,4 +166,4 @@ def plotsumplasmaline(plsum):
     ax.set_xlabel('time [UTC]')
     ax.set_title('plasma line summed over altitude (200..350)km and frequency (3.5..5.5)MHz')
 
-    ax.xaxis.set_major_locator(timeticks(plsum.columns[-1]-plsum.columns[0]))
+    ax.xaxis.set_major_locator(timeticks(plsum.time[-1]-plsum.time[0]))

@@ -1,12 +1,9 @@
 from six import integer_types
 from h5py import Dataset
-from numpy import (array,ndarray,unravel_index,ones,
+from numpy import (array,ndarray,unravel_index,ones,datetime64,timedelta64,
                    datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from . import Path
-from datetime import datetime,timedelta
-from dateutil.parser import parse
-from pytz import UTC
 from pandas import Timestamp
 from matplotlib.pyplot import close
 from matplotlib.dates import MinuteLocator,SecondLocator
@@ -25,9 +22,9 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
     az,el,slantrange in degrees,meters
     """
     isrlla = asarray(isrlla); optlla=asarray(optlla)
-    assert len(isrlla) == len(optlla.dtype) == 3
+    assert isrlla.size == optlla.size == 3
     x,y,z = aer2ecef(beamazel[0],beamazel[1],heightkm*1e3,isrlla[0],isrlla[1],isrlla[2])
-    az,el,srng= ecef2aer(x,y,z,optlla['lat'],optlla['lon'],optlla['alt_m'])
+    az,el,srng= ecef2aer(x,y,z,optlla[0],optlla[1],optlla[2])
 
     return {'az':az,'el':el,'srng':srng}
 
@@ -35,22 +32,19 @@ def timesync(tisr,topt,tlim=(None,None)):
     """
     TODO: for now, assume optical is always faster
     inputs
-    tisr: vector of UT1 Unix time for ISR
-    topt: vector of UT1 Unix time for camera
+    tisr: vector of datetime64 for ISR
+    topt: vector of datetime64 for camera
     tlim: start,stop UT1 Unix time request
 
     output
     iisr: indices (integers) of isr to playback at same time as camera
     iopt: indices (integers) of optical to playback at same time as isr
     """
-
     if isinstance(tisr[0],datetime64):
-        tisr = Timestamp(tisr) #FIXME untested
-# separate comparison
-    if isinstance(tisr[0],(datetime,Timestamp)):
-        tisr = array([t.timestamp() for t in tisr]) #must be ndarray
-    assert isinstance(tisr[0],float), 'datetime64 is not wanted here, lets use ut1_unix float for minimum conversion effort'
+        tisr = tisr.astype(float)/1e9
 
+    assert ((tisr>1e9) & (tisr<2e9)).all(),'date sanity check'
+# separate comparison
     if topt is None:
         topt = (nan,nan)
 #%% interpolate isr indices to opt (assume opt is faster, a lot of duplicates iisr)
@@ -74,6 +68,9 @@ def timesync(tisr,topt,tlim=(None,None)):
     return iisrreq,ioptreq
 
 def cliptlim(t,tlim):
+    tlim[0] = datetime64(tlim[0])
+    tlim[1] = datetime64(tlim[1])
+
     tind = ones(t.size,dtype=bool)
 
     if tlim[0] is not None:
@@ -120,7 +117,7 @@ def ut2dt(ut):
         T=ut
     elif ut.ndim==2:
         T=ut[:,0]
-    return array([datetime.fromtimestamp(t,tz=UTC) for t in T])
+    return array([datetime64(int(t*1e3),'ms') for t in T])
 
 #def findstride(beammat:Dataset,bid:int):
 def findstride(beammat, bid):
@@ -175,7 +172,7 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
         odir.mkdir(parents=True,exist_ok=True)
 
         if isinstance(t,(DataArray)):
-            t = datetime.fromtimestamp(t.item()/1e9,tz=UTC)
+            t = datetime64(t.item(),'ns')
         ppth = odir / (ctxt+t.strftime('%Y-%m-%dT%H-%M-%S.%f')[:-3]+'.png')
 
         print('saving {}'.format(ppth))
@@ -186,12 +183,12 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
 #def timeticks(tdiff:timedelta ):
 def timeticks(tdiff):
     if isinstance(tdiff,DataArray): #len==1
-        tdiff = timedelta(microseconds=tdiff.item()/1e3)
-    assert isinstance(tdiff,timedelta),'expecting datetime.timedelta'
+        tdiff = timedelta64(int(tdiff.item()),'ns')
+    assert isinstance(tdiff,timedelta64)
 
-    if tdiff>timedelta(minutes=20):
+    if tdiff > timedelta64(20,'m'):
         return MinuteLocator(interval=5)
-    elif (timedelta(minutes=1)<tdiff) & (tdiff<=timedelta(minutes=20)):
+    elif (timedelta64(1,'m')<tdiff) & (tdiff<=timedelta64(20,'m')):
         return MinuteLocator(interval=1)
     else:
         return SecondLocator(interval=5)
@@ -213,7 +210,7 @@ def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p.add_argument('-o','--odir',help='directory to write files to',default='')
     p = p.parse_args()
 
-    tlim = (parse(p.tlim[0]),parse(p.tlim[1])) if p.tlim else (None,None)
+    tlim = (datetime64(p.tlim[0]), datetime64(p.tlim[1])) if p.tlim else (None,None)
 
     return (p,
             Path(p.isrfn).expanduser(),

@@ -6,7 +6,7 @@ from xarray import DataArray
 #
 from .common import findstride,ut2dt,cliptlim
 
-def readplasmaline(fn,beamid,tlim):
+def readplasmaline(P):
     """
     inputs:
     fn: d*.dt?.h5 file to load
@@ -16,16 +16,16 @@ def readplasmaline(fn,beamid,tlim):
     spec: Ntime x Nrange x Nfreq
     """
 
-    fn = Path(fn).expanduser()
-    assert isinstance(beamid,integer_types),'beam specification must be a scalar integer'
+    fn = Path(P['isrfn']).expanduser()
+    assert isinstance(P['beamid'],integer_types),'beam specification must be a scalar integer'
 
     #['downshift','upshift'] # by definition of dt1,dt2
     #fshift = (('dt1',-5e6),('dt2',5e6))
     FREQSHIFT = (-5e6,5e6)
 #%% read downshift spectrum
-    specdown = readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt1.h5'),beamid, FREQSHIFT[0], tlim)
+    specdown = readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt1.h5'), P['beamid'], FREQSHIFT[0], P['tlim'])
 #%% read upshift spectrum
-    specup =   readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt2.h5'),beamid, FREQSHIFT[1], tlim)
+    specup =   readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt2.h5'), P['beamid'], FREQSHIFT[1], P['tlim'])
 
     return specdown,specup
 
