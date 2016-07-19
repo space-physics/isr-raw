@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 from six import integer_types
-from datetime import datetime
-from pytz import UTC
-from dateutil.parser import parse
-from numpy import log10,absolute, meshgrid, sin, radians
+from numpy import log10,absolute, meshgrid, sin, radians,datetime64
 from numpy.ma import masked_invalid
 from xarray import DataArray
 #
@@ -42,8 +39,8 @@ def plotsnr(snr,fn,P,ctxt=''):
         tdiff = snr.time[-1] - snr.time[0]
     else:
         if isinstance(P['tlim'][0],str):
-            tdiff = parse(P['tlim'][1]) - P['tlim'][0]
-        elif isinstance(P['tlim'][0],datetime):
+            tdiff = datetime64(P['tlim'][1]) - datetime64(P['tlim'][0])
+        elif isinstance(P['tlim'][0],datetime64):
             tdiff = P['tlim'][1] - P['tlim'][0]
 
     ticker = timeticks(tdiff)
@@ -56,7 +53,7 @@ def plotsnr(snr,fn,P,ctxt=''):
 
     Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
     ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(expfn(fn),
-                 datetime.fromtimestamp(snr.time[0].item()/1e9, tz=UTC).strftime('%Y-%m-%d'),
+                 str(datetime64(snr.time[0].item(),'ns'))[:10],
                  Ts.item()/1e9))
 
     for m in P['tmark']:
@@ -72,7 +69,8 @@ def plotsnr(snr,fn,P,ctxt=''):
 
     fg.tight_layout()
 
-    writeplots(fg,datetime.fromtimestamp(snr.time[0].item()/1e9, tz=UTC),P['odir'],P['makeplot'],'power_'+expfn(fn)+ctxt)
+    writeplots(fg, str(datetime64(snr.time[0].item(),'ns')),
+                                  P['odir'],P['makeplot'],'power_'+expfn(fn)+ctxt)
 
     return fg
 
@@ -111,7 +109,7 @@ def plotsnrmesh(snr,fn,P):
     S = 10*log10(snr[snr.srng >= P['zlim'][0],t1])
     z = S.index
 
-    x,y = meshgrid(S.time.values.astype(float),z)
+    x,y = meshgrid(S.time.values.astype(float)/1e9,z)
 
     ax3 = figure().gca(projection='3d')
 
@@ -219,7 +217,7 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
     ax.set_xlim(P['flim_pl'])
 
     fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt,
-                                            datetime.fromtimestamp(t.item()/1e9)))
+                                            str(datetime64(t.item(),'ns'))))
 
 
 def plotplasmatime(spec,t,fg,ax,P,ctxt):

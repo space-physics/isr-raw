@@ -7,7 +7,7 @@ from xarray import DataArray
 #
 from .common import ut2dt,findstride,sampletime,cliptlim
 
-def samplepower(sampiq,bstride,ut,srng,tlim,zlim):
+def samplepower(sampiq,bstride,ut,srng,P):
     """
     returns I**2 + Q**2 of radar received amplitudes
     FIXME: what are sample units?
@@ -16,7 +16,7 @@ def samplepower(sampiq,bstride,ut,srng,tlim,zlim):
     """
     assert sampiq.ndim == 4
     assert bstride.ndim== 2 and sampiq.shape[:2] == bstride.shape and bstride.dtype==bool
-
+    zlim = P['zlim']
 #%% filter by range
     Nr = srng.size
     zind = ones(Nr,dtype=bool)
@@ -28,7 +28,7 @@ def samplepower(sampiq,bstride,ut,srng,tlim,zlim):
 #%% filter by time
     t = ut2dt(ut)
 
-    t,tind = cliptlim(t,tlim)
+    t,tind = cliptlim(t,P['tlim'])
 
     sampiq = sampiq.value[bstride,:,:]
     sampiq = sampiq[:,zind,:]
@@ -40,13 +40,13 @@ def samplepower(sampiq,bstride,ut,srng,tlim,zlim):
                      dims=['srng','time'],
                      coords={'srng':srng,'time':t})
 
-def readpower_samples(fn,bid,zlim,tlim=(None,None)):
+def readpower_samples(P):
     """
     reads samples (lowest level data) and computes power for a particular beam.
     returns power measurements
     """
-    fn=Path(fn).expanduser()
-    assert isinstance(bid,integer_types),'beam specification must be a scalar integer!'
+    fn=Path(P['isrfn']).expanduser()
+    assert isinstance(P['beamid'],integer_types),'beam specification must be a scalar integer!'
 
     try:
       with h5py.File(str(fn),'r',libver='latest') as f:
@@ -54,21 +54,21 @@ def readpower_samples(fn,bid,zlim,tlim=(None,None)):
 
         rawkey = filekey(f)
         try:
-            bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],bid)
+            bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],P['beamid'])
             ut = sampletime(f[rawkey+'/RadacHeader/RadacTime'],bstride)
         except KeyError:
-            bstride = findstride(f['/RadacHeader/BeamCode'],bid) # old 2007 DT3 files (DT0 2007 didn't have raw data?)
+            bstride = findstride(f['/RadacHeader/BeamCode'],P['beamid']) # old 2007 DT3 files (DT0 2007 didn't have raw data?)
             ut = sampletime(f['/RadacHeader/RadacTime'],bstride)
 
 
         srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
 
         try:
-            power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,tlim,zlim) #I + jQ   # Ntimes x striped x alt x real/comp
+            power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,P) #I + jQ   # Ntimes x striped x alt x real/comp
         except KeyError:
             return (None,)*3
 #%% return az,el of this beam
-        azelrow = f['/Setup/BeamcodeMap'][:,0] == bid
+        azelrow = f['/Setup/BeamcodeMap'][:,0] == P['beamid']
         azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
     except OSError as e: #problem with file
         print('{} reading error {}'.format(fn,e))

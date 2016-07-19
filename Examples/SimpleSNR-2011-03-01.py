@@ -16,8 +16,6 @@ d0245970 375km turb 10:10:53
 d0245971 quiescent
 d0245972 quiescent
 """
-from datetime import datetime
-from pytz import UTC
 from matplotlib.pyplot import show
 import seaborn as sns
 sns.set_context('talk',1.5)
@@ -35,8 +33,8 @@ P={'path':'~/data/2011-03-01/isr',
    'vlim':  [30,60],
    'vlimacf': (20,50),
     'zlim': (90, None),
-    'tlim': (datetime(2011,3,1,10,6,33,tzinfo=UTC),
-             datetime(2011,3,1,10,6,39,tzinfo=UTC)),
+    'tlim': ['2011-03-01T10:06:09',
+             '2011-03-01T10:06:22'],
     'tmark': [],
     'odir': '',
   }
