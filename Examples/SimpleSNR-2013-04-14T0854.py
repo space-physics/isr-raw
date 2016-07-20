@@ -2,11 +2,6 @@
 """
 2013-04-14 08:54:54 UT event
 """
-from matplotlib.pyplot import show
-import seaborn as sns
-sns.set_context('talk',1.5)
-sns.set_style('ticks')
-#
 from isrutils.looper import simpleloop
 #%% users param
 
@@ -21,11 +16,11 @@ P={'path':'~/data/2013-04-14/isr',
    'flim_pl': [None,None],
    'int': False,
    'samples': False,
-   'odir': 'out/2013-04-14',
+   'odir': 'out/test',
    'vlim': [30, 60],
    'zlim': (90, None),
-   'tlim': [None,None],#['2013-04-14T08:54:00',
-            #'2013-04-14T08:54:50'],
+   'tlim': ['2013-04-14T08:54:00',
+            '2013-04-14T08:54:50'],
    'tmark':[],
 #   'tmark': [(datetime(2013,4,14,8,54,30,tzinfo=UTC),300.,'onset',-1),
 #             (datetime(2013,4,14,8,54,41,tzinfo=UTC),300.,'quiescence',1)]
@@ -41,5 +36,3 @@ flist = (
 )
 
 ax = simpleloop(flist,P)
-
-show()

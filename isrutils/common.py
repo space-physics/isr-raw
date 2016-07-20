@@ -73,7 +73,7 @@ def cliptlim(t,tlim):
     if tlim[0] is not None:
         tind &= datetime64(tlim[0]) <= t
     if tlim[1] is not None:
-        tind &= datetime64(tlim[1]) <= tlim[1]
+        tind &= t <= datetime64(tlim[1])
 
     return t[tind],tind
 

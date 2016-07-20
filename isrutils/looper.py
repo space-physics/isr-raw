@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 from copy import deepcopy
+#
+import matplotlib
+matplotlib.use('agg') # NOTE comment out this line to enable visible plots
+from matplotlib.pyplot import show
+import seaborn as sns
+sns.set_context('talk',1.5)
+sns.set_style('ticks')
+#
 from . import Path
 from .common import ftype
 from .switchyard import isrselect
@@ -30,4 +38,4 @@ def simpleloop(flist,P):
         # plasma line spectrum
         plotplasmaline(specdown,specup,f,P)
 
-    return ax
+    show()
