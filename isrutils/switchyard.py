@@ -38,7 +38,7 @@ def isrstacker(flist,P):
 
     plotsnr(snrints,fn,P)
 
-    plotsnr1d(snr30ints,fn,t0,zlim)
+    plotsnr1d(snr30ints,fn,P)
 
     plotsnr(snr30ints,fn,P)
     #plotsnrmesh(snr,fn,P)
