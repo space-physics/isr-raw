@@ -124,6 +124,9 @@ def plotsnrmesh(snr,fn,P):
 
 
 def plotacf(spec,fn,azel,t,P,ctxt=''):
+    """
+    plot PSD derived from ACF.
+    """
     #%% plot axes
 
     fg = figure()
@@ -138,7 +141,7 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
                     10*log10(absolute(spec[goodz,:].values)),
                     vmin=P['vlimacf'][0],
                     vmax=P['vlimacf'][1],
-                    cmap='jet')#'cubehelix_r')
+                    cmap='cubehelix_r')
 
     ytop = min(z[-1], P['zlim'][1])  if P['zlim'][1] is not None else z[-1]
 
