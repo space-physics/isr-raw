@@ -67,15 +67,13 @@ def timesync(tisr,topt,tlim=(None,None)):
     return iisrreq,ioptreq
 
 def cliptlim(t,tlim):
-    tlim[0] = datetime64(tlim[0])
-    tlim[1] = datetime64(tlim[1])
-
+    # FIXME what if tlim has 'NaT'?  as of Numpy 1.11, only Pandas understands NaT with .isnull()
     tind = ones(t.size,dtype=bool)
 
     if tlim[0] is not None:
-        tind &= tlim[0] <= t
+        tind &= datetime64(tlim[0]) <= t
     if tlim[1] is not None:
-        tind &= t <= tlim[1]
+        tind &= datetime64(tlim[1]) <= tlim[1]
 
     return t[tind],tind
 
@@ -170,9 +168,10 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
         odir = Path(odir).expanduser()
         odir.mkdir(parents=True,exist_ok=True)
 
-        if isinstance(t,(DataArray)):
+        if isinstance(t,DataArray):
             t = datetime64(t.item(),'ns')
-        ppth = odir / (ctxt+t.strftime('%Y-%m-%dT%H-%M-%S.%f')[:-3]+'.png')
+
+        ppth = odir / (ctxt+str(t)+'.png')
 
         print('saving {}'.format(ppth))
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')

@@ -138,7 +138,7 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
                     10*log10(absolute(spec[goodz,:].values)),
                     vmin=P['vlimacf'][0],
                     vmax=P['vlimacf'][1],
-                    cmap='cubehelix_r')
+                    cmap='jet')#'cubehelix_r')
 
     ytop = min(z[-1], P['zlim'][1])  if P['zlim'][1] is not None else z[-1]
 
@@ -148,12 +148,12 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
     c=fg.colorbar(h,ax=ax)
     c.set_label(ctxt)
     ax.set_ylabel('altitude [km]')
-    ax.set_title('{} {}'.format(expfn(fn),t.strftime('%Y-%m-%dT%H:%M:%S')))
+    ax.set_title('{} {}'.format(expfn(fn),t))
     ax.autoscale(True,axis='x',tight=True)
     ax.set_xlabel('frequency [kHz]')
 
 
-    writeplots(fg,t,P['odir'],P['makeplot'],'acf')
+    writeplots(fg,t,P['odir'],P['makeplot'],'acf_'+expfn(fn))
 
 def plotplasmaline(specdown,specup,fn, P):
     if not (isinstance(specdown,DataArray) or isinstance(specup,DataArray)):
