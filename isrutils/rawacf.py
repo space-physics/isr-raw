@@ -91,7 +91,7 @@ def readACF(fn,P):
 
         t,tind = cliptlim(t,P['tlim'])
 
-        istride = column_stack(bstride[tind,:].nonzero())
+        istride = column_stack(bstride.nonzero())[tind,:]
         for tt,s in zip(t,istride):
             if noisekey is not None:
                 spectrum,acf = compacf(acfkey[s[0],s[1],...],
