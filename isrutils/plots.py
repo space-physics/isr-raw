@@ -149,7 +149,7 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
     ax.set_ylim(P['zlim'][0],ytop)
 
     c=fg.colorbar(h,ax=ax)
-    c.set_label(ctxt)
+    c.set_label('Power [dB]')
     ax.set_ylabel('altitude [km]')
     ax.set_title('{} {}'.format(expfn(fn),t))
     ax.autoscale(True,axis='x',tight=True)
@@ -220,7 +220,7 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
     ax.set_xlim(P['flim_pl'])
 
     fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt,
-                                            str(datetime64(t.item(),'ns'))))
+                                            str(datetime64(t.item(),'ns'))[:19]))
 
 
 def plotplasmatime(spec,t,fg,ax,P,ctxt):
@@ -231,23 +231,23 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
     zgood = srng > 60. # above N km
 
     h=ax.pcolormesh(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
-                    vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='jet')#'cubehelix_r')
+                    vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
 
     ax.set_xlabel('Doppler frequency [MHz]')
     if ctxt.startswith('down'):
         ax.set_ylabel('slant range [km]')
 
-    c=fg.colorbar(h,ax=ax)
+    c=fg.colorbar(h,ax=ax,format='%.0f')
     c.set_label('Power [dB]')
 
     ax.autoscale(True,'both',tight=True) #before manual lim setting
     ax.set_ylim(P['zlim_pl'])
 
-    ax.set_title('Plasma line {}'.format(datetime.fromtimestamp(t.item()/1e9, tz=UTC)))
+    ax.set_title('Plasma line {}'.format(str(datetime64(t.item(),'ns'))[:19]))
 #%%
     xfreq(ax,spec,P['flim_pl'])
 
-    ax.tick_params(axis='both', which='both', direction='out')
+    #ax.tick_params(axis='both', which='both', direction='out')
     fg.tight_layout()
 
 def xfreq(ax,spec,Pflim):

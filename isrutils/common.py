@@ -171,7 +171,7 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
         if isinstance(t,DataArray):
             t = datetime64(t.item(),'ns')
 
-        ppth = odir / (ctxt+str(t)+'.png')
+        ppth = odir / (ctxt+str(t)[:23]+'.png')  #:23 keeps up to millisecond if present.
 
         print('saving {}'.format(ppth))
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')

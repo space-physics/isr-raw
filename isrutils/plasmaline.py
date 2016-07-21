@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 from six import integer_types
+from time import time
 from . import Path
 import h5py
 from xarray import DataArray
 #
 from .common import findstride,ut2dt,cliptlim
 
-def readplasmaline(P):
+def readplasmaline(fn,P):
     """
     inputs:
     fn: d*.dt?.h5 file to load
@@ -15,13 +16,13 @@ def readplasmaline(P):
     outputs:
     spec: Ntime x Nrange x Nfreq
     """
-
-    fn = Path(P['isrfn']).expanduser()
+    fn = Path(fn).expanduser()
     assert isinstance(P['beamid'],integer_types),'beam specification must be a scalar integer'
 
     #['downshift','upshift'] # by definition of dt1,dt2
     #fshift = (('dt1',-5e6),('dt2',5e6))
     FREQSHIFT = (-5e6,5e6)
+
 #%% read downshift spectrum
     specdown = readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt1.h5'), P['beamid'], FREQSHIFT[0], P['tlim'])
 #%% read upshift spectrum
