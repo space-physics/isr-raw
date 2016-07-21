@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from . import Path
+from time import time
 from xarray import concat
 #
 from .common import ftype
@@ -56,14 +57,23 @@ def isrselect(fn,P):
 #%% plasma line
     specdown=specup=None
     if ft in ('dt1','dt2'):
+        tic = time()
         specdown,specup = readplasmaline(fn,P)
+        if P['verbose']:
+            print('plasma line read took {} sec.'.format(time()-tic))
 #%% ~ 200 millisecond raw altcode and longpulse
     snrsamp=azel=isrlla=None
     if ft in ('dt0','dt3') and P['samples']:
+        tic = time()
         snrsamp,azel,isrlla = readpower_samples(fn,P)
+        if P['verbose']:
+            print('sample read took {} sec.'.format(time()-tic))
 #%% ACF
     if ft in ('dt0','dt3') and P['acf']:
+        tic = time()
         readACF(fn,P)
+        if P['verbose']:
+            print('ACF/PSD read & plot took {} sec.'.format(time()-tic))
 #%% multi-second integration (numerous integrated pulses)
     snrint=None
     if ft in ('dt0','dt3') and P['int']:

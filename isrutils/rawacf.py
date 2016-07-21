@@ -115,6 +115,6 @@ def readACF(fn,P):
                                coords={'srng':srng.value.squeeze(),
                                        'freq':linspace(-freqscalefact,freqscalefact,spectrum.shape[1])})
             try:
-                plotacf(specdf,fn,azel,tt, P, ctxt='dB')
+                plotacf(specdf,fn,azel,tt, P)
             except Exception as e:
                 print('failed to plot ACF due to {}'.format(e))

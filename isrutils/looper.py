@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from copy import deepcopy
+from time import time
 #
 import matplotlib
 matplotlib.use('agg') # NOTE comment out this line to enable visible plots
@@ -35,7 +36,10 @@ def simpleloop(flist,P):
         # 200 ms integration
         ax[ft]['snrraw'] = plotsnr(snrsamp,f,P)
 
-        # plasma line spectrum
+#%% plasma line spectrum
+        tic = time()
         plotplasmaline(specdown,specup,f,P)
-
+        if P['verbose']:
+            print('plasma line plot took {:.1f} sec.'.format(time()-tic))
+#%% ACF
     show()
