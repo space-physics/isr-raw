@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 from . import Path
-from numpy import array
+from numpy import array,datetime64
 #
 from .plasmaline import readplasmaline#,plotplasmaline
 from .summed import sumlongpulse,dojointplot
+from .common import str2dt
 #
 from GeoData.utilityfuncs import readNeoCMOS
 #
@@ -23,25 +24,26 @@ def overlayisrhist(P):
         azelfn = Path(P['azelfn']).expanduser()
     else:
         optfn = azelfn = None
+
+    P['tlim'] = str2dt(P['tlim'])
 #%% (1) read ISR plasma line
 #    plsum = sumplasmaline(isrfn,p.beamid,p.flim,tlim,zlim)
 #    plotsumplasmaline(plsum)
-    spec,freq = readplasmaline(P)
+    spec,freq = readplasmaline(P['isrfn'],P)
     #plotplasmaline(spec,freq,isrfn,P)
 #%% (2-3) read ISR long pulse
     lpsum,beamazel,isrlla = sumlongpulse(P)
 #%% (4) load optical data
     if optfn is not None:
-        utlim = array(P['tlim']).astype(float)
-
         #hst = []; hstazel=[]; hstlla=[]; hstut=[]
-        opt, _, optazel, optlla, optut = readNeoCMOS(optfn,azelfn,treq=utlim)[:5]
+        opt, _, optazel, optlla, optut = readNeoCMOS(optfn,azelfn,
+                                                     treq=P['tlim'].astype(float))[:5]
         #hst.append(opt['optical']); hstazel.append(optazel)
         #hstlla.append(optlla); hstut.append(optut)
         optdat = opt['optical']
     else:
-        optdat=optazel=optlla=optut=utlim=None
+        optdat=optazel=optlla=optut=None
 #%% (5) transform magnetic zenith PFISR to HiST frame, assuming single altitude
     # now this happens inside do joint plot
 #%% (6) plot joint
-    dojointplot(lpsum,spec,freq,beamazel,optdat,optazel,optlla,isrlla, heightkm,optut,utlim,P)
+    dojointplot(lpsum,spec,freq,beamazel,optdat,optazel,optlla,isrlla, heightkm,optut,P)
