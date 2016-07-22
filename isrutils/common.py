@@ -1,4 +1,4 @@
-from six import integer_types
+from six import integer_types, string_types
 from h5py import Dataset
 from numpy import (array,ndarray,unravel_index,ones,timedelta64,
                    datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
@@ -27,7 +27,7 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
 
     return {'az':az,'el':el,'srng':srng}
 
-def timesync(tisr,topt,tlim=(None,None)):
+def timesync(tisr,topt,tlim=[None,None]):
     """
     TODO: for now, assume optical is always faster
     inputs
@@ -43,12 +43,15 @@ def timesync(tisr,topt,tlim=(None,None)):
         tisr = tisr.astype(float)/1e9
 
     assert ((tisr>1e9) & (tisr<2e9)).all(),'date sanity check'
+
+    if isinstance(tlim[0],datetime64):
+        tlim = tlim.astype(float)
 # separate comparison
     if topt is None:
         topt = (nan,nan)
 #%% interpolate isr indices to opt (assume opt is faster, a lot of duplicates iisr)
-    tstart = nanmax([tlim[0],tisr[0], topt[0]])
-    tend   = nanmin([tlim[1],tisr[-1],topt[-1]])
+    tstart = nanmax([tlim[0], tisr[0], topt[0]])
+    tend   = nanmin([tlim[1], tisr[-1], topt[-1]])
 
     if topt is not None and isfinite(topt[0]):
         f = interp1d(tisr,range(tisr.size),'nearest',assume_sorted=True)
@@ -105,6 +108,12 @@ def findindex2Dsphere(azimg,elimg,az,el):
 
     adist = angledist(azimg,elimg,az,el)
     return unravel_index(adist.argmin(), azimg.shape)
+
+def str2dt(ut):
+    """
+    """
+    assert isinstance(ut,(list,tuple,ndarray)) and isinstance(ut[0],string_types)
+    return array([datetime64(t) for t in ut])
 
 
 def ut2dt(ut):

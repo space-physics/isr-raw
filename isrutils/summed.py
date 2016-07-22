@@ -2,6 +2,7 @@
 """
 summed measurements and plots
 """
+from . import Path
 from xarray import DataArray
 from numpy import absolute,nan,linspace,percentile,datetime64
 from matplotlib.pyplot import figure,draw,pause,show
@@ -18,7 +19,7 @@ from GeoData.plotting import plotazelscale
 vidnorm = LogNorm()
 
 #%% joint isr optical plot
-def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,utlim,P):
+def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,P):
     """
     ds: radar data
 
@@ -64,7 +65,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
         fg.tight_layout()
 #%% time sync
     tisr = ds.time.values
-    Iisr,Iopt = timesync(tisr,utopt,utlim)
+    Iisr,Iopt = timesync(tisr,utopt,P['tlim'])
 #%% iterate
     first = True
     Writer = anim.writers['ffmpeg']
@@ -72,8 +73,10 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
                     metadata=dict(artist='Michael Hirsch'),
                     codec='ffv1')
 
-    print('writing {}'.format(P['ofn']))
-    with writer.saving(fg, str(P['ofn']),150):
+    ofn = Path(P['odir']).expanduser() / 'joint_{}'.format(utopt[0])
+
+    print('writing {}'.format(ofn))
+    with writer.saving(fg, str(ofn),150):
       for iisr,iopt in zip(Iisr,Iopt):
         ctisr = tisr[iisr]
 #%% update isr plot
@@ -95,11 +98,11 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
 
         writer.grab_frame(facecolor='k')
 
-        if P['ofn'].suffix == '.png':
+        if ofn.suffix == '.png':
             try:
-                writeplots(fg,ctopt,P['ofn'],P['makeplot'],ctxt='joint')
+                writeplots(fg,ctopt,ofn,P['makeplot'],ctxt='joint')
             except UnboundLocalError:
-                writeplots(fg,ctisr,P['ofn'],P['makeplot'],ctxt='isr')
+                writeplots(fg,ctisr,ofn,P['makeplot'],ctxt='isr')
 
 def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
     """
