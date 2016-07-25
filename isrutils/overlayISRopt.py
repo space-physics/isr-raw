@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from . import Path
-from numpy import array,datetime64
+#
+import matplotlib
+matplotlib.use('agg') # NOTE comment out this line to enable visible plots
 #
 from .plasmaline import readplasmaline#,plotplasmaline
 from .summed import sumlongpulse,dojointplot
@@ -36,8 +38,7 @@ def overlayisrhist(P):
 #%% (4) load optical data
     if optfn is not None:
         #hst = []; hstazel=[]; hstlla=[]; hstut=[]
-        opt, _, optazel, optlla, optut = readNeoCMOS(optfn,azelfn,
-                                                     treq=P['tlim'].astype(float))[:5]
+        opt, _, optazel, optlla, optut = readNeoCMOS(optfn,azelfn, treq=P['tlim'])[:5]
         #hst.append(opt['optical']); hstazel.append(optazel)
         #hstlla.append(optlla); hstut.append(optut)
         optdat = opt['optical']

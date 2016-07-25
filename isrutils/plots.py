@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from time import time
+from datetime import datetime
 from six import integer_types
 from numpy import log10,absolute, meshgrid, sin, radians,datetime64
 from numpy.ma import masked_invalid
@@ -9,21 +11,24 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import SecondLocator, DateFormatter
 #
 from histutils.findnearest import find_nearest as findnearest
-from .common import expfn,timeticks,writeplots
+from .common import expfn,timeticks,writeplots,str2dt
 
 def plotsnr(snr,fn,P,ctxt=''):
     if not isinstance(snr,DataArray):
         return
 
+    P['tlim'] = str2dt(P['tlim'])
 
     assert snr.ndim==2 and snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
 
     fg = figure(figsize=(15,12))
     ax = fg.gca()
-    h=ax.pcolormesh(snr.time, snr.srng,
-                     10*masked_invalid(log10(snr.values)),
-                     vmin=P['vlim'][0], vmax=P['vlim'][1],
-                     cmap='cubehelix_r')
+    # as of Numpy 1.11, Matplotlib 1.5, must convert to datetime64[ms] before python datetime.
+    h=ax.pcolormesh(snr.time,
+                    snr.srng,
+                    10*masked_invalid(log10(snr.values)),
+                    vmin=P['vlim'][0], vmax=P['vlim'][1],
+                    cmap='cubehelix_r')
     ax.autoscale(True,tight=True)
 
     ax.set_xlim(P['tlim'])
@@ -162,6 +167,8 @@ def plotplasmaline(specdown,specup,fn, P):
     if not (isinstance(specdown,DataArray) or isinstance(specup,DataArray)):
         return
 
+    tic = time()
+
     T = specdown.time
     assert (T==specup.time).all(),'times do not match for downshift and upshift plasma spectrum'
 
@@ -192,8 +199,14 @@ def plotplasmaline(specdown,specup,fn, P):
             except KeyError as e:
                 print('E: {} plotting {} {}'.format(e,fshift,t))
 
+        fg.tight_layout()
+
         # write plots here else you'll double write plots
         writeplots(fg,t,P['odir'],P['makeplot'],'plasmaLine')
+
+    if P['verbose']:
+        print('plasma line plot took {:.1f} sec.'.format(time()-tic))
+
 
 def plotplasmaoverlay(specdown,specup,t,fg,P):
 
@@ -233,6 +246,9 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
     h=ax.pcolormesh(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
                     vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
 
+#    h=ax.imshow(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
+#                    vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
+
     ax.set_xlabel('Doppler frequency [MHz]')
     if ctxt.startswith('down'):
         ax.set_ylabel('slant range [km]')
@@ -248,7 +264,6 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
     xfreq(ax,spec,P['flim_pl'])
 
     #ax.tick_params(axis='both', which='both', direction='out')
-    fg.tight_layout()
 
 def xfreq(ax,spec,Pflim):
     if spec.freq.values[0] < 0 : # downshift

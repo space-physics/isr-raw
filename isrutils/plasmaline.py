@@ -16,6 +16,7 @@ def readplasmaline(fn,P):
     outputs:
     spec: Ntime x Nrange x Nfreq
     """
+    tic = time()
     fn = Path(fn).expanduser()
     assert isinstance(P['beamid'],integer_types),'beam specification must be a scalar integer'
 
@@ -27,6 +28,9 @@ def readplasmaline(fn,P):
     specdown = readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt1.h5'), P['beamid'], FREQSHIFT[0], P['tlim'])
 #%% read upshift spectrum
     specup =   readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt2.h5'), P['beamid'], FREQSHIFT[1], P['tlim'])
+
+    if P['verbose']:
+        print('Took {:.1f} sec. to read plasma data'.format(time()-tic))
 
     return specdown,specup
 
