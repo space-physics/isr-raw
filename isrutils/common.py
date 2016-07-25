@@ -5,7 +5,7 @@ from datetime import datetime,timedelta
 from dateutil.parser import parse
 from pytz import UTC
 from h5py import Dataset
-from numpy import (array,ndarray,unravel_index,ones,datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
+from numpy import (array,ndarray,unravel_index,ones, datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from matplotlib.pyplot import close
 from matplotlib.dates import MinuteLocator,SecondLocator
@@ -38,25 +38,25 @@ def timesync(tisr,topt,tlim=[None,None]):
     """
     TODO: for now, assume optical is always faster
     inputs
-    tisr: vector of datetime64 for ISR
-    topt: vector of datetime64 for camera
+    tisr: vector of datetime for ISR
+    topt: vector of datetime for camera
     tlim: start,stop UT1 Unix time request
 
     output
     iisr: indices (integers) of isr to playback at same time as camera
     iopt: indices (integers) of optical to playback at same time as isr
     """
-    if isinstance(tisr[0],datetime64):
+    if isinstance(tisr[0],datetime):
+        tisr = array([t.timestamp() for t in tisr]) #must be ndarray
+    elif isinstance(tisr[0],datetime64):
         tisr = tisr.astype(float)/1e9
-    elif isinstance(tisr[0],datetime):
-        tisr = array([t.timestamp() for t in tisr])
 
     assert ((tisr>1e9) & (tisr<2e9)).all(),'date sanity check'
 
-    if isinstance(tlim[0],datetime64): #only for 'ms'
-        tlim = tlim.astype(float)
-    elif isinstance(tlim[0],datetime):
+    if isinstance(tlim[0],datetime):
         tlim = array([t.timestamp() for t in tlim])
+
+    assert isinstance(tisr[0],float), 'datetime64 is not wanted here, lets use ut1_unix float for minimum conversion effort'
 # separate comparison
     if topt is None:
         topt = (nan,nan)
@@ -85,9 +85,9 @@ def cliptlim(t,tlim):
     tind = ones(t.size,dtype=bool)
 
     if tlim[0] is not None:
-        tind &= datetime64(tlim[0]) <= t
+        tind &= tlim[0] <= t
     if tlim[1] is not None:
-        tind &= t <= datetime64(tlim[1])
+        tind &= t <= tlim[1]
 
     return t[tind],tind
 
@@ -123,9 +123,14 @@ def findindex2Dsphere(azimg,elimg,az,el):
 def str2dt(ut):
     """
     """
-    assert isinstance(ut,(list,tuple,ndarray)) and isinstance(ut[0],string_types)
-    return array([parse(t) for t in ut])
+    assert isinstance(ut,(list,tuple,ndarray))
 
+    if isinstance(ut[0],string_types):
+        return array([parse(t) for t in ut])
+    elif isinstance(ut[0],datetime):
+        return ut
+    else:
+        raise TypeError('unknown data type {}'.format(ut[0].dtype))
 
 def ut2dt(ut):
     assert isinstance(ut,ndarray) and ut.ndim in (1,2)
@@ -135,7 +140,7 @@ def ut2dt(ut):
     elif ut.ndim==2:
         T=ut[:,0]
     #return array([datetime64(int(t*1e3),'ms') for t in T]) # datetime64 is too buggy as of Numpy 1.11 and xarray 0.7
-    return array([datetime.fromtimestamp(t) for t in T])
+    return array([datetime.fromtimestamp(t,tz=UTC) for t in T])
 
 #def findstride(beammat:Dataset,bid:int):
 def findstride(beammat, bid):
@@ -189,10 +194,12 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
         odir = Path(odir).expanduser()
         odir.mkdir(parents=True,exist_ok=True)
 
-        if isinstance(t,DataArray):
-            t = datetime64(t.item(),'ns')
+        if isinstance(t,(DataArray)):
+              t = datetime.fromtimestamp(t.item()/1e9)
+        elif isinstance(t,(float,integer_types)): # UTC assume
+              t = datetime.fromtimestamp(t/1e9)
 
-        ppth = odir / pathvalidate.sanitize_filename(ctxt+str(t)[:23]+'.png','-')  #:23 keeps up to millisecond if present.
+        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-3] + '.png','-')  #:23 keeps up to millisecond if present.
 
         print('saving {}'.format(ppth))
 
@@ -203,14 +210,14 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
 #def timeticks(tdiff:timedelta ):
 def timeticks(tdiff):
     if isinstance(tdiff,DataArray): #len==1
-        tdiff = datetime.fromtimestamp(tdiff.item())
-    assert isinstance(tdiff,timedelta)
+        tdiff = timedelta(microseconds=tdiff.item()/1e3)
+    assert isinstance(tdiff,timedelta),'expecting datetime.timedelta'
 
-    if tdiff > timedelta64(20,'m'):
+    if tdiff > timedelta(minutes=20):
         return MinuteLocator(interval=5)
-    elif (timedelta64(1,'m')<tdiff) & (tdiff<=timedelta64(20,'m')):
+    elif (timedelta(minutes=1) < tdiff) & (tdiff<=timedelta(minutes=20)):
         return MinuteLocator(interval=1)
-    elif (timedelta64(30,'s')<tdiff) &(tdiff<=timedelta64(1,'m')):
+    elif (timedelta(seconds=30) < tdiff) &(tdiff<=timedelta(minutes=1)):
         return SecondLocator(interval=5)
     else:
         return SecondLocator(interval=2)
@@ -232,7 +239,7 @@ def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p.add_argument('-o','--odir',help='directory to write files to',default='')
     p = p.parse_args()
 
-    tlim = (datetime64(p.tlim[0]), datetime64(p.tlim[1])) if p.tlim else (None,None)
+    tlim = (p.tlim[0], p.tlim[1]) if p.tlim else (None,None)
 
     return (p,
             Path(p.isrfn).expanduser(),

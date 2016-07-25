@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 from time import time
-from datetime import datetime
 from six import integer_types
-from numpy import log10,absolute, meshgrid, sin, radians,datetime64
+from datetime import datetime
+from pytz import UTC
+from numpy import log10,absolute, meshgrid, sin, radians
 from numpy.ma import masked_invalid
 from xarray import DataArray
 #
@@ -23,7 +24,7 @@ def plotsnr(snr,fn,P,ctxt=''):
 
     fg = figure(figsize=(15,12))
     ax = fg.gca()
-    # as of Numpy 1.11, Matplotlib 1.5, must convert to datetime64[ms] before python datetime.
+
     h=ax.pcolormesh(snr.time,
                     snr.srng,
                     10*masked_invalid(log10(snr.values)),
@@ -43,10 +44,7 @@ def plotsnr(snr,fn,P,ctxt=''):
     if P['tlim'][0] is None or P['tlim'][1] is None:
         tdiff = snr.time[-1] - snr.time[0]
     else:
-        if isinstance(P['tlim'][0],str):
-            tdiff = datetime64(P['tlim'][1]) - datetime64(P['tlim'][0])
-        elif isinstance(P['tlim'][0],datetime64):
-            tdiff = P['tlim'][1] - P['tlim'][0]
+        tdiff = P['tlim'][1] - P['tlim'][0]
 
     ticker = timeticks(tdiff)
 
@@ -58,8 +56,7 @@ def plotsnr(snr,fn,P,ctxt=''):
 
     Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
     ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(expfn(fn),
-                 str(datetime64(snr.time[0].item(),'ns'))[:10],
-                 Ts.item()/1e9))
+                 str(snr.time[0].item())[:10], Ts.item()))
 
     for m in P['tmark']:
         try:
@@ -74,8 +71,7 @@ def plotsnr(snr,fn,P,ctxt=''):
 
     fg.tight_layout()
 
-    writeplots(fg, str(datetime64(snr.time[0].item(),'ns')),
-                                  P['odir'],P['makeplot'],'power_'+expfn(fn)+ctxt)
+    writeplots(fg, snr.time[0].item(), P['odir'],P['makeplot'],'power_'+expfn(fn)+ctxt)
 
     return fg
 
@@ -232,8 +228,7 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
     ax.set_ylim(P['vlim_pl'][:2])
     ax.set_xlim(P['flim_pl'])
 
-    fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt,
-                                            str(datetime64(t.item(),'ns'))[:19]))
+    fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt, str(t.item)[:19]))
 
 
 def plotplasmatime(spec,t,fg,ax,P,ctxt):
@@ -259,7 +254,7 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
     ax.autoscale(True,'both',tight=True) #before manual lim setting
     ax.set_ylim(P['zlim_pl'])
 
-    ax.set_title('Plasma line {}'.format(str(datetime64(t.item(),'ns'))[:19]))
+    ax.set_title('Plasma line {}'.format(str(t.item())[:19]))
 #%%
     xfreq(ax,spec,P['flim_pl'])
 
