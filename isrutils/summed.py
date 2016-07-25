@@ -3,8 +3,11 @@
 summed measurements and plots
 """
 from . import Path
+import pathvalidate
 from xarray import DataArray
-from numpy import absolute,nan,linspace,percentile,datetime64
+from datetime import datetime
+from pytz import UTC
+from numpy import absolute,nan,linspace,percentile
 from matplotlib.pyplot import figure,draw,pause,show
 from matplotlib.cm import jet
 import matplotlib.gridspec as gridspec
@@ -73,7 +76,8 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
                     metadata=dict(artist='Michael Hirsch'),
                     codec='ffv1')
 
-    ofn = Path(P['odir']).expanduser() / 'joint_{}'.format(utopt[0])
+    ofn = Path(P['odir']).expanduser() / ('joint_' +
+            pathvalidate.sanitize_filename(str(datetime.fromtimestamp(utopt[0]))[:-3]) + '.mkv')
 
     print('writing {}'.format(ofn))
     with writer.saving(fg, str(ofn),150):
@@ -84,7 +88,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
         t1.set_text('isr: {}'.format(ctisr))
 #%% update hist plot
         if iopt is not None:
-            ctopt = datetime64(int(utopt[iopt]*1e3),'ms')
+            ctopt = datetime.fromtimestamp(utopt[iopt], tz=UTC)
             h0.set_data(optical[iopt,...])
             t0.set_text('optical: {}'.format(ctopt))
             s0.set_array(ds.loc[ctisr]) #FIXME circle not changing magnetic zenith beam color? NOTE this is isr time index
@@ -126,12 +130,18 @@ def sumlongpulse(P):
     return snrsamp.sum(axis=0),azel,lla
 
 def plotsumlongpulse(dsum,ax,rmode,zlim):
-    assert isinstance(dsum,DataArray) and dsum.ndim==1
+    assert isinstance(dsum,DataArray) and dsum.ndim==1,'incorrect input type'
+    assert dsum.size > 1,'must have at least two data points to plot'
+
     if not ax:
         fg = figure()
         ax = fg.gca()
 
-    dsum.plot(ax=ax)
+    try:
+        dsum.plot(ax=ax)
+    except ValueError as e:
+        print('Windows bug?ValueError: ordinal must be >= 1     your error is {}'.format(e) )
+
     ax.set_ylabel('summed power')
     ax.set_xlabel('time [UTC]')
     ax.set_title('{} summed over altitude ({}..{})km'.format(rmode,zlim[0],zlim[1]))

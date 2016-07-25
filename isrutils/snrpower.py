@@ -98,9 +98,7 @@ def readsnr_int(fn,bid):
         print('integrated pulse data not found {}  {}'.format(fn,e))
         return
 #%% return requested beam data only
-    return DataArray(data=power,
-                     dims=['srng','time'],
-                     coords={'srng':srng,'time':t})
+    return DataArray(data=power, dims=['srng','time'], coords={'srng':srng,'time':t})
 
 def filekey(f):
     # detect old and new HDF5 AMISR files
