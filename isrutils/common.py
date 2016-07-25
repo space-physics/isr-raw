@@ -1,9 +1,12 @@
-from six import integer_types, string_types
-from h5py import Dataset
-from numpy import (array,ndarray,unravel_index,ones,timedelta64,
-                   datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
-from scipy.interpolate import interp1d
 from . import Path
+from six import integer_types, string_types
+import pathvalidate
+from datetime import datetime,timedelta
+from dateutil.parser import parse
+from pytz import UTC
+from h5py import Dataset
+from numpy import (array,ndarray,unravel_index,ones,datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
+from scipy.interpolate import interp1d
 from matplotlib.pyplot import close
 from matplotlib.dates import MinuteLocator,SecondLocator
 from argparse import ArgumentParser
@@ -12,6 +15,7 @@ from xarray import DataArray
 from pymap3d.haversine import angledist
 from pymap3d.coordconv3d import aer2ecef,ecef2aer
 
+EPOCH = datetime(1970,1,1,0,0,0,tzinfo=UTC)
 
 def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
     """
@@ -23,7 +27,10 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
     isrlla = asarray(isrlla); optlla=asarray(optlla)
     assert isrlla.size == optlla.size == 3
     x,y,z = aer2ecef(beamazel[0],beamazel[1],heightkm*1e3,isrlla[0],isrlla[1],isrlla[2])
-    az,el,srng= ecef2aer(x,y,z,optlla[0],optlla[1],optlla[2])
+    try:
+        az,el,srng = ecef2aer(x,y,z,optlla[0],optlla[1],optlla[2])
+    except IndexError:
+        az,el,srng = ecef2aer(x,y,z,optlla['lat'],optlla['lon'],optlla['alt_km'])
 
     return {'az':az,'el':el,'srng':srng}
 
@@ -41,11 +48,15 @@ def timesync(tisr,topt,tlim=[None,None]):
     """
     if isinstance(tisr[0],datetime64):
         tisr = tisr.astype(float)/1e9
+    elif isinstance(tisr[0],datetime):
+        tisr = array([t.timestamp() for t in tisr])
 
     assert ((tisr>1e9) & (tisr<2e9)).all(),'date sanity check'
 
-    if isinstance(tlim[0],datetime64):
+    if isinstance(tlim[0],datetime64): #only for 'ms'
         tlim = tlim.astype(float)
+    elif isinstance(tlim[0],datetime):
+        tlim = array([t.timestamp() for t in tlim])
 # separate comparison
     if topt is None:
         topt = (nan,nan)
@@ -113,7 +124,7 @@ def str2dt(ut):
     """
     """
     assert isinstance(ut,(list,tuple,ndarray)) and isinstance(ut[0],string_types)
-    return array([datetime64(t) for t in ut])
+    return array([parse(t) for t in ut])
 
 
 def ut2dt(ut):
@@ -123,7 +134,8 @@ def ut2dt(ut):
         T=ut
     elif ut.ndim==2:
         T=ut[:,0]
-    return array([datetime64(int(t*1e3),'ms') for t in T])
+    #return array([datetime64(int(t*1e3),'ms') for t in T]) # datetime64 is too buggy as of Numpy 1.11 and xarray 0.7
+    return array([datetime.fromtimestamp(t) for t in T])
 
 #def findstride(beammat:Dataset,bid:int):
 def findstride(beammat, bid):
@@ -180,18 +192,19 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
         if isinstance(t,DataArray):
             t = datetime64(t.item(),'ns')
 
-        ppth = odir / (ctxt+str(t)[:23]+'.png')  #:23 keeps up to millisecond if present.
+        ppth = odir / pathvalidate.sanitize_filename(ctxt+str(t)[:23]+'.png','-')  #:23 keeps up to millisecond if present.
 
         print('saving {}'.format(ppth))
+
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
-        if 'show' not in makeplot:
-            close(fg)
+
+        close(fg)
 
 #def timeticks(tdiff:timedelta ):
 def timeticks(tdiff):
     if isinstance(tdiff,DataArray): #len==1
-        tdiff = timedelta64(int(tdiff.item()),'ns')
-    assert isinstance(tdiff,timedelta64)
+        tdiff = datetime.fromtimestamp(tdiff.item())
+    assert isinstance(tdiff,timedelta)
 
     if tdiff > timedelta64(20,'m'):
         return MinuteLocator(interval=5)

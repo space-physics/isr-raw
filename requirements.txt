@@ -1,10 +1,10 @@
 setuptools
 six
 nose
+python-dateutil
+pytz
 numpy
-pandas
+xarray
 matplotlib
 seaborn
 h5py
-python-dateutil
-pytz
