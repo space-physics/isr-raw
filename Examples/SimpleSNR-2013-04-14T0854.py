@@ -4,8 +4,6 @@
 """
 from isrutils.looper import simpleloop
 #%% users param
-
-
 P={
 'path':'~/data/2013-04-14/isr',
 'makeplot': [],
@@ -22,7 +20,7 @@ P={
 'zlim': (90, None),
 'tlim': ['2013-04-14T08:54:00Z',
          '2013-04-14T08:54:50Z'],
-   'tmark':[],
+'tmark':[],
 'verbose': True,
 #   'tmark': [(datetime(2013,4,14,8,54,30,tzinfo=UTC),300.,'onset',-1),
 #             (datetime(2013,4,14,8,54,41,tzinfo=UTC),300.,'quiescence',1)]

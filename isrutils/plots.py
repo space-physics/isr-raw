@@ -25,11 +25,15 @@ def plotsnr(snr,fn,P,ctxt=''):
     fg = figure(figsize=(15,12))
     ax = fg.gca()
 
+    #try:
     h=ax.pcolormesh(snr.time,
-                    snr.srng,
-                    10*masked_invalid(log10(snr.values)),
-                    vmin=P['vlim'][0], vmax=P['vlim'][1],
-                    cmap='cubehelix_r')
+                        snr.srng,
+                        10*masked_invalid(log10(snr.values)),
+                        vmin=P['vlim'][0], vmax=P['vlim'][1],
+                        cmap='cubehelix_r')
+   # except ValueError as e:
+    #    print('Windows seems to wrongly get error ValueError: ordinal must be >= 1.  Your error is {}'.format(e))
+
     ax.autoscale(True,tight=True)
 
     ax.set_xlim(P['tlim'])
@@ -56,7 +60,7 @@ def plotsnr(snr,fn,P,ctxt=''):
 
     Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
     ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(expfn(fn),
-                 str(snr.time[0].item())[:10], Ts.item()))
+                 str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10], Ts.item()/1e9))
 
     for m in P['tmark']:
         try:

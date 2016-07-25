@@ -194,6 +194,7 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
         odir = Path(odir).expanduser()
         odir.mkdir(parents=True,exist_ok=True)
 
+
         if isinstance(t,(DataArray)):
               t = datetime.fromtimestamp(t.item()/1e9)
         elif isinstance(t,(float,integer_types)): # UTC assume
