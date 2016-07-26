@@ -196,11 +196,11 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
 
 
         if isinstance(t,(DataArray)):
-              t = datetime.fromtimestamp(t.item()/1e9)
+              t = datetime.fromtimestamp(t.item()/1e9, tz=UTC)
         elif isinstance(t,(float,integer_types)): # UTC assume
-              t = datetime.fromtimestamp(t/1e9)
+              t = datetime.fromtimestamp(t/1e9, tz=UTC)
 
-        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-3] + '.png','-')  #:23 keeps up to millisecond if present.
+        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + '.png','-')  #:23 keeps up to millisecond if present.
 
         print('saving {}'.format(ppth))
 

@@ -64,13 +64,13 @@ def isrselect(fn,P):
         tic = time()
         snrsamp,azel,isrlla = readpower_samples(fn,P)
         if P['verbose']:
-            print('sample read took {} sec.'.format(time()-tic))
+            print('sample read took {:.1f} sec.'.format(time()-tic))
 #%% ACF
     if ft in ('dt0','dt3') and P['acf']:
         tic = time()
         readACF(fn,P)
         if P['verbose']:
-            print('ACF/PSD read & plot took {} sec.'.format(time()-tic))
+            print('ACF/PSD read & plot took {:.1f} sec.'.format(time()-tic))
 #%% multi-second integration (numerous integrated pulses)
     snrint=None
     if ft in ('dt0','dt3') and P['int']:
