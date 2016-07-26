@@ -156,12 +156,13 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
     c=fg.colorbar(h,ax=ax)
     c.set_label('Power [dB]')
     ax.set_ylabel('altitude [km]')
-    ax.set_title('{} {}'.format(expfn(fn),t))
+    ax.set_title('{} {}'.format(expfn(fn),str(t)[:-6]))
     ax.autoscale(True,axis='x',tight=True)
     ax.set_xlabel('frequency [kHz]')
 
 
     writeplots(fg,t,P['odir'],P['makeplot'],'acf_'+expfn(fn))
+#%%
 
 def plotplasmaline(specdown,specup,fn, P):
     if not (isinstance(specdown,DataArray) or isinstance(specup,DataArray)):
@@ -258,7 +259,7 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
     ax.autoscale(True,'both',tight=True) #before manual lim setting
     ax.set_ylim(P['zlim_pl'])
 
-    ax.set_title('Plasma line {}'.format(str(t.item())[:19]))
+    ax.set_title('Plasma line {}'.format(str(datetime.fromtimestamp(t.item()/1e9, tz=UTC))[:-6]))
 #%%
     xfreq(ax,spec,P['flim_pl'])
 
