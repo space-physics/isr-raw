@@ -71,10 +71,10 @@ def readpower_samples(fn,P):
         azelrow = f['/Setup/BeamcodeMap'][:,0] == P['beamid']
         azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
     except OSError as e: #problem with file
-        print('{} reading error {}'.format(fn,e))
+        print('{} OSError when reading: \n {}'.format(fn,e))
         return (None,)*3
     except KeyError as e:
-        print('raw pulse data not found {}  {}'.format(fn,e))
+        print('raw pulse data not found {} \n {}'.format(fn,e))
         return (None,)*3
 
     return power,azel,isrlla

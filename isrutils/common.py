@@ -122,13 +122,16 @@ def findindex2Dsphere(azimg,elimg,az,el):
 
 def str2dt(ut):
     """
+    converts parseable string to datetime, pass other suitable types back through.
+    FIXME: assumes all elements are of same type as first element.
+    can't just do list comprehension in case all None
     """
     assert isinstance(ut,(list,tuple,ndarray))
 
-    if isinstance(ut[0],string_types):
-        return array([parse(t) for t in ut])
-    elif isinstance(ut[0],datetime):
+    if ut[0] is None or isinstance(ut[0],datetime):
         return ut
+    elif isinstance(ut[0],string_types):
+        return array([parse(t) for t in ut])
     else:
         raise TypeError('unknown data type {}'.format(ut[0].dtype))
 
@@ -182,6 +185,10 @@ def expfn(fn):
 def sampletime(t,bstride):
     """
     read the time of the pulses to the microsecond level
+    t: h5py variable
+    bstride: 2-D boolean
+
+    returns: 2-D single of UTC time unix epoch
     """
     assert isinstance(t,Dataset),'hdf5 only'
     assert t.ndim == 2
