@@ -2,9 +2,8 @@
 """
 reading PFISR data down to IQ samples
 
-See README.rst for the data types this file handles.
+See Examples/ for more updated specific code
 """
-from matplotlib.pyplot import show
 #
 from isrutils.common import boilerplateapi
 from isrutils.switchyard import isrselect
@@ -14,6 +13,4 @@ p,isrfn,odir,tlim = boilerplateapi()
 spec,freq,snrsamp,azel,isrlla,snrint,snr30int = isrselect(
                         isrfn,p.beamid,tlim,p.zlim,p.t0,p.acf,p.samples)
 #%% plot data
-plotsnr(snrint,isrfn,tlim)
-
-show()
+plotsnr(snrint,isrfn,p,azel)

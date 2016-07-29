@@ -57,14 +57,14 @@ def isrselect(fn,P):
 #%% plasma line
     specdown=specup=None
     if ft in ('dt1','dt2'):
-        specdown,specup = readplasmaline(fn,P)
+        specdown,specup,azel = readplasmaline(fn,P)
 #%% ~ 200 millisecond raw altcode and longpulse
-    snrsamp=azel=isrlla=None
-    if ft in ('dt0','dt3') and P['samples']:
-        tic = time()
+    snrsamp=isrlla=None
+    if ft in ('dt0','dt3'):
+#        tic = time()
         snrsamp,azel,isrlla = readpower_samples(fn,P)
-        if P['verbose']:
-            print('sample read took {:.1f} sec.'.format(time()-tic))
+#        if P['verbose']:
+#            print('sample read took {:.1f} sec.'.format(time()-tic))
 #%% ACF
     if ft in ('dt0','dt3') and P['acf']:
         tic = time()
@@ -73,7 +73,7 @@ def isrselect(fn,P):
             print('ACF/PSD read & plot took {:.1f} sec.'.format(time()-tic))
 #%% multi-second integration (numerous integrated pulses)
     snrint=None
-    if ft in ('dt0','dt3') and P['int']:
+    if ft in ('dt0','dt3'):
         snrint = readsnr_int(fn,P['beamid'])
 #%% 30 second integration plots
     if fn.stem.rsplit('_',1)[-1] == '30sec':

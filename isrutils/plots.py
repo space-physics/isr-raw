@@ -14,7 +14,7 @@ from matplotlib.dates import DateFormatter
 from histutils.findnearest import find_nearest as findnearest
 from .common import expfn,timeticks,writeplots,str2dt
 
-def plotsnr(snr,fn,P,ctxt=''):
+def plotsnr(snr,fn,P,azel,ctxt=''):
     if not isinstance(snr,DataArray):
         return
 
@@ -26,11 +26,10 @@ def plotsnr(snr,fn,P,ctxt=''):
     ax = fg.gca()
 
     #try:
-    h=ax.pcolormesh(snr.time,
-                        snr.srng,
-                        10*masked_invalid(log10(snr.values)),
-                        vmin=P['vlim'][0], vmax=P['vlim'][1],
-                        cmap='cubehelix_r')
+    h=ax.pcolormesh(snr.time, snr.srng,
+                    10*masked_invalid(log10(snr.values)),
+                    vmin=P['vlim'][0], vmax=P['vlim'][1],
+                    cmap='cubehelix_r')
    # except ValueError as e:
     #    print('Windows seems to wrongly get error ValueError: ordinal must be >= 1.  Your error is {}'.format(e))
 
@@ -60,8 +59,8 @@ def plotsnr(snr,fn,P,ctxt=''):
     c.set_label('Power [dB]')
 
     Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
-    ax.set_title('{}  {}  $T_{{sample}}$={:.3f} sec.'.format(expfn(fn),
-                 str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10], Ts.item()/1e9))
+    ax.set_title('Az,El {},{}  {}  {}  $T_{{sample}}$={:.3f} sec.'.format(azel[0],azel[1],expfn(fn),
+                         str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10], Ts.item()/1e9))
 
     for m in P['tmark']:
         try:
@@ -157,7 +156,7 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
     c=fg.colorbar(h,ax=ax)
     c.set_label('Power [dB]')
     ax.set_ylabel('altitude [km]')
-    ax.set_title('{} {}'.format(expfn(fn),str(t)[:-6]))
+    ax.set_title('Az,El {},{}  {} {}'.format(azel[0],azel[1], expfn(fn),str(t)[:-6]))
     ax.autoscale(True,axis='x',tight=True)
     ax.set_xlabel('frequency [kHz]')
 
@@ -165,7 +164,7 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
     writeplots(fg,t,P['odir'],P['makeplot'],'acf_'+expfn(fn))
 #%%
 
-def plotplasmaline(specdown,specup,fn, P):
+def plotplasmaline(specdown,specup,fn, P, azel):
     if not (isinstance(specdown,DataArray) or isinstance(specup,DataArray)):
         return
 
@@ -191,6 +190,8 @@ def plotplasmaline(specdown,specup,fn, P):
             continue
         else: #pcolor
             fg,axs = subplots(1,2,figsize=(15,5),sharey=True)
+            fg.suptitle('Az,El {},{}  Plasma line {}'.format(azel[0],azel[1],
+                            str(datetime.fromtimestamp(t.item()/1e9, tz=UTC))[:-6]))
 #%%
         for s,ax,fshift in zip((specdown,specup),axs,('down','up')):
             try:
@@ -259,8 +260,6 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
 
     ax.autoscale(True,'both',tight=True) #before manual lim setting
     ax.set_ylim(P['zlim_pl'])
-
-    ax.set_title('Plasma line {}'.format(str(datetime.fromtimestamp(t.item()/1e9, tz=UTC))[:-6]))
 #%%
     xfreq(ax,spec,P['flim_pl'])
 

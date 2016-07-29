@@ -34,6 +34,22 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
 
     return {'az':az,'el':el,'srng':srng}
 
+def getazel(f,beamid):
+    """
+    f: h5py HDF5 handle
+    beamid: integer beam id number
+
+    returns: azimuth,elevation pair (degrees)
+    """
+    assert isinstance(beamid,integer_types)
+
+    azelrow = (f['/Setup/BeamcodeMap'][:,0] == beamid).nonzero()[0]
+    assert azelrow.size == 1, 'each beam should have a unique az,el'
+
+    azel = f['/Setup/BeamcodeMap'][azelrow,1:3]
+    assert azel.size==2
+    return azel
+
 def timesync(tisr,topt,tlim=[None,None]):
     """
     TODO: for now, assume optical is always faster
@@ -81,6 +97,8 @@ def timesync(tisr,topt,tlim=[None,None]):
     return iisrreq,ioptreq
 
 def cliptlim(t,tlim):
+    assert isinstance(t,ndarray) and t.ndim==1
+    assert len(tlim) == 2
     # FIXME what if tlim has 'NaT'?  as of Numpy 1.11, only Pandas understands NaT with .isnull()
     tind = ones(t.size,dtype=bool)
 

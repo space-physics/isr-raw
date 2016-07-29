@@ -5,7 +5,7 @@ from . import Path
 import h5py
 from xarray import DataArray
 #
-from .common import findstride,ut2dt,cliptlim
+from .common import findstride,ut2dt,cliptlim,getazel
 
 def readplasmaline(fn,P):
     """
@@ -25,17 +25,16 @@ def readplasmaline(fn,P):
     FREQSHIFT = (-5e6,5e6)
 
 #%% read downshift spectrum
-    specdown = readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt1.h5'), P['beamid'], FREQSHIFT[0], P['tlim'])
+    specdown,azel = readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt1.h5'), P['beamid'], FREQSHIFT[0], P['tlim'])
 #%% read upshift spectrum
-    specup =   readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt2.h5'), P['beamid'], FREQSHIFT[1], P['tlim'])
+    specup,azel =   readplasma(fn.parent / (fn.stem.split('.')[0] + '.dt2.h5'), P['beamid'], FREQSHIFT[1], P['tlim'])
 
     if P['verbose']:
         print('Took {:.1f} sec. to read plasma data'.format(time()-tic))
 
-    return specdown,specup
+    return specdown,specup,azel
 
 def readplasma(fn,beamid,fshift,tlim):
-
     try:
         with h5py.File(str(fn),'r',libver='latest') as f:
             T     = ut2dt(f['/Time/UnixTime'].value)
@@ -43,12 +42,16 @@ def readplasma(fn,beamid,fshift,tlim):
             data = f['/PLFFTS/Data/Spectra/Data'].value[bind,:,:].T
             srng  = f['/PLFFTS/Data/Spectra/Range'].value.squeeze()/1e3
             freq  = f['/PLFFTS/Data/Spectra/Frequency'].value.squeeze() + fshift
+            azel = getazel(f,beamid)
     except OSError as e: #problem with file
         print('{} reading error {}'.format(fn,e))
         return
 #%% spectrum compute
     T,tind = cliptlim(T,tlim)
 
-    return DataArray(data = data[:,:,tind].transpose(2,0,1),
+    spec = DataArray(data = data[:,:,tind].transpose(2,0,1),
                      dims=['time','srng','freq'],
                      coords={'time':T, 'srng':srng, 'freq':freq})
+
+
+    return spec,azel
