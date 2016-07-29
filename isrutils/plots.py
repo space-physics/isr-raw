@@ -9,7 +9,7 @@ from xarray import DataArray
 #
 from matplotlib.pyplot import figure,subplots
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.dates import SecondLocator, DateFormatter
+from matplotlib.dates import DateFormatter
 #
 from histutils.findnearest import find_nearest as findnearest
 from .common import expfn,timeticks,writeplots,str2dt
@@ -50,9 +50,10 @@ def plotsnr(snr,fn,P,ctxt=''):
     else:
         tdiff = P['tlim'][1] - P['tlim'][0]
 
-    ticker = timeticks(tdiff)
+    majtick,mintick = timeticks(tdiff)
 
-    ax.xaxis.set_major_locator(ticker)
+    ax.xaxis.set_major_locator(majtick)
+    ax.xaxis.set_minor_locator(mintick)
     ax.tick_params(axis='both', which='both', direction='out')
 
     c=fg.colorbar(h,ax=ax,fraction=0.075,shrink=0.5)

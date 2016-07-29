@@ -222,13 +222,15 @@ def timeticks(tdiff):
     assert isinstance(tdiff,timedelta),'expecting datetime.timedelta'
 
     if tdiff > timedelta(minutes=20):
-        return MinuteLocator(interval=5)
-    elif (timedelta(minutes=1) < tdiff) & (tdiff<=timedelta(minutes=20)):
-        return MinuteLocator(interval=1)
+        return MinuteLocator(interval=5),MinuteLocator(interval=1)
+    elif (timedelta(minutes=5) < tdiff) & (tdiff<=timedelta(minutes=20)):
+        return MinuteLocator(interval=1),SecondLocator(interval=15)
+    elif (timedelta(minutes=1) < tdiff) & (tdiff<=timedelta(minutes=5)):
+        return SecondLocator(interval=15),SecondLocator(interval=5)
     elif (timedelta(seconds=30) < tdiff) &(tdiff<=timedelta(minutes=1)):
-        return SecondLocator(interval=5)
+        return SecondLocator(interval=5), SecondLocator(interval=2)
     else:
-        return SecondLocator(interval=2)
+        return SecondLocator(interval=2),SecondLocator(interval=1)
 
 def boilerplateapi(descr='loading,procesing,plotting raw ISR data'):
     p = ArgumentParser(description=descr)

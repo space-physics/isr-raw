@@ -149,7 +149,7 @@ def plotsumlongpulse(dsum,ax,rmode,zlim):
     ax.set_yscale('log')
     ax.grid(True)
 
-    ax.xaxis.set_major_locator(timeticks(dsum.time[-1] - dsum.time[0]))
+    ax.xaxis.set_major_locator(timeticks(dsum.time[-1] - dsum.time[0])[0])
     return ax
 
 #%% plasma line
@@ -179,4 +179,4 @@ def plotsumplasmaline(plsum):
     ax.set_xlabel('time [UTC]')
     ax.set_title('plasma line summed over altitude (200..350)km and frequency (3.5..5.5)MHz')
 
-    ax.xaxis.set_major_locator(timeticks(plsum.time[-1]-plsum.time[0]))
+    ax.xaxis.set_major_locator(timeticks(plsum.time[-1]-plsum.time[0])[0])
