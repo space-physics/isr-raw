@@ -14,19 +14,22 @@ from .switchyard import isrselect
 from .plots import plotsnr,plotplasmaline
 
 def simpleloop(flist,P):
-
+#%% api catchall
     if not 'odir' in P:
         P['odir'] = None
 
     if not 'makeplot' in P:
         P['makeplot'] = []
 
+    if not 'tlim' in P:
+        P['tlim'] = [None,None]
+
     Pint = deepcopy(P) # copy does not work, deepcopy works
-    if Pint['vlim'][0] is not None: Pint['vlim'][0] = Pint['vlim'][0] + 30
-    if Pint['vlim'][1] is not None: Pint['vlim'][1] = Pint['vlim'][1] + 30
+    if Pint['vlim'][0] is not None: Pint['vlim'][0] = Pint['vlim'][0] + 15
+    if Pint['vlim'][1] is not None: Pint['vlim'][1] = Pint['vlim'][1] + 15
 
     P['tlim'] = str2dt(P['tlim'])
-
+#%%
     ax = {}
     for f in flist:
         ft = ftype(f)

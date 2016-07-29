@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-"""
-2013-04-14 08:24 UT event
-"""
 from isrutils.looper import simpleloop
 #%% users param
 P={

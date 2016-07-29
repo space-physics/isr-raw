@@ -120,20 +120,28 @@ def findindex2Dsphere(azimg,elimg,az,el):
     adist = angledist(azimg,elimg,az,el)
     return unravel_index(adist.argmin(), azimg.shape)
 
-def str2dt(ut):
+def str2dt(tstr):
     """
     converts parseable string to datetime, pass other suitable types back through.
     FIXME: assumes all elements are of same type as first element.
     can't just do list comprehension in case all None
     """
-    assert isinstance(ut,(list,tuple,ndarray))
+    tstr = atleast_1d(tstr)
+    assert tstr.ndim == 1
 
-    if ut[0] is None or isinstance(ut[0],datetime):
-        return ut
-    elif isinstance(ut[0],string_types):
-        return array([parse(t) for t in ut])
-    else:
-        raise TypeError('unknown data type {}'.format(ut[0].dtype))
+    ut = []
+
+    for t in tstr:
+        if t is None or isinstance(t,datetime):
+            ut.append(t)
+        elif isinstance(t,string_types):
+            ut.append(parse(t))
+        elif isinstance(t,(float,integer_types)):
+            ut.append(datetime.fromtimestamp(t,tz=UTC))
+        else:
+            raise TypeError('unknown data type {}'.format(ut[0].dtype))
+
+    return ut
 
 def ut2dt(ut):
     assert isinstance(ut,ndarray) and ut.ndim in (1,2)
