@@ -10,8 +10,6 @@ P={
 'zlim_pl': [None,None],
 'vlim_pl': [75,95],
 'flim_pl': [3.5,5.5],
-'int': False,
-'samples': True,
 'odir': 'out/2013-04-14T0824',
 'vlim': [30, 60],
 'zlim': (90, None),

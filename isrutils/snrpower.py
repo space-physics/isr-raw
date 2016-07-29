@@ -5,7 +5,7 @@ from numpy import ones
 import h5py
 from xarray import DataArray
 #
-from .common import ut2dt,findstride,sampletime,cliptlim
+from .common import ut2dt,findstride,sampletime,cliptlim,getazel
 
 def samplepower(sampiq,bstride,ut,srng,P):
     """
@@ -68,8 +68,7 @@ def readpower_samples(fn,P):
         except KeyError:
             return (None,)*3
 #%% return az,el of this beam
-        azelrow = f['/Setup/BeamcodeMap'][:,0] == P['beamid']
-        azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
+        azel = getazel(f,P['beamid'])
     except OSError as e: #problem with file
         print('{} OSError when reading: \n {}'.format(fn,e))
         return (None,)*3

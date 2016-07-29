@@ -36,11 +36,11 @@ def simpleloop(flist,P):
         ax[ft] = {}
         specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P)
         # 15 sec integration
-        ax[ft]['snrint'] = plotsnr(snrint,f,Pint)
+        ax[ft]['snrint'] = plotsnr(snrint,f,Pint,azel)
         # 200 ms integration
-        ax[ft]['snrraw'] = plotsnr(snrsamp,f,P)
+        ax[ft]['snrraw'] = plotsnr(snrsamp,f,P,azel)
 
 #%% plasma line spectrum
-        plotplasmaline(specdown,specup,f,P)
+        plotplasmaline(specdown,specup,f,P,azel)
 #%% ACF
     show()
