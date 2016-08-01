@@ -1,29 +1,20 @@
 #!/usr/bin/env python
-"""
-2013-05-01
-"""
 from isrutils import Path
-from datetime import datetime
-from pytz import UTC
-from matplotlib.pyplot import show
-import seaborn as sns
-sns.set_context('talk',1.5)
-#
 from isrutils.looper import simpleloop
 #%% users param
-vlim=(22,55)
-#zlim=(90, 400)
-zlim = (None,None)
-#tlim=(datetime(2013,5,1,tzinfo=UTC),
-#      datetime(2013,5,1,tzinfo=UTC))
-tlim=(None,None)
-
-
-P={'path':'~/data/2013-05-01/isr',
-   'beamid': 64157,
-   'showacf':False,
-   'showsamples':True,
-  }
+P={
+'path':'~/data/2013-05-01/isr',
+'makeplot': [],
+'beamid': 64157,
+'acf': True,
+'vlimacf': (18,45),
+'zlim_pl': [None,None],
+'vlim_pl': [72,90],
+'flim_pl': [3.5,5.5],
+'odir': 'out/2013-05-01',
+'vlim': [25, 55],
+'zlim': (90, None),
+'verbose': True,}
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 #flist = ( #long pulse
 #         'd0349102.dt0.h5',  ) #alt code
@@ -32,6 +23,4 @@ P={'path':'~/data/2013-05-01/isr',
 
 flist = [x for x in Path(P['path']).expanduser().iterdir() if x.suffix=='.h5']
 
-simpleloop(flist,tlim,zlim,vlim,P)
-
-show()
+simpleloop(flist,P)
