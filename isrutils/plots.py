@@ -62,7 +62,8 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
     ax.set_title('Az,El {},{}  {}  {}  $T_{{sample}}$={:.3f} sec.'.format(azel[0],azel[1],expfn(fn),
                          str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10], Ts.item()/1e9))
 
-    for m in P['tmark']:
+    try:
+      for m in P['tmark']:
         try:
             ax.annotate(m[2],m[:2],
                         xytext=(m[3]*100,50), textcoords='offset points', color='white', ha='left',
@@ -72,6 +73,8 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
                                     'connectionstyle':"arc3,rad=0.2"})
         except Exception as e:
             print('failed to annotate {}'.format(e))
+    except KeyError:
+        pass
 
     fg.tight_layout()
 
