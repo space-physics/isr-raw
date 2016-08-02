@@ -5,7 +5,7 @@ P={
 'path':'~/data/2013-04-14/isr',
 'makeplot': [],
 'beamid': 64157,
-'acf': True,
+'acf': False,
 'vlimacf': (18,45),
 'zlim_pl': [None,None],
 'vlim_pl': [72,90],
@@ -20,7 +20,7 @@ P={
 #%%
 
 flist=('d0346832.dt3.h5',
-       'd0346832.dt1.h5'
+      # 'd0346832.dt1.h5'
        #'d0346832.dt0.h5'
        )
 

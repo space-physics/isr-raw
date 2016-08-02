@@ -16,28 +16,21 @@ d0245970 375km turb 10:10:53
 d0245971 quiescent
 d0245972 quiescent
 """
-from matplotlib.pyplot import show
-import seaborn as sns
-sns.set_context('talk',1.5)
-sns.set_style('ticks')
-#
 from isrutils.looper import simpleloop
 #%% users param
 P={'path':'~/data/2011-03-01/isr',
    'beamid': 64157,
    'acf': False,
    'zlim_pl': [None,None],
-   'vlim_pl': [None,None],
+   'vlim_pl': [72,90],
    'flim_pl': [None,None],
-   'int': False,
-   'samples': True,
    'vlim':  [30,60],
    'vlimacf': (20,50),
     'zlim': (90, None),
-    'tlim': ['2011-03-01T10:06:09',
-             '2011-03-01T10:06:22'],
+    'tlim': ['2011-03-01T10:06:09Z',
+             '2011-03-01T10:06:22Z'],
     'tmark': [],
-    'odir': '',
+    'odir': 'out/2011-03-01',
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (
@@ -61,4 +54,3 @@ flist = (
 )
 simpleloop(flist,P)
 
-show()

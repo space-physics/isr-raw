@@ -221,7 +221,7 @@ def sampletime(t,bstride):
 
     return t.value[bstride]
 
-def writeplots(fg,t,odir,makeplot,ctxt=''):
+def writeplots(fg,t='',odir=None,ctxt=''):
 
     if odir:
         odir = Path(odir).expanduser()
@@ -229,9 +229,10 @@ def writeplots(fg,t,odir,makeplot,ctxt=''):
 
 
         if isinstance(t,(DataArray)):
-              t = datetime.fromtimestamp(t.item()/1e9, tz=UTC)
+            t = datetime.fromtimestamp(t.item()/1e9, tz=UTC)
         elif isinstance(t,(float,integer_types)): # UTC assume
-              t = datetime.fromtimestamp(t/1e9, tz=UTC)
+            t = datetime.fromtimestamp(t/1e9, tz=UTC)
+
 
         ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + '.png','-')  #:23 keeps up to millisecond if present.
 
