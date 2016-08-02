@@ -6,6 +6,7 @@ import h5py
 from xarray import DataArray
 #
 from .common import ut2dt,findstride,sampletime,cliptlim,getazel
+from .plots import plotbeampattern
 
 def samplepower(sampiq,bstride,ut,srng,P):
     """
@@ -56,10 +57,11 @@ def readpower_samples(fn,P):
         try:
             bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],P['beamid'])
             ut = sampletime(f[rawkey+'/RadacHeader/RadacTime'],bstride)
+            plotbeampattern(f,P,f[rawkey+'/RadacHeader/BeamCode'])
         except KeyError:
             bstride = findstride(f['/RadacHeader/BeamCode'],P['beamid']) # old 2007 DT3 files (DT0 2007 didn't have raw data?)
             ut = sampletime(f['/RadacHeader/RadacTime'],bstride)
-
+            plotbeampattern(f,P,f['/RadacHeader/BeamCode'])
 
         srng  = f[rawkey+'/Power/Range'].value.squeeze()/1e3
 

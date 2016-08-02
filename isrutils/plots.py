@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 from time import time
 from six import integer_types
+import h5py
 from datetime import datetime
 from pytz import UTC
-from numpy import log10,absolute, meshgrid, sin, radians
+from numpy import log10,absolute, meshgrid, sin, radians,unique
 from numpy.ma import masked_invalid
+from pandas import DataFrame
 from xarray import DataArray
 #
 from matplotlib.pyplot import figure,subplots
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import DateFormatter
 #
+from GeoData.plotting import polarplot
 from histutils.findnearest import find_nearest as findnearest
 from .common import expfn,timeticks,writeplots,str2dt
 
@@ -78,7 +81,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 
     fg.tight_layout()
 
-    writeplots(fg, snr.time[0].item(), P['odir'],P['makeplot'],'power_'+expfn(fn)+ctxt)
+    writeplots(fg, snr.time[0].item(), P['odir'],'power_'+expfn(fn)+ctxt)
 
     return fg
 
@@ -164,7 +167,7 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
     ax.set_xlabel('frequency [kHz]')
 
 
-    writeplots(fg,t,P['odir'],P['makeplot'],'acf_'+expfn(fn))
+    writeplots(fg,t,P['odir'],'acf_'+expfn(fn))
 #%%
 
 def plotplasmaline(specdown,specup,fn, P, azel):
@@ -189,7 +192,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
         elif P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,integer_types)): #lineplot
             fg = figure()
             plotplasmaoverlay(specdown.loc[t,:,:],specup.loc[t,:,:],t,fg,P)
-            writeplots(fg,t,P['odir'],P['makeplot'],'plasmaLineOverlay')
+            writeplots(fg,t,P['odir'],'plasmaLineOverlay')
             continue
         else: #pcolor
             fg,axs = subplots(1,2,figsize=(15,5),sharey=True)
@@ -208,7 +211,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
         fg.tight_layout()
 
         # write plots here else you'll double write plots
-        writeplots(fg,t,P['odir'],P['makeplot'],'plasmaLine')
+        writeplots(fg,t,P['odir'],'plasmaLine')
 
     if P['verbose']:
         print('plasma line plot took {:.1f} sec.'.format(time()-tic))
@@ -313,3 +316,40 @@ def plotplasmamesh(spec,fg,ax,P,ptype=''):
     ax.set_xlabel('Frequency [MHz]')
     ax.autoscale(True,'y',tight=True)
     fg.tight_layout()
+
+def plotbeampattern(fn,P,beamkey,beamids=None):
+  """
+  plots beams used in the file
+  """
+  try:
+    beamcodes = unique(beamkey)  # for some files they're jumbled
+
+    def _pullbeams(f):
+        M = f['/Setup/BeamcodeMap']
+
+        azel =  DataFrame(index=M[:,0].astype(int),
+                          columns=['az','el'],
+                          data=M[:,1:3])
+
+        date = f['/Time/RadacTimeString'][0][0][:10].decode('utf8')
+
+        return azel,date
+
+
+    if isinstance(fn,h5py.File):
+        beams,date = _pullbeams(fn)
+    else:
+        with h5py.File(str(fn),'r',libver='latest') as f:
+            beams,date = _pullbeams(f)
+
+
+
+    fg = polarplot(beams.loc[beamcodes,'az'], beams.loc[beamcodes,'el'],
+                   title='ISR {} Beam Pattern: {}'.format(beamcodes.size,date),
+                   markerarea=27.4)
+
+    print('{} beam pattern {}'.format(beamcodes.size,fn))
+    writeplots(fg, odir=P['odir'], ctxt='beams_{}'.format(fn))
+
+  except Exception as e:
+      print(e)

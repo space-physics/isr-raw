@@ -3,13 +3,14 @@ from copy import deepcopy
 #
 import matplotlib
 matplotlib.use('agg') # NOTE comment out this line to enable visible plots
-from matplotlib.pyplot import show
+#from matplotlib.pyplot import show
 import seaborn as sns
 sns.set_context('talk',1.5)
 sns.set_style('ticks')
 #
+
 from . import Path
-from .common import ftype,str2dt
+from .common import str2dt
 from .switchyard import isrselect
 from .plots import plotsnr,plotplasmaline
 
@@ -31,17 +32,16 @@ def simpleloop(flist,P):
     P['tlim'] = str2dt(P['tlim'])
 
 #%%
-    ax = {}
+   # ax = {}
     for f in flist:
-        ft = ftype(f)
-        ax[ft] = {}
+      #  ft = ftype(f)
+       # ax[ft] = {}
         specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P)
         # 15 sec integration
-        ax[ft]['snrint'] = plotsnr(snrint,f,Pint,azel)
+        plotsnr(snrint,f,Pint,azel)
         # 200 ms integration
-        ax[ft]['snrraw'] = plotsnr(snrsamp,f,P,azel)
-
+        plotsnr(snrsamp,f,P,azel)
 #%% plasma line spectrum
         plotplasmaline(specdown,specup,f,P,azel)
-#%% ACF
-    show()
+
+#    show()
