@@ -15,6 +15,9 @@ from .switchyard import isrselect
 from .plots import plotsnr,plotplasmaline
 
 def simpleloop(flist,P):
+    flist=sorted(flist) #in case glob
+    if not flist:
+        raise ValueError('no files found in {}'.format(P['path']))
 #%% api catchall
     if not 'odir' in P:
         P['odir'] = None
@@ -38,7 +41,7 @@ def simpleloop(flist,P):
        # ax[ft] = {}
         specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P)
         # 15 sec integration
-        plotsnr(snrint,f,Pint,azel)
+        plotsnr(snrint,f,Pint,azel,ctxt='int_')
         # 200 ms integration
         plotsnr(snrsamp,f,P,azel)
 #%% plasma line spectrum

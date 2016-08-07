@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from . import Path
 from time import time
 from six import integer_types
 import h5py
@@ -27,7 +28,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 
     assert snr.ndim==2 and snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
 
-    fg = figure(figsize=(15,12))
+    fg = figure(figsize=(30,12))
     ax = fg.gca()
 
     #try:
@@ -83,7 +84,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 
     fg.tight_layout()
 #%% output
-    ofn = 'power_'+expfn(fn)+ctxt
+    ofn = ctxt +'power_' + expfn(fn)
 
     writeplots(fg, snr.time[0].item(), P['odir'],ofn)
 
@@ -343,9 +344,11 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
     if isinstance(fn,h5py.File):
         beams,date = _pullbeams(fn)
+        h5fn = Path(fn.filename).name
     else:
         with h5py.File(str(fn),'r',libver='latest') as f:
             beams,date = _pullbeams(f)
+        h5fn = Path(fn).name
 
 
 
@@ -354,7 +357,7 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
                    markerarea=27.4)
 
     print('{} beam pattern {}'.format(beamcodes.size,fn))
-    writeplots(fg, odir=P['odir'], ctxt='beams_{}'.format(fn))
+    writeplots(fg, odir=P['odir'], ctxt='beams_{}'.format(h5fn))
 
   except Exception as e:
       print(e)
