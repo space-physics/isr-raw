@@ -2,7 +2,7 @@
 from time import time
 from six import integer_types
 import h5py
-from datetime import datetime
+from datetime import datetime,timedelta
 from pytz import UTC
 from numpy import log10,absolute, meshgrid, sin, radians,unique
 from numpy.ma import masked_invalid
@@ -10,12 +10,14 @@ from pandas import DataFrame
 from xarray import DataArray
 #
 from matplotlib.pyplot import figure,subplots
+from matplotlib.dates import MinuteLocator,SecondLocator
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import DateFormatter
 #
 from GeoData.plotting import polarplot
 from histutils.findnearest import find_nearest as findnearest
-from .common import expfn,timeticks,writeplots,str2dt
+from .common import expfn,str2dt
+from .io import writeplots
 
 def plotsnr(snr,fn,P,azel,ctxt=''):
     if not isinstance(snr,DataArray):
@@ -356,3 +358,20 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
   except Exception as e:
       print(e)
+
+#def timeticks(tdiff:timedelta ):
+def timeticks(tdiff):
+    if isinstance(tdiff,DataArray): #len==1
+        tdiff = timedelta(microseconds=tdiff.item()/1e3)
+    assert isinstance(tdiff,timedelta),'expecting datetime.timedelta'
+
+    if tdiff > timedelta(minutes=20):
+        return MinuteLocator(interval=5),MinuteLocator(interval=1)
+    elif (timedelta(minutes=5) < tdiff) & (tdiff<=timedelta(minutes=20)):
+        return MinuteLocator(interval=1),SecondLocator(interval=15)
+    elif (timedelta(minutes=1) < tdiff) & (tdiff<=timedelta(minutes=5)):
+        return SecondLocator(interval=15),SecondLocator(interval=5)
+    elif (timedelta(seconds=30) < tdiff) &(tdiff<=timedelta(minutes=1)):
+        return SecondLocator(interval=5), SecondLocator(interval=2)
+    else:
+        return SecondLocator(interval=2),SecondLocator(interval=1)

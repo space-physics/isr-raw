@@ -15,8 +15,10 @@ from matplotlib.colors import LogNorm
 import matplotlib.animation as anim
 #
 from .plasmaline import readplasmaline
-from .common import timeticks,findindex2Dsphere,timesync,projectisrhist,writeplots,expfn
+from .common import timeticks,findindex2Dsphere,timesync,projectisrhist,expfn
 from .snrpower import readpower_samples
+from .io import writeplots
+#
 from GeoData.plotting import plotazelscale
 
 vidnorm = LogNorm()
