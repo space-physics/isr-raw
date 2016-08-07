@@ -1,16 +1,12 @@
 from . import Path
 from six import integer_types, string_types
-import pathvalidate
-from datetime import datetime,timedelta
+from datetime import datetime
 from dateutil.parser import parse
 from pytz import UTC
 from h5py import Dataset
 from numpy import (array,ndarray,unravel_index,ones, datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
-from matplotlib.pyplot import close
-from matplotlib.dates import MinuteLocator,SecondLocator
 from argparse import ArgumentParser
-from xarray import DataArray
 #
 from pymap3d.haversine import angledist
 from pymap3d.coordconv3d import aer2ecef,ecef2aer
@@ -220,44 +216,6 @@ def sampletime(t,bstride):
     assert t.ndim == 2
 
     return t.value[bstride]
-
-def writeplots(fg,t='',odir=None,ctxt=''):
-
-    if odir:
-        odir = Path(odir).expanduser()
-        odir.mkdir(parents=True,exist_ok=True)
-
-
-        if isinstance(t,(DataArray)):
-            t = datetime.fromtimestamp(t.item()/1e9, tz=UTC)
-        elif isinstance(t,(float,integer_types)): # UTC assume
-            t = datetime.fromtimestamp(t/1e9, tz=UTC)
-
-
-        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + '.png','-')  #:23 keeps up to millisecond if present.
-
-        print('saving {}'.format(ppth))
-
-        fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
-
-        close(fg)
-
-#def timeticks(tdiff:timedelta ):
-def timeticks(tdiff):
-    if isinstance(tdiff,DataArray): #len==1
-        tdiff = timedelta(microseconds=tdiff.item()/1e3)
-    assert isinstance(tdiff,timedelta),'expecting datetime.timedelta'
-
-    if tdiff > timedelta(minutes=20):
-        return MinuteLocator(interval=5),MinuteLocator(interval=1)
-    elif (timedelta(minutes=5) < tdiff) & (tdiff<=timedelta(minutes=20)):
-        return MinuteLocator(interval=1),SecondLocator(interval=15)
-    elif (timedelta(minutes=1) < tdiff) & (tdiff<=timedelta(minutes=5)):
-        return SecondLocator(interval=15),SecondLocator(interval=5)
-    elif (timedelta(seconds=30) < tdiff) &(tdiff<=timedelta(minutes=1)):
-        return SecondLocator(interval=5), SecondLocator(interval=2)
-    else:
-        return SecondLocator(interval=2),SecondLocator(interval=1)
 
 def boilerplateapi(descr='loading, processing, plotting raw ISR data'):
     p = ArgumentParser(description=descr)
