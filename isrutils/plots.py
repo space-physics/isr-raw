@@ -80,10 +80,13 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
         pass
 
     fg.tight_layout()
+#%% output
+    ofn = 'power_'+expfn(fn)+ctxt
 
-    writeplots(fg, snr.time[0].item(), P['odir'],'power_'+expfn(fn)+ctxt)
+    writeplots(fg, snr.time[0].item(), P['odir'],ofn)
 
     return fg
+
 
 def plotsnr1d(snr,P):
     if not isinstance(snr,DataArray):
