@@ -6,7 +6,7 @@ P={
 'path':'~/data/2013-05-01/isr',
 'makeplot': [],
 'beamid': 64157,
-'acf': True,
+'acf': False,
 'vlimacf': (18,45),
 'zlim_pl': [None,None],
 'vlim_pl': [72,90],
