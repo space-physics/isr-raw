@@ -219,7 +219,8 @@ def sampletime(t,bstride):
 
 def boilerplateapi(descr='loading, processing, plotting raw ISR data'):
     p = ArgumentParser(description=descr)
-    p.add_argument('-i','--isrfn',help='HDF5 file (or path) to read')
+    p.add_argument('isrfn',help='HDF5 file (or path) to read')
+    p.add_argument('-r','--rtype',help='0: alt code. 1: plasma line. 3: long pulse',type=int,default=3)
     p.add_argument('-c','--optfn',help='optical data HDF5 to read') #,nargs='+',default=('',)
     p.add_argument('-a','--azelfn',help='plate scale file hdf5') #,nargs='+',default=('',)
     p.add_argument('--t0',help='time to extract 1-D vertical plot')
@@ -229,7 +230,7 @@ def boilerplateapi(descr='loading, processing, plotting raw ISR data'):
     p.add_argument('--zlim',help='min,max for altitude [km]',type=float,nargs=2,default=(90.,None))
     p.add_argument('--tlim',help='min,max time range yyyy-mm-ddTHH:MM:SSz',nargs=2,default=[None,None])
     p.add_argument('--flim',help='frequency limits to plots',type=float,nargs=2,default=(None,None))
-    p.add_argument('-o','--odir',help='directory to write files to',default='')
+    p.add_argument('-o','--odir',help='directory to write files to',default='.')
     p = p.parse_args()
 
     return p

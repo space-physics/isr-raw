@@ -68,15 +68,15 @@ def readpower_samples(fn,P):
         try:
             power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,P) #I + jQ   # Ntimes x striped x alt x real/comp
         except KeyError:
-            return (None,)*3
+            return (None,(None,None),None)
 #%% return az,el of this beam
         azel = getazel(f,P['beamid'])
     except OSError as e: #problem with file
         print('{} OSError when reading: \n {}'.format(fn,e))
-        return (None,)*3
+        return (None,(None,None),None)
     except KeyError as e:
         print('raw pulse data not found {} \n {}'.format(fn,e))
-        return (None,)*3
+        return (None,(None,None),None)
 
     return power,azel,isrlla
 
