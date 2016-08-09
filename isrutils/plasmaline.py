@@ -45,7 +45,7 @@ def readplasma(fn,beamid,fshift,tlim):
             azel = getazel(f,beamid)
     except OSError as e: #problem with file
         print('{} reading error {}'.format(fn,e))
-        return
+        return (None,)*2
 #%% spectrum compute
     T,tind = cliptlim(T,tlim)
 
