@@ -5,7 +5,7 @@ from six import integer_types
 import h5py
 from datetime import datetime,timedelta
 from pytz import UTC
-from numpy import log10,absolute, meshgrid, sin, radians,unique
+from numpy import log10,absolute, meshgrid, sin, radians,unique,atleast_1d
 from numpy.ma import masked_invalid
 from pandas import DataFrame
 from xarray import DataArray
@@ -177,13 +177,19 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
 #%%
 
 def plotplasmaline(specdown,specup,fn, P, azel):
-    if not (isinstance(specdown,DataArray) or isinstance(specup,DataArray)):
+    spec = [s for s in (specdown,specup) if isinstance(s,DataArray)]
+
+    Nspec = len(spec)
+
+    if not spec:
         return
 
     tic = time()
 
-    T = specdown.time
-    assert (T==specup.time).all(),'times do not match for downshift and upshift plasma spectrum'
+    T = spec[0].time
+
+    for s in spec:
+        assert (s.time == T).all(),'times do not match for downshift and upshift plasma spectrum'
 
     ptype=None#'mesh'
 
@@ -192,20 +198,22 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             axs=[None,None]
 
             fg = figure(figsize=(15,5))
-            axs[0] = fg.add_subplot(1,2,1,projection='3d')
+            axs[0] = fg.add_subplot(1,Nspec,1,projection='3d')
 
             fg.suptitle('{} {}'.format(fn.name,t.to_pydatetime()))
         elif P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,integer_types)): #lineplot
             fg = figure()
-            plotplasmaoverlay(specdown.loc[t,:,:],specup.loc[t,:,:],t,fg,P)
+            plotplasmaoverlay(specdown,specup,t,fg,P)
             writeplots(fg,t,P['odir'],'plasmaLineOverlay')
             continue
         else: #pcolor
-            fg,axs = subplots(1,2,figsize=(15,5),sharey=True)
+            fg,axs = subplots(Nspec,1,figsize=(15,Nspec*7.5))
+            axs = atleast_1d(axs)
+
             fg.suptitle('Az,El {},{}  Plasma line {}'.format(azel[0],azel[1],
                             str(datetime.fromtimestamp(t.item()/1e9, tz=UTC))[:-6]))
 #%%
-        for s,ax,fshift in zip((specdown,specup),axs,('down','up')):
+        for s,ax,fshift in zip(spec,axs,('down','up')):
             try:
                 if ptype in ('mesh','surf'):
                     plotplasmamesh(s.loc[t,:,:], fg,ax,P,ptype)
@@ -228,14 +236,20 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
     ax = fg.gca()
 
     ialt,alt = findnearest(specdown.srng.values,P['zlim_pl'])
-
-    dBdown = 10*log10(specdown[ialt,:].values)
-    if len(P['vlim_pl'])>=4 and P['vlim_pl'][2] is not None:
-        dBdown += P['vlim_pl'][2]
-
-    dBup = 10*log10(specup[ialt,:].values)
-    if len(P['vlim_pl'])>=4 and P['vlim_pl'][3] is not None:
-        dBup += P['vlim_pl'][3]
+#%%
+    try:
+        dBdown = 10*log10(specdown.loc[t,...][ialt,:].values)
+        if len(P['vlim_pl'])>=4 and P['vlim_pl'][2] is not None:
+            dBdown += P['vlim_pl'][2]
+    except AttributeError:
+        pass
+#%%
+    try:
+        dBup = 10*log10(specup.loc[t,...][ialt,:].values)
+        if len(P['vlim_pl'])>=4 and P['vlim_pl'][3] is not None:
+            dBup += P['vlim_pl'][3]
+    except AttributeError:
+        pass
 
     ax.plot(-specdown.freq.values/1e6, dBdown)
 
@@ -257,15 +271,14 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
     srng = spec.srng.values
     zgood = srng > 60. # above N km
 
-    h=ax.pcolormesh(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
+    h=ax.pcolormesh(spec.freq.values/1e6, srng[zgood], 10*log10(spec[zgood,:].values),
                     vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
 
 #    h=ax.imshow(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
 #                    vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
 
     ax.set_xlabel('Doppler frequency [MHz]')
-    if ctxt.startswith('down'):
-        ax.set_ylabel('slant range [km]')
+    ax.set_ylabel('slant range [km]')
 
     c=fg.colorbar(h,ax=ax,format='%.0f')
     c.set_label('Power [dB]')
