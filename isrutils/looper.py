@@ -22,8 +22,8 @@ def simpleloop(flist,P):
     if not 'odir' in P:
         P['odir'] = None
 
-    if not 'makeplot' in P:
-        P['makeplot'] = []
+    if not 'verbose' in P:
+        P['verbose'] = False
 
     if not 'tlim' in P:
         P['tlim'] = [None,None]

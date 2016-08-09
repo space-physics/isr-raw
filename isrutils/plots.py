@@ -187,6 +187,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
     tic = time()
 
     T = spec[0].time
+    dT = (T[1]-T[0]).item()/1e9
 
     for s in spec:
         assert (s.time == T).all(),'times do not match for downshift and upshift plasma spectrum'
@@ -210,8 +211,8 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             fg,axs = subplots(Nspec,1,figsize=(15,Nspec*7.5))
             axs = atleast_1d(axs)
 
-            fg.suptitle('Az,El {},{}  Plasma line {}'.format(azel[0],azel[1],
-                            str(datetime.fromtimestamp(t.item()/1e9, tz=UTC))[:-6]))
+            fg.suptitle('Az,El {},{}  Plasma line {}  $T_{{sample}}$: {} [sec.]'.format(azel[0],azel[1],
+                            str(datetime.fromtimestamp(t.item()/1e9, tz=UTC))[:-6],dT))
 #%%
         for s,ax,fshift in zip(spec,axs,('down','up')):
             try:
