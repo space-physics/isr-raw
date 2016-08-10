@@ -12,7 +12,7 @@ from .common import ftype,ut2dt,findstride,cliptlim,getazel
 from .plots import plotacf
 from .snrpower import filekey
 
-def compacf(acfall,noiseall,Nr,dns):
+def acf2psd(acfall,noiseall,Nr,dns):
     """
     acf all:  Nlag x Nslantrange x real/comp
 
@@ -90,22 +90,24 @@ def readACF(fn,P):
 
         t,tind = cliptlim(t,P['tlim'])
 
+        dt = (t[1]-t[0]).seconds
+
         istride = column_stack(bstride.nonzero())[tind,:]
         for tt,s in zip(t,istride):
             if noisekey is not None:
-                spectrum,acf = compacf(acfkey[s[0],s[1],...],
+                spectrum,acf = acf2psd(acfkey[s[0],s[1],...],
                                    noisekey[s[0],s[1],...],
                                    srng.size, dns)
             elif acfkey.ndim==5:
-                spectrum,acf = compacf(acfkey[s[0],s[1],...],
+                spectrum,acf = acf2psd(acfkey[s[0],s[1],...],
                                    noisekey,
                                    srng.size, dns)
-            elif acfkey.ndim==4: #raw samples from 2007 file
+            elif acfkey.ndim==4: # TODO raw samples from 2007 file
                 return
                 logging.critical('TODO this code not complete--need to have all the lags as a dimension')
                 tdat = acfkey[s[0],s[1],:,0] + 1j*acfkey[s[0],s[1],:,1]
                 acfall = xcorr(tdat, tdat, 'full')
-                spectrum,acf = compacf(acfall,
+                spectrum,acf = acf2psd(acfall,
                                    noisekey,
                                    srng.size, dns)
 
@@ -114,6 +116,6 @@ def readACF(fn,P):
                                coords={'srng':srng.value.squeeze(),
                                        'freq':linspace(-freqscalefact,freqscalefact,spectrum.shape[1])})
             try:
-                plotacf(specdf,fn,azel,tt, P)
+                plotacf(specdf,fn,azel,tt, dt, P)
             except Exception as e:
                 print('failed to plot ACF due to {}'.format(e))
