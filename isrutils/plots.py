@@ -65,7 +65,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
     c.set_label('Power [dB]')
 
     Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
-    ax.set_title('Az,El {},{}  {}  {}  $T_{{sample}}$={:.3f} sec.'.format(azel[0],azel[1],expfn(fn),
+    ax.set_title('Az,El {:.1f},{:.1f}  {}  {}  $T_{{sample}}$={:.3f} sec.'.format(azel[0],azel[1],expfn(fn),
                          str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10], Ts.item()/1e9))
 
     try:
@@ -140,7 +140,7 @@ def plotsnrmesh(snr,fn,P):
     ax3.autoscale(True,'y',tight=True)
 
 
-def plotacf(spec,fn,azel,t,P,ctxt=''):
+def plotacf(spec,fn,azel,t,dt,P,ctxt=''):
     """
     plot PSD derived from ACF.
     """
@@ -168,7 +168,7 @@ def plotacf(spec,fn,azel,t,P,ctxt=''):
     c=fg.colorbar(h,ax=ax)
     c.set_label('Power [dB]')
     ax.set_ylabel('altitude [km]')
-    ax.set_title('Az,El {},{}  {} {}'.format(azel[0],azel[1], expfn(fn),str(t)[:-6]))
+    ax.set_title('Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], expfn(fn), dt, str(t)[:-6]))
     ax.autoscale(True,axis='x',tight=True)
     ax.set_xlabel('frequency [kHz]')
 
@@ -211,7 +211,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             fg,axs = subplots(Nspec,1,figsize=(15,Nspec*7.5))
             axs = atleast_1d(axs)
 
-            fg.suptitle('Az,El {},{}  Plasma line {}  $T_{{sample}}$: {} [sec.]'.format(azel[0],azel[1],
+            fg.suptitle('Az,El {:.1f},{:.1f}  Plasma line {}  $T_{{sample}}$: {} [sec.]'.format(azel[0],azel[1],
                             str(datetime.fromtimestamp(t.item()/1e9, tz=UTC))[:-6],dT))
 #%%
         for s,ax,fshift in zip(spec,axs,('down','up')):
