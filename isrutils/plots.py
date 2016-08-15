@@ -56,7 +56,6 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
         tdiff = P['tlim'][1] - P['tlim'][0]
 
     majtick,mintick = timeticks(tdiff)
-
     ax.xaxis.set_major_locator(majtick)
     ax.xaxis.set_minor_locator(mintick)
     ax.tick_params(axis='both', which='both', direction='out')
