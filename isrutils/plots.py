@@ -381,7 +381,9 @@ def timeticks(tdiff):
         tdiff = timedelta(microseconds=tdiff.item()/1e3)
     assert isinstance(tdiff,timedelta),'expecting datetime.timedelta'
 
-    if tdiff > timedelta(minutes=20):
+    if tdiff > timedelta(hours=2):
+        return None,None
+    elif tdiff > timedelta(minutes=20):
         return MinuteLocator(interval=5),MinuteLocator(interval=1)
     elif (timedelta(minutes=5) < tdiff) & (tdiff<=timedelta(minutes=20)):
         return MinuteLocator(interval=1),SecondLocator(interval=15)
