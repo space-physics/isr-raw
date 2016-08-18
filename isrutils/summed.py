@@ -2,7 +2,7 @@
 """
 summed measurements and plots
 """
-from . import Path
+from . import Path, writeplots,expfn
 import pathvalidate
 from xarray import DataArray
 from datetime import datetime
@@ -15,9 +15,8 @@ from matplotlib.colors import LogNorm
 import matplotlib.animation as anim
 #
 from .plasmaline import readplasmaline
-from .common import timeticks,findindex2Dsphere,timesync,projectisrhist,expfn
+from .common import timeticks,findindex2Dsphere,timesync,projectisrhist
 from .snrpower import readpower_samples
-from .io import writeplots
 #
 from GeoData.plotting import plotazelscale
 

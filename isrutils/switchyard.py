@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-from . import Path
+from . import Path, ftype
 from time import time
 from xarray import concat
 #
-from .common import ftype
 from .rawacf import readACF
 from .plasmaline import readplasmaline
 from .snrpower import readpower_samples,readsnr_int,snrvtime_fit

@@ -17,8 +17,7 @@ from matplotlib.dates import DateFormatter
 #
 from GeoData.plotting import polarplot
 from histutils.findnearest import find_nearest as findnearest
-from .common import expfn,str2dt
-from .io import writeplots
+from . import writeplots,expfn,str2dt
 
 def plotsnr(snr,fn,P,azel,ctxt=''):
     if not isinstance(snr,DataArray):
