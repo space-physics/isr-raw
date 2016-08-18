@@ -1,6 +1,6 @@
 from __future__ import division
 from six import integer_types
-from . import Path
+from . import Path, ftype,ut2dt,cliptlim
 import h5py
 import logging
 from xarray import DataArray
@@ -8,7 +8,7 @@ from numpy import (empty,zeros,complex128,conj,append,linspace,column_stack)
 from numpy import correlate as xcorr
 from numpy.fft import fft,fftshift
 #
-from .common import ftype,ut2dt,findstride,cliptlim,getazel
+from .common import findstride,getazel
 from .plots import plotacf
 from .snrpower import filekey
 

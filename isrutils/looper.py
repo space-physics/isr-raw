@@ -9,8 +9,7 @@ sns.set_context('talk',1.5)
 sns.set_style('ticks')
 #
 
-from . import Path
-from .common import str2dt
+from . import Path,str2dt
 from .switchyard import isrselect
 from .plots import plotsnr,plotplasmaline
 

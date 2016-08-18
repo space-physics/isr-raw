@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-from . import Path
+from . import Path, str2dt
 #
 import matplotlib
 matplotlib.use('agg') # NOTE comment out this line to enable visible plots
 #
 from .plasmaline import readplasmaline#,plotplasmaline
 from .summed import sumlongpulse,dojointplot
-from .common import str2dt
 #
 from GeoData.utilityfuncs import readNeoCMOS
 #

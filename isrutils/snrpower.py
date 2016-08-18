@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 from six import integer_types
-from . import Path
+from . import Path,ut2dt,cliptlim
 from numpy import ones
 import h5py
 from xarray import DataArray
 #
-from .common import ut2dt,findstride,sampletime,cliptlim,getazel
+from .common import findstride,sampletime,getazel
 from .plots import plotbeampattern
 
 def samplepower(sampiq,bstride,ut,srng,P):

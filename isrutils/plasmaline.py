@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 from six import integer_types
 from time import time
-from . import Path
+from . import Path,ut2dt,cliptlim
 import h5py
 from xarray import DataArray
 #
-from .common import findstride,ut2dt,cliptlim,getazel
+from .common import findstride,getazel
 
 def readplasmaline(fn,P):
     """
