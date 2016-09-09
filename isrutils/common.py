@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 from argparse import ArgumentParser
 #
 from pymap3d.haversine import angledist
-from pymap3d.coordconv3d import aer2ecef,ecef2aer
+from pymap3d import aer2ecef,ecef2aer
 
 EPOCH = datetime(1970,1,1,0,0,0,tzinfo=UTC)
 
