@@ -376,19 +376,27 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
 #def timeticks(tdiff:timedelta ):
 def timeticks(tdiff):
+    """
+    NOTE do NOT use "interval" or ticks are misaligned!  use "bysecond" only!
+    """
     if isinstance(tdiff,DataArray): #len==1
         tdiff = timedelta(microseconds=tdiff.item()/1e3)
     assert isinstance(tdiff,timedelta),'expecting datetime.timedelta'
 
     if tdiff > timedelta(hours=2):
         return None,None
+
     elif tdiff > timedelta(minutes=20):
-        return MinuteLocator(interval=5),MinuteLocator(interval=1)
+        return MinuteLocator(byminute=range(0,60,5)),  MinuteLocator(byminute=range(0,60,1))
+
     elif (timedelta(minutes=5) < tdiff) & (tdiff<=timedelta(minutes=20)):
-        return MinuteLocator(interval=1),SecondLocator(interval=15)
+        return MinuteLocator(byminute=range(0,60,1)),  SecondLocator(bysecond=range(0,60,15))
+
     elif (timedelta(minutes=1) < tdiff) & (tdiff<=timedelta(minutes=5)):
-        return SecondLocator(interval=15),SecondLocator(interval=5)
+        return SecondLocator(bysecond=range(0,60,15)), SecondLocator(bysecond=range(0,60,5))
+
     elif (timedelta(seconds=30) < tdiff) &(tdiff<=timedelta(minutes=1)):
-        return SecondLocator(interval=5), SecondLocator(interval=2)
+        return SecondLocator(bysecond=range(0,60,5)),  SecondLocator(bysecond=range(0,60,2))
+
     else:
-        return SecondLocator(interval=2),SecondLocator(interval=1)
+        return SecondLocator(bysecond=range(0,60,2)),  SecondLocator(bysecond=range(0,60,1))
