@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import logging
 from . import Path
 from time import time
 from six import integer_types
@@ -193,6 +194,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
     ptype=None#'mesh'
 
     for t in T:
+        t = datetime.fromtimestamp(t.item()/1e9,tz=UTC)
         if ptype in ('mesh','surf'): #cannot use subplots for 3d with matplotlib 1.4
             axs=[None,None]
 
@@ -210,16 +212,16 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             axs = atleast_1d(axs)
 
             fg.suptitle('Az,El {:.1f},{:.1f}  Plasma line {}  $T_{{sample}}$: {} [sec.]'.format(azel[0],azel[1],
-                            str(datetime.fromtimestamp(t.item()/1e9, tz=UTC))[:-6],dT))
+                            t,dT))
 #%%
         for s,ax,fshift in zip(spec,axs,('down','up')):
             try:
                 if ptype in ('mesh','surf'):
-                    plotplasmamesh(s.loc[t,:,:], fg,ax,P,ptype)
+                    plotplasmamesh(s.sel(time=t), fg,ax,P,ptype)
                 else: #pcolor
-                    plotplasmatime(s.loc[t,:,:],t, fg,ax,P,fshift)
+                    plotplasmatime(s.sel(time=t),t, fg,ax,P,fshift)
             except KeyError as e:
-                print('E: {} plotting {} {}'.format(e,fshift,t))
+                logging.error('{} plotting {} {}'.format(e,fshift,t))
 
         fg.tight_layout()
 
@@ -237,14 +239,14 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
     ialt,alt = findnearest(specdown.srng.values,P['zlim_pl'])
 #%%
     try:
-        dBdown = 10*log10(specdown.loc[t,...][ialt,:].values)
+        dBdown = 10*log10(specdown.sel(time=t)[ialt,:].values)
         if len(P['vlim_pl'])>=4 and P['vlim_pl'][2] is not None:
             dBdown += P['vlim_pl'][2]
     except AttributeError:
         pass
 #%%
     try:
-        dBup = 10*log10(specup.loc[t,...][ialt,:].values)
+        dBup = 10*log10(specup.sel(time=t)[ialt,:].values)
         if len(P['vlim_pl'])>=4 and P['vlim_pl'][3] is not None:
             dBup += P['vlim_pl'][3]
     except AttributeError:
@@ -315,7 +317,7 @@ def plotplasmamesh(spec,fg,ax,P,ptype=''):
     srng = spec.index.values
     zgood = srng>P['zlim'][0] # above N km
 
-    S = 10*log10(spec.loc[zgood,:])
+    S = 10*log10(spec.loc[zgood,:]) #FIXME .sel()
     z = S.index.values
 
     x,y = meshgrid(spec.freq.values/1e6,z)
@@ -364,7 +366,7 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
 
 
-    fg = polarplot(beams.loc[beamcodes,'az'], beams.loc[beamcodes,'el'],
+    fg = polarplot(beams.loc[beamcodes,'az'], beams.loc[beamcodes,'el'], # FIXME .sel()
                    title='ISR {} Beam Pattern: {}'.format(beamcodes.size,date),
                    markerarea=27.4)
 

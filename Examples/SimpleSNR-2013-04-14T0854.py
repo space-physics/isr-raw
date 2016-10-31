@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-2013-04-14 08:54:54 UT event
+2013-04-14 08:54 UT event
 """
 from isrutils.looper import simpleloop
 #%% users param
@@ -13,7 +13,7 @@ P={
 'zlim_pl': [None,None],
 'vlim_pl': [72,90],
 'flim_pl': [3.5,5.5],
-'int': False,
+'int': True,
 'samples': True,
 'odir': 'out/2013-04-14T0854',
 'vlim': [30, 60],
