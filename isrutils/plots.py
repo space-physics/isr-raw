@@ -6,12 +6,12 @@ from six import integer_types
 import h5py
 from datetime import datetime,timedelta
 from pytz import UTC
-from numpy import log10,absolute, meshgrid, sin, radians,unique,atleast_1d
+from numpy import log10,absolute, meshgrid, sin, radians,unique,atleast_1d, median
 from numpy.ma import masked_invalid
 from pandas import DataFrame
 from xarray import DataArray
 #
-from matplotlib.pyplot import figure,subplots
+from matplotlib.pyplot import figure,subplots,gcf
 from matplotlib.dates import MinuteLocator,SecondLocator
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import DateFormatter
@@ -402,3 +402,50 @@ def timeticks(tdiff):
 
     else:
         return SecondLocator(bysecond=range(0,60,2)),  SecondLocator(bysecond=range(0,60,1))
+
+
+def plotsumionline(dsum,ax,fn,P):
+    if dsum is None:
+        return
+
+    assert isinstance(dsum,DataArray) and dsum.ndim==1,'incorrect input type'
+    assert dsum.size > 1,'must have at least two data points to plot'
+
+    if not ax:
+        fg = figure()
+        ax = fg.gca()
+    else:
+        fg = gcf()
+
+    ax.plot(dsum.time,dsum.values,label='$\sum_{range} |P_{rx}|$')
+
+    if P['verbose']:
+        med = median(dsum.values)
+        ax.axhline(med,color='gold',linestyle='--',label='median')
+        if 'medthres' in P:
+            medthres = P['medthres']*med
+            ax.axhline(medthres,color='red',linestyle='--',label='threshold')
+
+    ax.set_ylabel('summed power')
+    ax.set_xlabel('time [UTC]')
+    ax.set_title('{} summed over ranges ({}..{})km'.format(expfn(fn),P['zlim'][0],P['zlim'][1]))
+
+    ax.set_yscale('log')
+    ax.grid(True)
+    ax.legend()
+
+    fg.autofmt_xdate()
+
+    writeplots(fg, dsum.time[0].item(), P['odir'],'summedAlt')
+
+def plotsumplasmaline(plsum):
+    assert isinstance(plsum,DataArray)
+
+    fg = figure()
+    ax = fg.gca()
+    plsum.plot(ax=ax)
+    ax.set_ylabel('summed power')
+    ax.set_xlabel('time [UTC]')
+    ax.set_title('plasma line summed over altitude (200..350)km and frequency (3.5..5.5)MHz')
+
+    #ax.xaxis.set_major_locator(timeticks(plsum.time[-1]-plsum.time[0])[0])
