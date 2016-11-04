@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+import matplotlib
+matplotlib.use('agg')
+print(matplotlib.get_backend())
+
 from isrutils import Path
 from numpy.testing import run_module_suite
 #
