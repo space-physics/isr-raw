@@ -1,8 +1,7 @@
 #!/usr/bin/env python
+from . import Path,writeplots,expfn,str2dt
 import logging
-from . import Path
 from time import time
-from six import integer_types
 import h5py
 from datetime import datetime,timedelta
 from pytz import UTC
@@ -18,7 +17,8 @@ from matplotlib.dates import DateFormatter
 #
 from GeoData.plotting import polarplot
 from histutils.findnearest import find_nearest as findnearest
-from . import writeplots,expfn,str2dt
+
+ALTMIN = 60e3 # meters
 
 def plotsnr(snr,fn,P,azel,ctxt=''):
     if not isinstance(snr,DataArray):
@@ -77,7 +77,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
                                     'arrowstyle':'-[',
                                     'connectionstyle':"arc3,rad=0.2"})
         except Exception as e:
-            print('failed to annotate {}'.format(e))
+            logging.error('failed to annotate {}'.format(e))
     except KeyError:
         pass
 
@@ -139,18 +139,17 @@ def plotsnrmesh(snr,fn,P):
     ax3.autoscale(True,'y',tight=True)
 
 
-def plotacf(spec,fn,azel,t,dt,P,ctxt=''):
+def plotacf(spec,fn,azel,t,dt,P,zslice=(350e3,450e3)):
     """
     plot PSD derived from ACF.
     """
-    #%% plot axes
-
+#%% alt vs freq
     fg = figure()
     ax = fg.gca()
 
-    assert 10 <= azel[1] <= 90
-    goodz = spec.srng * sin(radians(azel[1])) > 60e3 #actual altitude > 60km
-    z = spec.srng[goodz].values / 1e3 #altitude over N km
+    assert 10 <= azel[1] <= 90,'possibly invalid elevation angle for this beam'
+    goodz = spec.srng * sin(radians(azel[1])) > ALTMIN #actual altitude > 60km
+    z = spec.srng[goodz].values / 1e3 #slant ranges where altitude > zmin km
 
     h=ax.pcolormesh(spec.freq.values,
                     z,
@@ -161,19 +160,29 @@ def plotacf(spec,fn,azel,t,dt,P,ctxt=''):
 
     ytop = min(z[-1], P['zlim'][1])  if P['zlim'][1] is not None else z[-1]
 
-
     ax.set_ylim(P['zlim'][0],ytop)
 
     c=fg.colorbar(h,ax=ax)
     c.set_label('Power [dB]')
-    ax.set_ylabel('altitude [km]')
+    ax.set_ylabel('slant range [km]')
     ax.set_title('Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], expfn(fn), dt, str(t)[:-6]))
     ax.autoscale(True,axis='x',tight=True)
     ax.set_xlabel('frequency [kHz]')
 
-
     writeplots(fg,t,P['odir'],'acf_'+expfn(fn))
-#%%
+#%% freq at alt
+    fg = figure()
+    ax = fg.gca()
+
+    iz = findnearest(spec.srng,zslice)[0]
+
+    ax.plot(spec.freq.values,10*log10(absolute(spec[iz[0]:iz[1],:].sum(dim='srng'))))
+    ax.set_ylim(P['vlimacf'])
+    ax.set_xlabel('frequency [kHz]')
+    ax.set_ylabel('Power [dB]')
+    ax.set_title('Az,El {:.1f},{:.1f}  @ {}..{} km  {}  $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], zslice[0]/1e3,zslice[1]/1e3,expfn(fn), dt, str(t)[:-6]))
+
+    writeplots(fg,t,P['odir'],'acfslice_'+expfn(fn), ext='.eps')
 
 def plotplasmaline(specdown,specup,fn, P, azel):
     spec = [s for s in (specdown,specup) if isinstance(s,DataArray)]
@@ -202,7 +211,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             axs[0] = fg.add_subplot(1,Nspec,1,projection='3d')
 
             fg.suptitle('{} {}'.format(fn.name,t.to_pydatetime()))
-        elif P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,integer_types)): #lineplot
+        elif P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,int)): #lineplot
             fg = figure()
             plotplasmaoverlay(specdown,specup,t,fg,P)
             writeplots(fg,t,P['odir'],'plasmaLineOverlay')

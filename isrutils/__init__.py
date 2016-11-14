@@ -14,7 +14,7 @@ except (ImportError,AttributeError):
 
 
 
-def writeplots(fg,t='',odir=None,ctxt=''):
+def writeplots(fg,t='',odir=None,ctxt='',ext='.png'):
     from matplotlib.pyplot import close
 
     if odir:
@@ -27,8 +27,8 @@ def writeplots(fg,t='',odir=None,ctxt=''):
         elif isinstance(t,(float,integer_types)): # UTC assume
             t = datetime.fromtimestamp(t/1e9, tz=UTC)
 
-
-        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + '.png','-')  #:23 keeps up to millisecond if present.
+            #:-6 keeps up to millisecond if present.
+        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + ext,'-').replace(' ','')
 
         print('saving {}'.format(ppth))
 

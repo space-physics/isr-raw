@@ -10,6 +10,9 @@ from numpy.fft import fft,fftshift
 from .common import findstride,getazel
 from .plots import plotacf
 
+freqscalefact=100/6  #100/2
+dns=1071/3 #TODO scalefactor
+
 def acf2psd(acfall,noiseall,Nr,dns):
     """
     acf all:  Nlag x Nslantrange x real/comp
@@ -47,9 +50,6 @@ def readACF(fn,P):
     """
     reads incoherent scatter radar autocorrelation function (ACF)
     """
-    freqscalefact=100/6  #100/2
-
-    dns=1071/3 #TODO scalefactor
     fn = Path(fn).expanduser()
     assert isinstance(P['beamid'],int),'beam specification must be a scalar integer'
 
