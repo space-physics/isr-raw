@@ -31,7 +31,7 @@ P={
 flist = (
 'd0346834.dt3.h5', # 480 us long pulse
 #'d0346834.dt1.h5',
-#'d0346834.dt0.h5', #alt code
+'d0346834.dt0.h5', #alt code
 
 #'20130413.001_ac_30sec.h5',
 #'20130413.001_lp_30sec.h5'

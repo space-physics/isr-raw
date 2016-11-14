@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from six import integer_types
-from . import Path,ut2dt,cliptlim
+from . import Path,ut2dt,cliptlim,filekey
 from numpy import ones
 import h5py
 from xarray import DataArray
@@ -100,19 +100,6 @@ def readsnr_int(fn,bid):
         return
 #%% return requested beam data only
     return DataArray(data=power, dims=['srng','time'], coords={'srng':srng,'time':t})
-
-def filekey(f):
-    # detect old and new HDF5 AMISR files
-    if   '/Raw11/Raw/PulsesIntegrated' in f:        # new 2013
-        return '/Raw11/Raw'
-    elif '/Raw11/RawData/PulsesIntegrated' in f:    # old 2011
-        return '/Raw11/RawData'
-    elif '/RAW10/Data/Samples' in f:                # older 2007
-        return '/RAW10/Data/'
-    elif '/S/Data/PulsesIntegrated' in f:
-        return '/S/Data'
-    else:
-        raise KeyError('not an old or new file?')
 
 def snrvtime_fit(fn,bid):
     fn = Path(fn).expanduser()

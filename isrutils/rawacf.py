@@ -1,6 +1,5 @@
 from __future__ import division
-from six import integer_types
-from . import Path, ftype,ut2dt,cliptlim
+from . import Path, ftype,ut2dt,cliptlim,filekey
 import h5py
 import logging
 from xarray import DataArray
@@ -10,7 +9,6 @@ from numpy.fft import fft,fftshift
 #
 from .common import findstride,getazel
 from .plots import plotacf
-from .snrpower import filekey
 
 def acf2psd(acfall,noiseall,Nr,dns):
     """
@@ -53,7 +51,7 @@ def readACF(fn,P):
 
     dns=1071/3 #TODO scalefactor
     fn = Path(fn).expanduser()
-    assert isinstance(P['beamid'],integer_types),'beam specification must be a scalar integer'
+    assert isinstance(P['beamid'],int),'beam specification must be a scalar integer'
 
     with h5py.File(str(fn),'r',libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'].value)
@@ -62,36 +60,28 @@ def readACF(fn,P):
         noisekey = None
 #%%
         if ft == 'dt3':
-            rk = '/S/'
-            try:
-                acfkey = f[rk+'Data/Acf/Data']
-                noisekey = f[rk+'Noise/Acf/Data']
-            except KeyError:
-                acfkey = f[filekey(f)+'/Samples/Data'] #2007 dt3 raw data
-#%%
+            rk,acfkey,noisekey = dt3keys(f)
         elif ft == 'dt0':
-            try:
-                rk = '/IncohCodeFl/'
-                acfkey = f[rk+'Data/Acf/Data']
-            except KeyError:
-                rk = '/S/'
-                acfkey = f[rk+'Data/Acf/Data'] # 2007 dt0 acf data
+            rk,acfkey = dt0keys(f)
         else:
             raise TypeError('unexpected file type {}'.format(ft))
-#%%
+
+        if acfkey is None or rk not in f:
+            return
+#%% get ranges
         try:
             srng = f[rk + 'Data/Acf/Range']
             bstride = findstride(f[rk+'Data/Beamcodes'],P['beamid'])
         except KeyError: # old 2007 files
             srng = f[filekey(f)+'/Power/Range']
             bstride = findstride(f['/RadacHeader/BeamCode'],P['beamid'])
-
+#%% get azel
         azel = getazel(f,P['beamid'])
-
+#%% get times
         t,tind = cliptlim(t,P['tlim'])
 
         dt = (t[1]-t[0]).seconds
-
+#%% get ACF
         istride = column_stack(bstride.nonzero())[tind,:]
         for tt,s in zip(t,istride):
             if noisekey is not None:
@@ -104,7 +94,7 @@ def readACF(fn,P):
                                    srng.size, dns)
             elif acfkey.ndim==4: # TODO raw samples from 2007 file
                 return
-                logging.critical('TODO this code not complete--need to have all the lags as a dimension')
+                logging.critical('TODO this code not complete--need to have all the lags as a dimension. See Swoboda PhD code for proper computation of lags from complex voltage. https://github.com/jswoboda')
                 tdat = acfkey[s[0],s[1],:,0] + 1j*acfkey[s[0],s[1],:,1]
                 acfall = xcorr(tdat, tdat, 'full')
                 spectrum,acf = acf2psd(acfall,
@@ -118,4 +108,31 @@ def readACF(fn,P):
             try:
                 plotacf(specdf,fn,azel,tt, dt, P)
             except Exception as e:
-                print('failed to plot ACF due to {}'.format(e))
+                logging.error('failed to plot ACF due to {}'.format(e))
+
+def dt3keys(f):
+
+    rk = '/S/'
+
+    try:
+        acfkey = f[rk+'Data/Acf/Data']
+        noisekey = f[rk+'Noise/Acf/Data']
+    except KeyError:
+        acfkey = f[filekey(f)+'/Samples/Data'] #2007 dt3 raw data
+        noisekey=None
+
+    return rk,acfkey,noisekey
+
+def dt0keys(f):
+    try:
+        rk = '/IncohCodeFl/'
+        acfkey = f[rk+'Data/Acf/Data']
+    except KeyError: # note for March 2011 PFISR, /S/ was in DT3 only not DT0, per Hassan
+        try:
+            rk = '/S/'
+            acfkey = f[rk+'Data/Acf/Data'] # 2007 dt0 acf data
+        except KeyError:
+            acfkey=None
+            logging.error('did not find ACF in {}. Try the .dt3 file (esp. if 2011 data)'.format(f.filename))
+
+    return rk,acfkey

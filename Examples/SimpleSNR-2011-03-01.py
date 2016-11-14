@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-NOTE: this date's data files has ~ half-second data gaps that pcolormesh smears horizontally (this is in general expected pcolormesh behavior)
+NOTE: this date's data files has ~ half-second data gaps that pcolormesh smears horizontally
+(this is in general expected pcolormesh behavior)
 to quickly mitigate, plot piecewise if wider time spans are necessary.
 
 optical/CMOS_110301_1006.avi is the companion video file
@@ -20,7 +21,7 @@ from isrutils.looper import simpleloop
 #%% users param
 P={'path':'~/data/2011-03-01/isr',
    'beamid': 64157,
-   'acf': False,
+   'acf': True,
    'zlim_pl': [None,None],
    'vlim_pl': [72,90],
    'flim_pl': [None,None],
@@ -36,9 +37,11 @@ P={'path':'~/data/2011-03-01/isr',
 flist = (
 #'d0245965.dt3.h5',
 #'d0245965.dt0.h5',
-#'d0245966.dt3.h5',
-'d0245966.dt2.h5',
+
+'d0245966.dt3.h5',
+#'d0245966.dt2.h5',
 #'d0245966.dt0.h5',
+
 #'d0245967.dt3.h5',
 #'d0245967.dt0.h5',
 #'d0245968.dt3.h5',
