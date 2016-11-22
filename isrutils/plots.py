@@ -165,7 +165,7 @@ def plotacf(spec,fn,azel,t,dt,P,zslice=(350e3,450e3)):
     c=fg.colorbar(h,ax=ax)
     c.set_label('Power [dB]')
     ax.set_ylabel('slant range [km]')
-    ax.set_title('Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], expfn(fn), dt, str(t)[:-6]))
+    ax.set_title('ISR PSD: Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], expfn(fn), dt, str(t)[:-6]))
     ax.autoscale(True,axis='x',tight=True)
     ax.set_xlabel('frequency [kHz]')
 
@@ -178,7 +178,7 @@ def plotacf(spec,fn,azel,t,dt,P,zslice=(350e3,450e3)):
 
     ax.plot(spec.freq.values,10*log10(absolute(spec[iz[0]:iz[1],:].sum(dim='srng'))))
     ax.set_ylim(P['vlimacf'])
-    ax.set_xlabel('frequency [kHz]')
+    ax.set_xlabel('frequency: $f_c + f$ [kHz]')
     ax.set_ylabel('Power [dB]')
     ax.set_title('Az,El {:.1f},{:.1f}  @ {}..{} km  {}  $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], zslice[0]/1e3,zslice[1]/1e3,expfn(fn), dt, str(t)[:-6]))
 
@@ -266,7 +266,7 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
     ax.plot(specup.freq.values/1e6, dBup)
 
     ax.set_ylabel('Power [dB]')
-    ax.set_xlabel('Doppler frequency [MHz]')
+    ax.set_xlabel('frequency: $f_c + f$ [MHz]')
 
     ax.set_ylim(P['vlim_pl'][:2])
     ax.set_xlim(P['flim_pl'])
@@ -287,7 +287,7 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
 #    h=ax.imshow(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
 #                    vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
 
-    ax.set_xlabel('Doppler frequency [MHz]')
+    ax.set_xlabel('frequency: $f_c + f$ [MHz]')
     ax.set_ylabel('slant range [km]')
 
     c=fg.colorbar(h,ax=ax,format='%.0f')
@@ -342,7 +342,7 @@ def plotplasmamesh(spec,fg,ax,P,ptype=''):
     ax.set_zlim(P['vlim'])
     ax.set_zlabel('Power [dB]')
     ax.set_ylabel('altitude [km]')
-    ax.set_xlabel('Frequency [MHz]')
+    ax.set_xlabel('frequency: $f_c + f$ [MHz]')
     ax.autoscale(True,'y',tight=True)
     fg.tight_layout()
 
