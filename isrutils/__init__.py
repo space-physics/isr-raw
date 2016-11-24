@@ -14,7 +14,7 @@ except (ImportError,AttributeError):
 
 
 
-def writeplots(fg,t='',odir=None,ctxt=''):
+def writeplots(fg,t='',odir=None,ctxt='',ext='.png'):
     from matplotlib.pyplot import close
 
     if odir:
@@ -27,8 +27,8 @@ def writeplots(fg,t='',odir=None,ctxt=''):
         elif isinstance(t,(float,integer_types)): # UTC assume
             t = datetime.fromtimestamp(t/1e9, tz=UTC)
 
-
-        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + '.png','-')  #:23 keeps up to millisecond if present.
+            #:-6 keeps up to millisecond if present.
+        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + ext,'-').replace(' ','')
 
         print('saving {}'.format(ppth))
 
@@ -69,6 +69,19 @@ def str2dt(tstr):
             raise TypeError('unknown data type {}'.format(ut[0].dtype))
 
     return ut
+
+def filekey(f):
+    # detect old and new HDF5 AMISR files
+    if   '/Raw11/Raw/PulsesIntegrated' in f:        # new 2013
+        return '/Raw11/Raw'
+    elif '/Raw11/RawData/PulsesIntegrated' in f:    # old 2011
+        return '/Raw11/RawData'
+    elif '/RAW10/Data/Samples' in f:                # older 2007
+        return '/RAW10/Data/'
+    elif '/S/Data/PulsesIntegrated' in f:
+        return '/S/Data'
+    else:
+        raise KeyError('not an old or new file?')
 
 def ftype(fn):
     """

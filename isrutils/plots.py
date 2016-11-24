@@ -1,23 +1,24 @@
 #!/usr/bin/env python
-from . import Path
+from . import Path,writeplots,expfn,str2dt
+import logging
 from time import time
-from six import integer_types
 import h5py
 from datetime import datetime,timedelta
 from pytz import UTC
-from numpy import log10,absolute, meshgrid, sin, radians,unique,atleast_1d
+from numpy import log10,absolute, meshgrid, sin, radians,unique,atleast_1d, median
 from numpy.ma import masked_invalid
 from pandas import DataFrame
 from xarray import DataArray
 #
-from matplotlib.pyplot import figure,subplots
+from matplotlib.pyplot import figure,subplots,gcf
 from matplotlib.dates import MinuteLocator,SecondLocator
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import DateFormatter
 #
 from GeoData.plotting import polarplot
 from histutils.findnearest import find_nearest as findnearest
-from . import writeplots,expfn,str2dt
+
+ALTMIN = 60e3 # meters
 
 def plotsnr(snr,fn,P,azel,ctxt=''):
     if not isinstance(snr,DataArray):
@@ -76,7 +77,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
                                     'arrowstyle':'-[',
                                     'connectionstyle':"arc3,rad=0.2"})
         except Exception as e:
-            print('failed to annotate {}'.format(e))
+            logging.error('failed to annotate {}'.format(e))
     except KeyError:
         pass
 
@@ -138,18 +139,17 @@ def plotsnrmesh(snr,fn,P):
     ax3.autoscale(True,'y',tight=True)
 
 
-def plotacf(spec,fn,azel,t,dt,P,ctxt=''):
+def plotacf(spec,fn,azel,t,dt,P,zslice=(350e3,450e3)):
     """
     plot PSD derived from ACF.
     """
-    #%% plot axes
-
+#%% alt vs freq
     fg = figure()
     ax = fg.gca()
 
-    assert 10 <= azel[1] <= 90
-    goodz = spec.srng * sin(radians(azel[1])) > 60e3 #actual altitude > 60km
-    z = spec.srng[goodz].values / 1e3 #altitude over N km
+    assert 10 <= azel[1] <= 90,'possibly invalid elevation angle for this beam'
+    goodz = spec.srng * sin(radians(azel[1])) > ALTMIN #actual altitude > 60km
+    z = spec.srng[goodz].values / 1e3 #slant ranges where altitude > zmin km
 
     h=ax.pcolormesh(spec.freq.values,
                     z,
@@ -160,19 +160,29 @@ def plotacf(spec,fn,azel,t,dt,P,ctxt=''):
 
     ytop = min(z[-1], P['zlim'][1])  if P['zlim'][1] is not None else z[-1]
 
-
     ax.set_ylim(P['zlim'][0],ytop)
 
     c=fg.colorbar(h,ax=ax)
     c.set_label('Power [dB]')
-    ax.set_ylabel('altitude [km]')
-    ax.set_title('Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], expfn(fn), dt, str(t)[:-6]))
+    ax.set_ylabel('slant range [km]')
+    ax.set_title('ISR PSD: Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], expfn(fn), dt, str(t)[:-6]))
     ax.autoscale(True,axis='x',tight=True)
     ax.set_xlabel('frequency [kHz]')
 
-
     writeplots(fg,t,P['odir'],'acf_'+expfn(fn))
-#%%
+#%% freq at alt
+    fg = figure()
+    ax = fg.gca()
+
+    iz = findnearest(spec.srng,zslice)[0]
+
+    ax.plot(spec.freq.values,10*log10(absolute(spec[iz[0]:iz[1],:].sum(dim='srng'))))
+    ax.set_ylim(P['vlimacf'])
+    ax.set_xlabel('frequency: $f_c + f$ [kHz]')
+    ax.set_ylabel('Power [dB]')
+    ax.set_title('Az,El {:.1f},{:.1f}  @ {}..{} km  {}  $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], zslice[0]/1e3,zslice[1]/1e3,expfn(fn), dt, str(t)[:-6]))
+
+    writeplots(fg,t,P['odir'],'acfslice_'+expfn(fn), ext='.eps')
 
 def plotplasmaline(specdown,specup,fn, P, azel):
     spec = [s for s in (specdown,specup) if isinstance(s,DataArray)]
@@ -193,6 +203,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
     ptype=None#'mesh'
 
     for t in T:
+        t = datetime.fromtimestamp(t.item()/1e9,tz=UTC)
         if ptype in ('mesh','surf'): #cannot use subplots for 3d with matplotlib 1.4
             axs=[None,None]
 
@@ -200,7 +211,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             axs[0] = fg.add_subplot(1,Nspec,1,projection='3d')
 
             fg.suptitle('{} {}'.format(fn.name,t.to_pydatetime()))
-        elif P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,integer_types)): #lineplot
+        elif P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,int)): #lineplot
             fg = figure()
             plotplasmaoverlay(specdown,specup,t,fg,P)
             writeplots(fg,t,P['odir'],'plasmaLineOverlay')
@@ -210,16 +221,16 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             axs = atleast_1d(axs)
 
             fg.suptitle('Az,El {:.1f},{:.1f}  Plasma line {}  $T_{{sample}}$: {} [sec.]'.format(azel[0],azel[1],
-                            str(datetime.fromtimestamp(t.item()/1e9, tz=UTC))[:-6],dT))
+                            t,dT))
 #%%
         for s,ax,fshift in zip(spec,axs,('down','up')):
             try:
                 if ptype in ('mesh','surf'):
-                    plotplasmamesh(s.loc[t,:,:], fg,ax,P,ptype)
+                    plotplasmamesh(s.sel(time=t), fg,ax,P,ptype)
                 else: #pcolor
-                    plotplasmatime(s.loc[t,:,:],t, fg,ax,P,fshift)
+                    plotplasmatime(s.sel(time=t),t, fg,ax,P,fshift)
             except KeyError as e:
-                print('E: {} plotting {} {}'.format(e,fshift,t))
+                logging.error('{} plotting {} {}'.format(e,fshift,t))
 
         fg.tight_layout()
 
@@ -237,14 +248,14 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
     ialt,alt = findnearest(specdown.srng.values,P['zlim_pl'])
 #%%
     try:
-        dBdown = 10*log10(specdown.loc[t,...][ialt,:].values)
+        dBdown = 10*log10(specdown.sel(time=t)[ialt,:].values)
         if len(P['vlim_pl'])>=4 and P['vlim_pl'][2] is not None:
             dBdown += P['vlim_pl'][2]
     except AttributeError:
         pass
 #%%
     try:
-        dBup = 10*log10(specup.loc[t,...][ialt,:].values)
+        dBup = 10*log10(specup.sel(time=t)[ialt,:].values)
         if len(P['vlim_pl'])>=4 and P['vlim_pl'][3] is not None:
             dBup += P['vlim_pl'][3]
     except AttributeError:
@@ -255,7 +266,7 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
     ax.plot(specup.freq.values/1e6, dBup)
 
     ax.set_ylabel('Power [dB]')
-    ax.set_xlabel('Doppler frequency [MHz]')
+    ax.set_xlabel('frequency: $f_c + f$ [MHz]')
 
     ax.set_ylim(P['vlim_pl'][:2])
     ax.set_xlim(P['flim_pl'])
@@ -276,7 +287,7 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
 #    h=ax.imshow(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
 #                    vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
 
-    ax.set_xlabel('Doppler frequency [MHz]')
+    ax.set_xlabel('frequency: $f_c + f$ [MHz]')
     ax.set_ylabel('slant range [km]')
 
     c=fg.colorbar(h,ax=ax,format='%.0f')
@@ -315,7 +326,7 @@ def plotplasmamesh(spec,fg,ax,P,ptype=''):
     srng = spec.index.values
     zgood = srng>P['zlim'][0] # above N km
 
-    S = 10*log10(spec.loc[zgood,:])
+    S = 10*log10(spec.loc[zgood,:]) #FIXME .sel()
     z = S.index.values
 
     x,y = meshgrid(spec.freq.values/1e6,z)
@@ -331,7 +342,7 @@ def plotplasmamesh(spec,fg,ax,P,ptype=''):
     ax.set_zlim(P['vlim'])
     ax.set_zlabel('Power [dB]')
     ax.set_ylabel('altitude [km]')
-    ax.set_xlabel('Frequency [MHz]')
+    ax.set_xlabel('frequency: $f_c + f$ [MHz]')
     ax.autoscale(True,'y',tight=True)
     fg.tight_layout()
 
@@ -364,7 +375,7 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
 
 
-    fg = polarplot(beams.loc[beamcodes,'az'], beams.loc[beamcodes,'el'],
+    fg = polarplot(beams.loc[beamcodes,'az'], beams.loc[beamcodes,'el'], # FIXME .sel()
                    title='ISR {} Beam Pattern: {}'.format(beamcodes.size,date),
                    markerarea=27.4)
 
@@ -400,3 +411,50 @@ def timeticks(tdiff):
 
     else:
         return SecondLocator(bysecond=range(0,60,2)),  SecondLocator(bysecond=range(0,60,1))
+
+
+def plotsumionline(dsum,ax,fn,P):
+    if dsum is None:
+        return
+
+    assert isinstance(dsum,DataArray) and dsum.ndim==1,'incorrect input type'
+    assert dsum.size > 1,'must have at least two data points to plot'
+
+    if not ax:
+        fg = figure()
+        ax = fg.gca()
+    else:
+        fg = gcf()
+
+    ax.plot(dsum.time,dsum.values,label='$\sum_{range} |P_{rx}|$')
+
+    if P['verbose']:
+        med = median(dsum.values)
+        ax.axhline(med,color='gold',linestyle='--',label='median')
+        if 'medthres' in P:
+            medthres = P['medthres']*med
+            ax.axhline(medthres,color='red',linestyle='--',label='threshold')
+
+    ax.set_ylabel('summed power')
+    ax.set_xlabel('time [UTC]')
+    ax.set_title('{} summed over ranges ({}..{})km'.format(expfn(fn),P['zlim'][0],P['zlim'][1]))
+
+    ax.set_yscale('log')
+    ax.grid(True)
+    ax.legend()
+
+    fg.autofmt_xdate()
+
+    writeplots(fg, dsum.time[0].item(), P['odir'],'summedAlt')
+
+def plotsumplasmaline(plsum):
+    assert isinstance(plsum,DataArray)
+
+    fg = figure()
+    ax = fg.gca()
+    plsum.plot(ax=ax)
+    ax.set_ylabel('summed power')
+    ax.set_xlabel('time [UTC]')
+    ax.set_title('plasma line summed over altitude (200..350)km and frequency (3.5..5.5)MHz')
+
+    #ax.xaxis.set_major_locator(timeticks(plsum.time[-1]-plsum.time[0])[0])

@@ -15,8 +15,9 @@ from matplotlib.colors import LogNorm
 import matplotlib.animation as anim
 #
 from .plasmaline import readplasmaline
-from .common import timeticks,findindex2Dsphere,timesync,projectisrhist
+from .common import findindex2Dsphere,timesync,projectisrhist
 from .snrpower import readpower_samples
+from .plots import plotsumionline
 #
 from GeoData.plotting import plotazelscale
 
@@ -37,7 +38,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
     gs = gridspec.GridSpec(2, 1, height_ratios=[3,1])
 #%% setup radar plot(s)
     a1 = fg.add_subplot(gs[1])
-    plotsumlongpulse(ds,a1,expfn(P['isrfn']),P['zlim'])
+    plotsumionline(ds,a1,expfn(P['isrfn']),P['zlim'])
 
     h1 = a1.axvline(nan,color='k',linestyle='--')
     t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
@@ -124,34 +125,11 @@ def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
     return clim
 
 #%% dt3
-def sumlongpulse(P):
-    snrsamp,azel,lla = readpower_samples(P['isrfn'],P)
+def sumionline(fn,P):
+    snrsamp,azel,lla = readpower_samples(fn,P)
     assert isinstance(snrsamp,DataArray)
 
-    return snrsamp.sum(axis=0),azel,lla
-
-def plotsumlongpulse(dsum,ax,rmode,zlim):
-    assert isinstance(dsum,DataArray) and dsum.ndim==1,'incorrect input type'
-    assert dsum.size > 1,'must have at least two data points to plot'
-
-    if not ax:
-        fg = figure()
-        ax = fg.gca()
-
-    try:
-        dsum.plot(ax=ax)
-    except ValueError as e:
-        print('Windows bug?ValueError: ordinal must be >= 1     your error is {}'.format(e) )
-
-    ax.set_ylabel('summed power')
-    ax.set_xlabel('time [UTC]')
-    ax.set_title('{} summed over altitude ({}..{})km'.format(rmode,zlim[0],zlim[1]))
-
-    ax.set_yscale('log')
-    ax.grid(True)
-
-    ax.xaxis.set_major_locator(timeticks(dsum.time[-1] - dsum.time[0])[0])
-    return ax
+    return snrsamp.sum(dim='srng'),azel,lla
 
 #%% plasma line
 def sumplasmaline(fn,P):
@@ -166,18 +144,6 @@ def sumplasmaline(fn,P):
 
     for s in spec:
         find = (P['flim'][0] <= absolute(freq[s]/1.e6)) & (absolute(freq[s]/1.e6) < P['flim'][1])
-        specsum.loc[:,s] = spec.loc[:,:,zind,find].sum(axis=3).sum(axis=2)
+        specsum.loc[:,s] = spec.loc[:,:,zind,find].sum(axis=3).sum(axis=2) #FIXME .sum(dim=)
 
     return specsum
-
-def plotsumplasmaline(plsum):
-    assert isinstance(plsum,DataArray)
-
-    fg = figure()
-    ax = fg.gca()
-    plsum.plot(ax=ax)
-    ax.set_ylabel('summed power')
-    ax.set_xlabel('time [UTC]')
-    ax.set_title('plasma line summed over altitude (200..350)km and frequency (3.5..5.5)MHz')
-
-    ax.xaxis.set_major_locator(timeticks(plsum.time[-1]-plsum.time[0])[0])

@@ -1,3 +1,6 @@
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.164876.svg
+   :target: https://doi.org/10.5281/zenodo.164876
+
 .. image:: https://travis-ci.org/scienceopen/isrutils.svg?branch=master
     :target: https://travis-ci.org/scienceopen/isrutils
 .. image:: https://coveralls.io/repos/github/scienceopen/isrutils/badge.svg?branch=master

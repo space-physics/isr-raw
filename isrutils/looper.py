@@ -11,7 +11,7 @@ sns.set_style('ticks')
 
 from . import Path,str2dt
 from .switchyard import isrselect
-from .plots import plotsnr,plotplasmaline
+from .plots import plotsnr,plotplasmaline,plotsumionline
 
 def simpleloop(flist,P):
     flist=sorted(flist) #in case glob
@@ -38,7 +38,9 @@ def simpleloop(flist,P):
     for f in flist:
       #  ft = ftype(f)
        # ax[ft] = {}
-        specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(Path(P['path'])/f, P)
+        specdown,specup,snrsamp,azel,isrlla,snrint,snr30int,ionsum = isrselect(Path(P['path'])/f, P)
+        # summed ion line over altitude range
+        plotsumionline(ionsum,None,f,P)
         # 15 sec integration
         plotsnr(snrint,f,Pint,azel,ctxt='int_')
         # 200 ms integration

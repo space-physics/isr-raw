@@ -6,8 +6,8 @@ from xarray import concat
 from .rawacf import readACF
 from .plasmaline import readplasmaline
 from .snrpower import readpower_samples,readsnr_int,snrvtime_fit
+from .summed import sumionline
 from .plots import plotsnr,plotsnr1d,plotplasmaline
-
 
 
 def isrstacker(flist,P):
@@ -54,11 +54,11 @@ def isrselect(fn,P):
 #%% handle path, detect file type
     ft = ftype(fn)
 #%% plasma line
-    specdown=specup=None
+    specdown=None; specup=None
     if ft in ('dt1','dt2'):
         specdown,specup,azel = readplasmaline(fn,P)
 #%% ~ 200 millisecond raw altcode and longpulse
-    snrsamp=isrlla=None
+    snrsamp=None; isrlla=None
     if ft in ('dt0','dt3'):
 #        tic = time()
         snrsamp,azel,isrlla = readpower_samples(fn,P)
@@ -71,13 +71,14 @@ def isrselect(fn,P):
         if P['verbose']:
             print('ACF/PSD read & plot took {:.1f} sec.'.format(time()-tic))
 #%% multi-second integration (numerous integrated pulses)
-    snrint=None
+    snrint=None; ionsum=None
     if ft in ('dt0','dt3'):
         snrint = readsnr_int(fn,P['beamid'])
+        ionsum,azel,isrlla = sumionline(fn,P)
 #%% 30 second integration plots
     if fn.stem.rsplit('_',1)[-1] == '30sec':
         snr30int = snrvtime_fit(fn,P['beamid'])
     else:
         snr30int=None
 
-    return specdown,specup,snrsamp,azel,isrlla,snrint,snr30int
+    return specdown,specup,snrsamp,azel,isrlla,snrint,snr30int,ionsum
