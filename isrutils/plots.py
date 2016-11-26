@@ -139,7 +139,7 @@ def plotsnrmesh(snr,fn,P):
     ax3.autoscale(True,'y',tight=True)
 
 
-def plotacf(spec,fn,azel,t,dt,P,zslice=(350e3,450e3)):
+def plotacf(spec,fn,azel,t,dt,P):
     """
     plot PSD derived from ACF.
     """
@@ -171,16 +171,19 @@ def plotacf(spec,fn,azel,t,dt,P,zslice=(350e3,450e3)):
 
     writeplots(fg,t,P['odir'],'acf_'+expfn(fn))
 #%% freq at alt
+    if 'zslice' not in P:
+        return
+
     fg = figure()
     ax = fg.gca()
 
-    iz = findnearest(spec.srng,zslice)[0]
+    iz = findnearest(spec.srng,P['zslice'])[0]
 
     ax.plot(spec.freq.values,10*log10(absolute(spec[iz[0]:iz[1],:].sum(dim='srng'))))
-    ax.set_ylim(P['vlimacf'])
+    ax.set_ylim(P['vlimacfslice'])
     ax.set_xlabel('frequency: $f_c + f$ [kHz]')
     ax.set_ylabel('Power [dB]')
-    ax.set_title('Az,El {:.1f},{:.1f}  @ {}..{} km  {}  $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], zslice[0]/1e3,zslice[1]/1e3,expfn(fn), dt, str(t)[:-6]))
+    ax.set_title('Az,El {:.1f},{:.1f}  @ {}..{} km  {}  $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], P['zslice'][0]/1e3, P['zslice'][1]/1e3,expfn(fn), dt, str(t)[:-6]))
 
     writeplots(fg,t,P['odir'],'acfslice_'+expfn(fn), ext='.eps')
 

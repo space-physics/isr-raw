@@ -3,7 +3,7 @@ from . import Path, ftype,ut2dt,cliptlim,filekey
 import h5py
 import logging
 from xarray import DataArray
-from numpy import (empty,zeros,complex128,conj,append,linspace,column_stack)
+from numpy import (empty,zeros,complex128,conj,append,linspace,column_stack,iscomplex)
 from numpy import correlate as xcorr
 from numpy.fft import fft,fftshift
 #
@@ -25,8 +25,10 @@ def acf2psd(acfall,noiseall,Nr,dns):
 
     if acfall.ndim == 3: # last dim real,cplx
         acf = (acfall[...,0] + 1j*acfall[...,1]).T / dns / 2.
-    elif acfall.ndim == 2:
+    elif acfall.ndim == 2 and iscomplex(acfall[0,0]):
         acf = acfall / dns / 2.
+    else:
+        raise TypeError('is this really ACF? I expect complex 2-D matrix')
 
     try:
         acf_noise = (noiseall[...,0] + 1j*noiseall[...,1]).T / dns / 2.
@@ -81,25 +83,24 @@ def readACF(fn,P):
         t,tind = cliptlim(t,P['tlim'])
 
         dt = (t[1]-t[0]).seconds
-#%% get ACF
+#%% get PSD
         istride = column_stack(bstride.nonzero())[tind,:]
         for tt,s in zip(t,istride):
             if noisekey is not None:
                 spectrum,acf = acf2psd(acfkey[s[0],s[1],...],
-                                   noisekey[s[0],s[1],...],
-                                   srng.size, dns)
+                                       noisekey[s[0],s[1],...],
+                                       srng.size, dns)
             elif acfkey.ndim==5:
                 spectrum,acf = acf2psd(acfkey[s[0],s[1],...],
-                                   noisekey,
-                                   srng.size, dns)
+                                       noisekey,
+                                       srng.size, dns)
             elif acfkey.ndim==4: # TODO raw samples from 2007 file
-                return
-                logging.critical('TODO this code not complete--need to have all the lags as a dimension. See Swoboda PhD code for proper computation of lags from complex voltage. https://github.com/jswoboda')
+                raise NotImplementedError('TODO this code not complete--need to have all the lags as a dimension. See Swoboda PhD code for proper computation of lags from complex voltage. https://github.com/jswoboda')
                 tdat = acfkey[s[0],s[1],:,0] + 1j*acfkey[s[0],s[1],:,1]
                 acfall = xcorr(tdat, tdat, 'full')
                 spectrum,acf = acf2psd(acfall,
-                                   noisekey,
-                                   srng.size, dns)
+                                       noisekey,
+                                       srng.size, dns)
 
             specdf = DataArray(data=spectrum,
                                dims=['srng','freq'],

@@ -1,11 +1,14 @@
 #!/usr/bin/env python
+"""
+This isn't in __init__.py due to matplotlib & seaborn imports.
+"""
 from copy import deepcopy
 #
 import matplotlib
 matplotlib.use('agg') # NOTE comment out this line to enable visible plots
 #from matplotlib.pyplot import show
 import seaborn as sns
-sns.set_context('talk',1.5)
+sns.set_context('talk',1.75)
 sns.set_style('ticks')
 #
 
