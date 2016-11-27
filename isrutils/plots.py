@@ -171,31 +171,53 @@ def plotacf(spec,fn,azel,t,dt,P):
 
     writeplots(fg,t,P['odir'],'acf_'+expfn(fn))
 #%% freq at alt
-    if 'zslice' not in P:
-        return
+    if 'zslice' in P:
+        plotzslice(spec,P['zslice'],P['vlimacfslice'],azel,fn,dt,t,P['odir'], 'acfslice_'+expfn(fn))
+
+
+def plotzslice(psd,zslice,vlim,azel,fn,dt,t,odir,stem,ttxt=None,flim=(None,None)):
+    assert psd.ndim==2,'single time,  spectrum vs srng and freq'
+
+    if psd.srng[-1]<100000: #km or m
+        zslice = zslice / 1000 # NOT /= or it modifies original dict!!
 
     fg = figure()
     ax = fg.gca()
 
-    iz = findnearest(spec.srng,P['zslice'])[0]
+    iz = findnearest(psd.srng, zslice)[0]
 
-    ax.plot(spec.freq.values,10*log10(absolute(spec[iz[0]:iz[1],:].sum(dim='srng'))))
-    ax.set_ylim(P['vlimacfslice'])
+    freq = psd.freq.values
+    if absolute(freq).max() > 1000: # MHz
+        freq /= 1e6
+    if freq[freq.size//2]<0 and flim[0] is not None:
+        flim = -flim
+
+    ax.plot(freq,
+            10*log10(absolute(psd.isel(srng=slice(iz[0],iz[1])).sum(dim='srng'))))
+
+
+
+    ax.set_xlim(flim)
+    if flim[-1]<0:
+        ax.invert_xaxis() #have to do it here after set_xlim
+
+    ax.set_ylim(vlim+10)
     ax.set_xlabel('frequency: $f_c + f$ [kHz]')
     ax.set_ylabel('Power [dB]')
-    ax.set_title('Az,El {:.1f},{:.1f}  @ {}..{} km  {}  $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], P['zslice'][0]/1e3, P['zslice'][1]/1e3,expfn(fn), dt, str(t)[:-6]))
 
-    writeplots(fg,t,P['odir'],'acfslice_'+expfn(fn), ext='.eps')
+    if ttxt is None:
+        ttxt = expfn(fn)
+
+    ax.set_title('Az,El {:.1f},{:.1f}  @ {}..{} km  {}  $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], zslice[0], zslice[1],ttxt, dt, str(t)[:-6]))
+
+    writeplots(fg,t, odir, stem, ext='.eps')
+
 
 def plotplasmaline(specdown,specup,fn, P, azel):
-    spec = [s for s in (specdown,specup) if isinstance(s,DataArray)]
-
-    Nspec = len(spec)
-
-    if not spec:
-        return
-
     tic = time()
+
+    spec = [s for s in (specdown,specup) if isinstance(s,DataArray)]
+    Nspec = len(spec)
 
     T = spec[0].time
     dT = (T[1]-T[0]).item()/1e9
@@ -206,6 +228,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
     ptype=None#'mesh'
 
     for t in T:
+        fg=None
         t = datetime.fromtimestamp(t.item()/1e9,tz=UTC)
         if ptype in ('mesh','surf'): #cannot use subplots for 3d with matplotlib 1.4
             axs=[None,None]
@@ -213,18 +236,20 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             fg = figure(figsize=(15,5))
             axs[0] = fg.add_subplot(1,Nspec,1,projection='3d')
 
-            fg.suptitle('{} {}'.format(fn.name,t.to_pydatetime()))
-        elif P['zlim_pl'] is not None and isinstance(P['zlim_pl'],(float,int)): #lineplot
-            fg = figure()
-            plotplasmaoverlay(specdown,specup,t,fg,P)
-            writeplots(fg,t,P['odir'],'plasmaLineOverlay')
-            continue
-        else: #pcolor
+            fg.suptitle('{} {}'.format(fn.name,t.to_pydatetime()),y=1.01)
+        elif 'zslice' in P: #lineplot
+            #fg = figure()
+            #plotplasmaoverlay(specdown,specup,t,fg,P)
+            #writeplots(fg,t,P['odir'],'plasmaLineOverlay')
+            #continue
+            plotzslice(specdown.sel(time=t),P['zslice'],P['vlim_pl'],azel,fn,dT,t,P['odir'],'plasmaDOWNslice','downshifted plasma line',P['flim_pl'])
+            plotzslice(specup.sel(time=t),P['zslice'],P['vlim_pl'],azel,fn,dT,t,P['odir'],'plasmaUPslice','upshifted plasma line',P['flim_pl'])
+
+        if fg is None:
             fg,axs = subplots(Nspec,1,figsize=(15,Nspec*7.5))
             axs = atleast_1d(axs)
 
-            fg.suptitle('Az,El {:.1f},{:.1f}  Plasma line {}  $T_{{sample}}$: {} [sec.]'.format(azel[0],azel[1],
-                            t,dT))
+            fg.suptitle('Az,El {:.1f},{:.1f}  Plasma line {}  $T_{{sample}}$: {} [sec.]'.format(azel[0],azel[1],t,dT),y=1.01)
 #%%
         for s,ax,fshift in zip(spec,axs,('down','up')):
             try:
@@ -284,7 +309,7 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
     srng = spec.srng.values
     zgood = srng > 60. # above N km
 
-    h=ax.pcolormesh(spec.freq.values/1e6, srng[zgood], 10*log10(spec[zgood,:].values),
+    hi=ax.pcolormesh(spec.freq.values/1e6, srng[zgood], 10*log10(spec[zgood,:].values),
                     vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
 
 #    h=ax.imshow(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
@@ -293,8 +318,8 @@ def plotplasmatime(spec,t,fg,ax,P,ctxt):
     ax.set_xlabel('frequency: $f_c + f$ [MHz]')
     ax.set_ylabel('slant range [km]')
 
-    c=fg.colorbar(h,ax=ax,format='%.0f')
-    c.set_label('Power [dB]')
+    #if hi.colorbar is None:
+    fg.colorbar(hi,ax=ax,format='%.0f').set_label('Power [dB]')
 
     ax.autoscale(True,'both',tight=True) #before manual lim setting
     ax.set_ylim(P['zlim_pl'])

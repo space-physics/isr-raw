@@ -22,6 +22,8 @@ from isrutils.looper import simpleloop
 P={'path':'~/data/2011-03-01/isr',
    'beamid': 64157,
    'acf': True,
+   'int':False,
+   'samples': True,
    'zlim_pl': [None,None],
    'vlim_pl': [72,84],
    'flim_pl': [None,None],
@@ -34,6 +36,8 @@ P={'path':'~/data/2011-03-01/isr',
              '2011-03-01T10:06:40Z'],
     'tmark': [],
     'odir': 'out/2011-03-01',
+    'medthres': 2.,
+
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (

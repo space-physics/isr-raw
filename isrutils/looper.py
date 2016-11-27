@@ -3,6 +3,7 @@
 This isn't in __init__.py due to matplotlib & seaborn imports.
 """
 from copy import deepcopy
+from numpy import asarray
 #
 import matplotlib
 matplotlib.use('agg') # NOTE comment out this line to enable visible plots
@@ -29,6 +30,15 @@ def simpleloop(flist,P):
 
     if not 'tlim' in P:
         P['tlim'] = [None,None]
+
+    if 'zslice' in P:
+        P['zslice'] = asarray(P['zslice'])
+
+    if 'flim_pl' in P:
+        P['flim_pl'] = asarray(P['flim_pl'])
+
+    if 'vlim_pl' in P:
+        P['vlim_pl'] = asarray(P['vlim_pl'])
 
     Pint = deepcopy(P) # copy does not work, deepcopy works
     if Pint['vlim'][0] is not None: Pint['vlim'][0] = Pint['vlim'][0] + 15
