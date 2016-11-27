@@ -20,7 +20,7 @@ from .plots import plotsnr,plotplasmaline,plotsumionline
 def simpleloop(flist,P):
     flist=sorted(flist) #in case glob
     if not flist:
-        raise ValueError('no files found in {}'.format(P['path']))
+        raise FileNotFoundError('no files found in {}'.format(P['path']))
 #%% api catchall
     if not 'odir' in P:
         P['odir'] = None
@@ -32,7 +32,10 @@ def simpleloop(flist,P):
         P['tlim'] = [None,None]
 
     for p in ('zslice','flim_pl','vlim_pl','vlim','vlimacf','vlimacfslice'):
-        P[p] = asarray(P[p])
+        if p in P:
+            P[p] = asarray(P[p])
+        else:
+            P[p] = (None,None)
 
 
     Pint = deepcopy(P) # copy does not work, deepcopy works

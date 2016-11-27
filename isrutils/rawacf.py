@@ -69,6 +69,8 @@ def readACF(fn,P):
             raise TypeError('unexpected file type {}'.format(ft))
 
         if acfkey is None or rk not in f:
+            if ft == 'dt3':
+                print('try DT0 file for ACF (esp. for 2007 PFISR)')
             return
 #%% get ranges
         try:
@@ -84,6 +86,7 @@ def readACF(fn,P):
 
         dt = (t[1]-t[0]).seconds
 #%% get PSD
+
         istride = column_stack(bstride.nonzero())[tind,:]
         for tt,s in zip(t,istride):
             if noisekey is not None:

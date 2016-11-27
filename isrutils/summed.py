@@ -127,9 +127,11 @@ def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
 #%% dt3
 def sumionline(fn,P):
     snrsamp,azel,lla = readpower_samples(fn,P)
-    assert isinstance(snrsamp,DataArray)
 
-    return snrsamp.sum(dim='srng'),azel,lla
+    if isinstance(snrsamp,DataArray):
+        return snrsamp.sum(dim='srng'),azel,lla
+    else:
+        return None,azel,lla
 
 #%% plasma line
 def sumplasmaline(fn,P):

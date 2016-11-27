@@ -12,10 +12,13 @@ P={
 'path':'~/data/2007-03-23/isr',
 'beamid': 64157,
 'acf': True,
+'int': False,
+'samples': True,
 'vlimacf': (25,60),
-'odir': 'out/2007-03-23',
+'vlimacfslice': (50,65),
+'zslice': (225e3, 300e3),
 'zlim_pl': [None,400],
-'vlim_pl': [None,90], # FIXME different scale for up and down shift
+'vlim_pl': [75,80], #[80,90] # FIXME different scale for up and down shift
 #  'zlim_pl': 230.,
 #  'vlim_pl': [71,78,0,-13], #last two numbers are offsets
 'flim_pl': [4.45,4.8], # [MHz]
@@ -23,13 +26,15 @@ P={
 'zlim': (90, None),
 'tlim': ['2007-03-23T11:20:00Z',
          '2007-03-23T11:20:50Z'],
+'medthres': 2.,
 'verbose': True,
+'odir': 'out/2007-03-23',
   }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = [
-        'd0019275.dt0.h5', #ion line of alt code
-        #'d0019275.dt1.h5', #plasma
-        #'d0019275.dt3.h5' # ion line of long pulse
-        ]
+#'d0019275.dt0.h5', #ion line of alt code
+'d0019275.dt1.h5', #plasma
+#'d0019275.dt3.h5' # ion line of long pulse
+]
 
 simpleloop(flist,P)

@@ -19,26 +19,27 @@ d0245972 quiescent
 """
 from isrutils.looper import simpleloop
 #%% users param
-P={'path':'~/data/2011-03-01/isr',
-   'beamid': 64157,
-   'acf': True,
-   'int':False,
-   'samples': True,
-   'zlim_pl': [None,None],
-   'vlim_pl': [72,84],
-   'flim_pl': [None,None],
-   'vlim':  [30,60],
-   'vlimacf': (20,50),
-    'zlim': (90, None),
-    'vlimacfslice': (30,55),
-    'zslice': (350e3,600e3),
-    'tlim': ['2011-03-01T10:06:00Z',
-             '2011-03-01T10:06:40Z'],
-    'tmark': [],
-    'odir': 'out/2011-03-01',
-    'medthres': 2.,
+P={
+'path':'~/data/2011-03-01/isr',
+'beamid': 64157,
+'acf': True,
+'int': False,
+'samples': True,
+'vlimacf': (20,50),
+'vlimacfslice': (30,55),
+'zslice': (350e3,600e3),
+'zlim_pl': [None,None],
+'vlim_pl': [75,85],
+'flim_pl': [None,None],
+'vlim':  [30,60],
+'zlim': (90, None),
+'tlim': ['2011-03-01T10:06:00Z',
+         '2011-03-01T10:06:40Z'],
+'medthres': 2.,
+'tmark': [],
+'odir': 'out/2011-03-01',
 
-  }
+ }
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = (
 #'d0245965.dt3.h5',

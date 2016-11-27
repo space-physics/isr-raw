@@ -64,6 +64,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
     c.set_label('Power [dB]')
 
     Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
+
     ax.set_title('Az,El {:.1f},{:.1f}  {}  {}  $T_{{sample}}$={:.3f} sec.'.format(azel[0],azel[1],expfn(fn),
                          str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10], Ts.item()/1e9))
 
@@ -201,7 +202,11 @@ def plotzslice(psd,zslice,vlim,azel,fn,dt,t,odir,stem,ttxt=None,flim=(None,None)
     if flim[-1] is not None and flim[-1]<0:
         ax.invert_xaxis() #have to do it here after set_xlim
 
-    ax.set_ylim(vlim+10)
+    for v in vlim: # not is None doesn't work for numpy.array
+        if v is not None:
+            v+=10
+    ax.set_ylim(vlim)
+
     ax.set_xlabel('frequency: $f_c + f$ [kHz]')
     ax.set_ylabel('Power [dB]')
 
@@ -244,6 +249,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             #plotplasmaoverlay(specdown,specup,t,fg,P)
             #writeplots(fg,t,P['odir'],'plasmaLineOverlay')
             #continue
+#            import pdb; pdb.set_trace()
             if isinstance(specdown,DataArray):
                 plotzslice(specdown.sel(time=t),P['zslice'],P['vlim_pl'],azel,fn,dT,t,P['odir'],'plasmaDOWNslice','downshifted plasma line',P['flim_pl'])
             if isinstance(specup,DataArray):
@@ -477,7 +483,7 @@ def plotsumionline(dsum,ax,fn,P):
 
     fg.autofmt_xdate()
 
-    writeplots(fg, dsum.time[0].item(), P['odir'],'summedAlt')
+    writeplots(fg, dsum.time[0].item(), P['odir'],'summedAlt',ext='.eps')
 
 def plotsumplasmaline(plsum):
     assert isinstance(plsum,DataArray)

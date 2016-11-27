@@ -52,6 +52,7 @@ def readpower_samples(fn,P):
     try:
       with h5py.File(str(fn),'r',libver='latest') as f:
         isrlla = (f['/Site/Latitude'].value,f['/Site/Longitude'].value,f['/Site/Altitude'].value)
+        azel = getazel(f,P['beamid'])
 
         rawkey = filekey(f)
         try:
@@ -68,15 +69,13 @@ def readpower_samples(fn,P):
         try:
             power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,P) #I + jQ   # Ntimes x striped x alt x real/comp
         except KeyError:
-            return (None,(None,None),None)
-#%% return az,el of this beam
-        azel = getazel(f,P['beamid'])
+            return None,azel,isrlla
     except OSError as e: #problem with file
         print('{} OSError when reading: \n {}'.format(fn,e))
-        return (None,(None,None),None)
+        return None,azel,isrlla
     except KeyError as e:
         print('raw pulse data not found {} \n {}'.format(fn,e))
-        return (None,(None,None),None)
+        return None,azel,isrlla
 
     return power,azel,isrlla
 
