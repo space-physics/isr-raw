@@ -198,7 +198,7 @@ def plotzslice(psd,zslice,vlim,azel,fn,dt,t,odir,stem,ttxt=None,flim=(None,None)
 
 
     ax.set_xlim(flim)
-    if flim[-1]<0:
+    if flim[-1] is not None and flim[-1]<0:
         ax.invert_xaxis() #have to do it here after set_xlim
 
     ax.set_ylim(vlim+10)
@@ -218,6 +218,8 @@ def plotplasmaline(specdown,specup,fn, P, azel):
 
     spec = [s for s in (specdown,specup) if isinstance(s,DataArray)]
     Nspec = len(spec)
+    if Nspec==0:
+        return
 
     T = spec[0].time
     dT = (T[1]-T[0]).item()/1e9
@@ -242,8 +244,10 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             #plotplasmaoverlay(specdown,specup,t,fg,P)
             #writeplots(fg,t,P['odir'],'plasmaLineOverlay')
             #continue
-            plotzslice(specdown.sel(time=t),P['zslice'],P['vlim_pl'],azel,fn,dT,t,P['odir'],'plasmaDOWNslice','downshifted plasma line',P['flim_pl'])
-            plotzslice(specup.sel(time=t),P['zslice'],P['vlim_pl'],azel,fn,dT,t,P['odir'],'plasmaUPslice','upshifted plasma line',P['flim_pl'])
+            if isinstance(specdown,DataArray):
+                plotzslice(specdown.sel(time=t),P['zslice'],P['vlim_pl'],azel,fn,dT,t,P['odir'],'plasmaDOWNslice','downshifted plasma line',P['flim_pl'])
+            if isinstance(specup,DataArray):
+                plotzslice(specup.sel(time=t),P['zslice'],P['vlim_pl'],azel,fn,dT,t,P['odir'],'plasmaUPslice','upshifted plasma line',P['flim_pl'])
 
         if fg is None:
             fg,axs = subplots(Nspec,1,figsize=(15,Nspec*7.5))

@@ -31,14 +31,9 @@ def simpleloop(flist,P):
     if not 'tlim' in P:
         P['tlim'] = [None,None]
 
-    if 'zslice' in P:
-        P['zslice'] = asarray(P['zslice'])
+    for p in ('zslice','flim_pl','vlim_pl','vlim','vlimacf','vlimacfslice'):
+        P[p] = asarray(P[p])
 
-    if 'flim_pl' in P:
-        P['flim_pl'] = asarray(P['flim_pl'])
-
-    if 'vlim_pl' in P:
-        P['vlim_pl'] = asarray(P['vlim_pl'])
 
     Pint = deepcopy(P) # copy does not work, deepcopy works
     if Pint['vlim'][0] is not None: Pint['vlim'][0] = Pint['vlim'][0] + 15
