@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from . import Path,writeplots,expfn,str2dt
 import logging
+from sys import stderr
 from time import time
 import h5py
 from datetime import datetime,timedelta
@@ -28,16 +29,17 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 
     assert snr.ndim==2 and snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
 
-    fg = figure(figsize=(30,12))
+    fg = figure()#figsize=(30,12))
     ax = fg.gca()
 
-    #try:
-    h=ax.pcolormesh(snr.time, snr.srng,
-                    10*masked_invalid(log10(snr.values)),
-                    vmin=P['vlim'][0], vmax=P['vlim'][1],
-                    cmap='cubehelix_r')
-   # except ValueError as e:
-    #    print('Windows seems to wrongly get error ValueError: ordinal must be >= 1.  Your error is {}'.format(e))
+    try:
+        h=ax.pcolormesh(snr.time, snr.srng,
+                10*masked_invalid(log10(snr.values)),
+                vmin=P['vlim'][0], vmax=P['vlim'][1],
+                cmap='cubehelix_r')
+    except ValueError as e:
+        print(e,file=stderr)
+        return
 
     ax.autoscale(True,tight=True)
 
@@ -423,8 +425,7 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
   except Exception as e:
       print(e)
 
-#def timeticks(tdiff:timedelta ):
-def timeticks(tdiff):
+def timeticks(tdiff:timedelta):
     """
     NOTE do NOT use "interval" or ticks are misaligned!  use "bysecond" only!
     """
@@ -464,7 +465,11 @@ def plotsumionline(dsum,ax,fn,P):
     else:
         fg = gcf()
 
-    ax.plot(dsum.time,dsum.values,label='$\sum_{range} |P_{rx}|$')
+    try:
+        ax.plot(dsum.time,dsum.values,label='$\sum_{range} |P_{rx}|$')
+    except ValueError as e:
+        print(e,file=stderr)
+        return
 
     if P['verbose']:
         med = median(dsum.values)

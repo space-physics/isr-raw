@@ -24,7 +24,9 @@ P={
 'flim_pl': [4.45,4.8], # [MHz]
 'vlim': [30,65],
 'zlim': (90, None),
-'tlim': ['2007-03-23T11:20:00Z',
+#'tlim': ['2007-03-23T11:20:00Z',
+#         '2007-03-23T11:20:50Z'],
+'tlim': ['2007-03-23T11:20:30Z',
          '2007-03-23T11:20:50Z'],
 'medthres': 2.,
 'verbose': True,
@@ -33,8 +35,8 @@ P={
 #%% iterate over list. Files are ID'd by file extension (See README.rst)
 flist = [
 #'d0019275.dt0.h5', #ion line of alt code
-'d0019275.dt1.h5', #plasma
-#'d0019275.dt3.h5' # ion line of long pulse
+#'d0019275.dt1.h5', #plasma
+'d0019275.dt3.h5' # ion line of long pulse
 ]
 
 simpleloop(flist,P)

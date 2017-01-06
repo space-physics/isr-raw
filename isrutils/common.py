@@ -1,8 +1,8 @@
-from six import integer_types
+import logging
 from datetime import datetime
 from pytz import UTC
 from h5py import Dataset
-from numpy import (array,ndarray,unravel_index, datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
+from numpy import (array,unravel_index, datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from argparse import ArgumentParser
 #
@@ -35,7 +35,7 @@ def getazel(f,beamid):
 
     returns: azimuth,elevation pair (degrees)
     """
-    assert isinstance(beamid,integer_types)
+    assert isinstance(beamid,int)
 
     azelrow = (f['/Setup/BeamcodeMap'][:,0] == beamid).nonzero()[0]
     assert azelrow.size == 1, 'each beam should have a unique az,el'
@@ -119,19 +119,13 @@ def findindex2Dsphere(azimg,elimg,az,el):
     adist = angledist(azimg,elimg,az,el)
     return unravel_index(adist.argmin(), azimg.shape)
 
-#def findstride(beammat:Dataset,bid:int):
-def findstride(beammat, bid):
-    assert isinstance(bid,integer_types)
+def findstride(beammat:Dataset, bid:int):
+    assert isinstance(bid,int)
     assert beammat.ndim==2
     # NOTE: Pre-2013 files have distinct rows, so touch each value in beamcode!
 
-#    Nt = beammat.shape[0]
-#    index = empty((Nt,Np),dtype=int)
-#    for i,b in enumerate(beammat):
-#        index[i,:] = nonzero(b==bid)[0] #NOTE: candidate for np.s_ ?
-
-#    return column_stack(beammat[:]==bid).nonzero()
     return beammat[:]==bid #boolean
+
 
 def sampletime(t,bstride):
     """
@@ -141,10 +135,15 @@ def sampletime(t,bstride):
 
     returns: 2-D single of UTC time unix epoch
     """
-    assert isinstance(t,Dataset),'hdf5 only'
+    assert isinstance(t,Dataset), 'hdf5 only'
     assert t.ndim == 2
 
-    return t.value[bstride]
+    t = t[bstride]
+    if t.max() > 1.01*t.mean():
+        logging.warning('at least one time gap in radar detected')
+
+    return t
+
 
 def boilerplateapi(descr='loading, processing, plotting raw ISR data'):
     p = ArgumentParser(description=descr)
