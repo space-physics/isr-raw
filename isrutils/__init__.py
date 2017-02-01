@@ -1,17 +1,10 @@
+from pathlib import Path
 import pathvalidate
 from xarray import DataArray
-from six import integer_types, string_types
 from dateutil.parser import parse
 from numpy import atleast_1d, ndarray,ones,array
 from datetime import datetime
 from pytz import UTC
-
-try:
-    from pathlib import Path
-    Path().expanduser()
-except (ImportError,AttributeError):
-    from pathlib2 import Path
-
 
 
 def writeplots(fg,t='',odir=None,ctxt='',ext='.png'):
@@ -24,7 +17,7 @@ def writeplots(fg,t='',odir=None,ctxt='',ext='.png'):
 
         if isinstance(t,(DataArray)):
             t = datetime.fromtimestamp(t.item()/1e9, tz=UTC)
-        elif isinstance(t,(float,integer_types)): # UTC assume
+        elif isinstance(t,(float,int)): # UTC assume
             t = datetime.fromtimestamp(t/1e9, tz=UTC)
 
             #:-6 keeps up to millisecond if present.
@@ -61,9 +54,9 @@ def str2dt(tstr):
     for t in tstr:
         if t is None or isinstance(t,datetime):
             ut.append(t)
-        elif isinstance(t,string_types):
+        elif isinstance(t,str):
             ut.append(parse(t))
-        elif isinstance(t,(float,integer_types)):
+        elif isinstance(t,(float,int)):
             ut.append(datetime.fromtimestamp(t,tz=UTC))
         else:
             raise TypeError('unknown data type {}'.format(ut[0].dtype))

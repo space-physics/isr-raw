@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 from setuptools import setup
-import subprocess
-
 try:
-    subprocess.call(['conda','install','--file','requirements.txt'])
-except Exception:
-    pass
+    import conda.cli
+    conda.cli.main('install','--file','requirements.txt')
+except Exception as e:
+    print(e)
+
 
 setup(name='isrutils',
-	  description='Utilities for Incoherent Scatter Radar raw data (initially targeted for PFISR)',
-	  url='https://github.com/scienceopen/isrutils',
-	  install_requires=['pathlib2','pathvalidate',
+	  install_requires=['pathvalidate',
                          'histutils','pymap3d','GeoData'],
       dependency_links = ['https://github.com/scienceopen/histutils/tarball/master#egg=histutils',
                           'https://github.com/scienceopen/pymap3d/tarball/master#egg=pymap3d',

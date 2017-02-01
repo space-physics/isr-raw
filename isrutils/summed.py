@@ -2,7 +2,7 @@
 """
 summed measurements and plots
 """
-from . import Path, writeplots,expfn
+from pathlib import Path
 import pathvalidate
 from xarray import DataArray
 from datetime import datetime
@@ -14,6 +14,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.colors import LogNorm
 import matplotlib.animation as anim
 #
+from . import  writeplots,expfn
 from .plasmaline import readplasmaline
 from .common import findindex2Dsphere,timesync,projectisrhist
 from .snrpower import readpower_samples

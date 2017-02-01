@@ -2,7 +2,7 @@
 """
 2013-05-01
 """
-from isrutils import Path
+from pathlib import Path
 from datetime import datetime
 from pytz import UTC
 from matplotlib.pyplot import show

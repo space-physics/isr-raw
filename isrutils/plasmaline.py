@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from six import integer_types
+from pathlib import Path
 from time import time
-from . import Path,ut2dt,cliptlim
+from . import ut2dt,cliptlim
 import h5py
 from xarray import DataArray
 #
@@ -18,7 +18,7 @@ def readplasmaline(fn,P):
     """
     tic = time()
     fn = Path(fn).expanduser()
-    assert isinstance(P['beamid'],integer_types),'beam specification must be a scalar integer'
+    assert isinstance(P['beamid'],int),'beam specification must be a scalar integer'
 
     #['downshift','upshift'] # by definition of dt1,dt2
     #fshift = (('dt1',-5e6),('dt2',5e6))

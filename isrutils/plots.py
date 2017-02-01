@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from . import Path,writeplots,expfn,str2dt
+from pathlib import Path
 import logging
 from sys import stderr
 from time import time
@@ -16,6 +16,7 @@ from matplotlib.dates import MinuteLocator,SecondLocator
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import DateFormatter
 #
+from . import writeplots,expfn,str2dt
 from GeoData.plotting import polarplot
 from histutils.findnearest import find_nearest as findnearest
 

@@ -4,7 +4,7 @@ reading PFISR data down to IQ samples
 
 See Examples/ for more updated specific code
 """
-from isrutils import Path
+from pathlib import Path
 from isrutils.common import boilerplateapi
 from isrutils.looper import simpleloop
 #%% user parameters

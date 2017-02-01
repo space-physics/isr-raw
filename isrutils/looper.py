@@ -2,6 +2,7 @@
 """
 This isn't in __init__.py due to matplotlib & seaborn imports.
 """
+from pathlib import Path
 from copy import deepcopy
 from numpy import asarray
 #
@@ -13,7 +14,7 @@ sns.set_context('talk',1.75)
 sns.set_style('ticks')
 #
 
-from . import Path,str2dt
+from . import str2dt
 from .switchyard import isrselect
 from .plots import plotsnr,plotplasmaline,plotsumionline
 

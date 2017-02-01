@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-from . import Path, str2dt
+from pathlib import Path
 #
 import matplotlib
 matplotlib.use('agg') # NOTE comment out this line to enable visible plots
 #
+from . import  str2dt
 from .plasmaline import readplasmaline#,plotplasmaline
 from .summed import sumionline,dojointplot
 #

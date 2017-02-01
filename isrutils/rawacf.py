@@ -1,5 +1,5 @@
 from __future__ import division
-from . import Path, ftype,ut2dt,cliptlim,filekey
+from pathlib import Path
 import h5py
 import logging
 from xarray import DataArray
@@ -7,6 +7,7 @@ from numpy import (empty,zeros,complex128,conj,append,linspace,column_stack,isco
 from numpy import correlate as xcorr
 from numpy.fft import fft,fftshift
 #
+from . import ftype,ut2dt,cliptlim,filekey
 from .common import findstride,getazel
 from .plots import plotacf
 

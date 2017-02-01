@@ -7,7 +7,7 @@ assuming quasi-stationary system such that production rate
 q = alpha * Ne^2
 where alpha is the dissociative recombination rate assuming Ni~Ne
 """
-from isrutils import Path
+from pathlib import Path
 import h5py
 from xarray import DataArray
 from numpy import empty_like,column_stack

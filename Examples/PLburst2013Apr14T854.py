@@ -3,7 +3,7 @@
 For a particular event, shows the plasma line bursts
 
 """
-from isrutils import Path
+from pathlib import Path
 from tempfile import gettempdir
 from datetime import datetime
 from pytz import UTC

@@ -3,7 +3,7 @@ import matplotlib
 matplotlib.use('agg')
 print(matplotlib.get_backend())
 
-from isrutils import Path
+from pathlib import Path
 from numpy.testing import run_module_suite
 #
 from isrutils.snrpower import (readpower_samples,readsnr_int,snrvtime_fit)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from isrutils import Path
+from pathlib import Path
 from isrutils.looper import simpleloop
 #%% users param
 P={

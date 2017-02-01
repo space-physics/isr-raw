@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-from . import Path,ut2dt,cliptlim,filekey
+from pathlib import Path
 from sys import stderr
 from numpy import ones
 import h5py
 from xarray import DataArray
 #
+from . import ut2dt,cliptlim,filekey
 from .common import findstride,sampletime,getazel
 from .plots import plotbeampattern
 
