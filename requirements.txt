@@ -1,9 +1,0 @@
-setuptools
-nose
-python-dateutil
-pytz
-numpy
-xarray
-matplotlib
-seaborn
-h5py
