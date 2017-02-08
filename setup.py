@@ -11,9 +11,11 @@ except Exception as e:
 
 setup(name='isrutils',
       author='Michael Hirsch, Ph.D.',
+      url='https://github.com/scienceopen/isrutils',
 	  install_requires=['pathvalidate',
-                         'histutils','pymap3d','GeoData'],
-      dependency_links = ['https://github.com/scienceopen/histutils/tarball/master#egg=histutils',
+	  'sciencedates','pymap3d',
+                        'GeoData'],
+      dependency_links = [
                           'https://github.com/jswoboda/GeoDataPython/tarball/master#egg=GeoData',],
       packages=['isrutils'],
 	  )

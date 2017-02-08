@@ -18,7 +18,7 @@ from matplotlib.dates import DateFormatter
 #
 from . import writeplots,expfn,str2dt
 from GeoData.plotting import polarplot
-from histutils.findnearest import find_nearest as findnearest
+from sciencedates import find_nearest as findnearest
 
 ALTMIN = 60e3 # meters
 
