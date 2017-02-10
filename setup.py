@@ -1,21 +1,17 @@
 #!/usr/bin/env python
 from setuptools import setup
 
-try:
-    import conda.cli
-    conda.cli.main('install','--file','requirements.txt')
-except Exception as e:
-    print(e)
-    import pip
-    pip.main(['install','-r','requirements.txt'])
+req = ['pathvalidate',
+	  'sciencedates','pymap3d',
+	                         'GeoData',
+	   'nose','python-dateutil','pytz','numpy','xarray','matplotlib','seaborn','h5py']
 
 setup(name='isrutils',
       author='Michael Hirsch, Ph.D.',
       url='https://github.com/scienceopen/isrutils',
-	  install_requires=['pathvalidate',
-	  'sciencedates','pymap3d',
-                        'GeoData'],
+      description='utilities for reading and plotting ISR raw data',
+	  install_requires=req,
       dependency_links = [
-                          'https://github.com/jswoboda/GeoDataPython/tarball/master#egg=GeoData',],
+            'https://github.com/jswoboda/GeoDataPython/tarball/master#egg=GeoData',],
       packages=['isrutils'],
 	  )
