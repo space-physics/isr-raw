@@ -3,15 +3,15 @@ from setuptools import setup
 
 req = ['pathvalidate',
 	  'sciencedates','pymap3d',
-	                         'GeoData',
+         'GeoData',
 	   'nose','python-dateutil','pytz','numpy','xarray','matplotlib','seaborn','h5py']
 
 setup(name='isrutils',
+      packages=['isrutils'],
       author='Michael Hirsch, Ph.D.',
       url='https://github.com/scienceopen/isrutils',
       description='utilities for reading and plotting ISR raw data',
 	  install_requires=req,
       dependency_links = [
             'https://github.com/jswoboda/GeoDataPython/tarball/master#egg=GeoData',],
-      packages=['isrutils'],
 	  )
