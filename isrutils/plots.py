@@ -12,13 +12,13 @@ from pandas import DataFrame
 from xarray import DataArray
 #
 from matplotlib.pyplot import figure,subplots,gcf
-from matplotlib.dates import MinuteLocator,SecondLocator
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import DateFormatter
 #
 from . import writeplots,expfn,str2dt
 from GeoData.plotting import polarplot
 from sciencedates import find_nearest as findnearest
+from sciencedates import timeticks
 
 ALTMIN = 60e3 # meters
 
@@ -426,31 +426,6 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
   except Exception as e:
       print(e)
 
-def timeticks(tdiff:timedelta):
-    """
-    NOTE do NOT use "interval" or ticks are misaligned!  use "bysecond" only!
-    """
-    if isinstance(tdiff,DataArray): #len==1
-        tdiff = timedelta(microseconds=tdiff.item()/1e3)
-    assert isinstance(tdiff,timedelta),'expecting datetime.timedelta'
-
-    if tdiff > timedelta(hours=2):
-        return None,None
-
-    elif tdiff > timedelta(minutes=20):
-        return MinuteLocator(byminute=range(0,60,5)),  MinuteLocator(byminute=range(0,60,1))
-
-    elif (timedelta(minutes=5) < tdiff) & (tdiff<=timedelta(minutes=20)):
-        return MinuteLocator(byminute=range(0,60,1)),  SecondLocator(bysecond=range(0,60,15))
-
-    elif (timedelta(minutes=1) < tdiff) & (tdiff<=timedelta(minutes=5)):
-        return SecondLocator(bysecond=range(0,60,15)), SecondLocator(bysecond=range(0,60,5))
-
-    elif (timedelta(seconds=30) < tdiff) &(tdiff<=timedelta(minutes=1)):
-        return SecondLocator(bysecond=range(0,60,5)),  SecondLocator(bysecond=range(0,60,2))
-
-    else:
-        return SecondLocator(bysecond=range(0,60,2)),  SecondLocator(bysecond=range(0,60,1))
 
 
 def plotsumionline(dsum,ax,fn,P):
