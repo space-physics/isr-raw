@@ -27,7 +27,7 @@ def isrstacker(flist,P):
         else:
             if snrsamp is not None: snrsamps= concat((snrsamps,snrsamp), axis=1)
             if snrint is not None:  snrints = concat((snrints,snrint), axis=1)
-            #TOOD other concat
+            #TOOD other concat & update to xarray syntax
 
 
 #%% plots
