@@ -18,7 +18,7 @@ from . import str2dt
 from .switchyard import isrselect
 from .plots import plotsnr,plotplasmaline,plotsumionline
 
-def simpleloop(flist,P):
+def simpleloop(flist:list, P:dict):
     flist=sorted(flist) #in case glob
     if not flist:
         raise FileNotFoundError('no files found in {}'.format(P['path']))

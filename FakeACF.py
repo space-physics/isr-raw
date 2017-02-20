@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-generate synthetic ACFs for turblent plasma scenarios
+generate synthetic ACFs for turbulent plasma scenarios
 """
 
 from numpy import exp,arange,pi,sqrt
