@@ -23,7 +23,7 @@ def writeplots(fg,t='',odir=None,ctxt='',ext='.png'):
             #:-6 keeps up to millisecond if present.
         ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + ext,'-').replace(' ','')
 
-        print('saving {}'.format(ppth))
+        print(f'saving {ppth}')
 
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
 
@@ -97,7 +97,7 @@ def expfn(fn):
     elif ft == 'dt3':
         return 'long pulse'
     else:
-        ValueError('unknown file type {}'.format(ft))
+        raise ValueError(f'unknown file type {ft}')
 
 def cliptlim(t,tlim):
     assert isinstance(t,ndarray) and t.ndim==1

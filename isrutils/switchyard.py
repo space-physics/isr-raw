@@ -59,12 +59,13 @@ def isrselect(fn,P):
     if ft in ('dt1','dt2'):
         specdown,specup,azel = readplasmaline(fn,P)
 #%% ~ 200 millisecond raw altcode and longpulse
-    snrsamp=None; isrlla=None
+    snrsamp=None; isrlla=None; ionsum=None
     if ft in ('dt0','dt3'):
 #        tic = time()
         snrsamp,azel,isrlla = readpower_samples(fn,P)
 #        if P['verbose']:
 #            print('sample read took {:.1f} sec.'.format(time()-tic))
+        ionsum = sumionline(snrsamp,P) # sum over altitude range (for detection)
 #%% ACF
     if ft in ('dt0','dt3') and P['acf']:
         tic = time()
@@ -72,10 +73,9 @@ def isrselect(fn,P):
         if P['verbose']:
             print('ACF/PSD read & plot took {:.1f} sec.'.format(time()-tic))
 #%% multi-second integration (numerous integrated pulses)
-    snrint=None; ionsum=None
+    snrint=None
     if ft in ('dt0','dt3'):
         snrint = readsnr_int(fn,P['beamid'])
-        ionsum,azel,isrlla = sumionline(fn,P)
 #%% 30 second integration plots
     if fn.stem.rsplit('_',1)[-1] == '30sec':
         snr30int = snrvtime_fit(fn,P['beamid'])

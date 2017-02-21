@@ -4,7 +4,7 @@ import logging
 from sys import stderr
 from time import time
 import h5py
-from datetime import datetime,timedelta
+from datetime import datetime
 from pytz import UTC
 from numpy import log10,absolute, meshgrid, sin, radians,unique,atleast_1d, median
 from numpy.ma import masked_invalid
@@ -28,7 +28,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 
     P['tlim'] = str2dt(P['tlim'])
 
-    assert snr.ndim==2 and snr.shape[1]>0,'you seem to have extracted zero times, look at tlim'
+    assert snr.ndim==2 and snr.shape[1]>0, f'you seem to have extracted zero times, look at tlim {P["tlim"]}'
 
     fg = figure()#figsize=(30,12))
     ax = fg.gca()
@@ -81,7 +81,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
                                     'arrowstyle':'-[',
                                     'connectionstyle':"arc3,rad=0.2"})
         except Exception as e:
-            logging.error('failed to annotate {}'.format(e))
+            logging.error(f'failed to annotate {e}')
     except KeyError:
         pass
 
@@ -182,8 +182,11 @@ def plotacf(spec,fn,azel,t,dt,P):
 def plotzslice(psd,zslice,vlim,azel,fn,dt,t,odir,stem,ttxt=None,flim=(None,None)):
     assert psd.ndim==2,'single time,  spectrum vs srng and freq'
 
-    if psd.srng[-1]<100000: #km or m
-        zslice = zslice / 1000 # NOT /= or it modifies original dict!!
+#    if psd.srng[-1]<100000: # km or m
+#        zslice = zslice / 1000 # NOT /= or it modifies original dict!!
+
+    if zslice[0] is None or zslice[1] is None: # didn't specify zslice
+        return
 
     fg = figure()
     ax = fg.gca()
@@ -216,7 +219,7 @@ def plotzslice(psd,zslice,vlim,azel,fn,dt,t,odir,stem,ttxt=None,flim=(None,None)
     if ttxt is None:
         ttxt = expfn(fn)
 
-    ax.set_title('Az,El {:.1f},{:.1f}  @ {}..{} km  {}  $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], zslice[0], zslice[1],ttxt, dt, str(t)[:-6]))
+    ax.set_title(f'Az,El {azel[0]:.1f},{azel[1]:.1f}  @ {zslice[0]}..{zslice[1]} km  {ttxt}  $T_s$: {dt} [sec.] {str(t)[:-6]} \n' )
 
     writeplots(fg,t, odir, stem, ext='.eps')
 
@@ -240,14 +243,16 @@ def plotplasmaline(specdown,specup,fn, P, azel):
     for t in T:
         fg=None
         t = datetime.fromtimestamp(t.item()/1e9,tz=UTC)
+
         if ptype in ('mesh','surf'): #cannot use subplots for 3d with matplotlib 1.4
             axs=[None,None]
 
             fg = figure(figsize=(15,5))
             axs[0] = fg.add_subplot(1,Nspec,1,projection='3d')
 
-            fg.suptitle('{} {}'.format(fn.name,t.to_pydatetime()),y=1.01)
+            fg.suptitle(f'{fn.name} {t.to_pydatetime()}',y=1.01)
         elif 'zslice' in P: #lineplot
+            print(P['zslice'])
             #fg = figure()
             #plotplasmaoverlay(specdown,specup,t,fg,P)
             #writeplots(fg,t,P['odir'],'plasmaLineOverlay')
@@ -271,7 +276,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
                 else: #pcolor
                     plotplasmatime(s.sel(time=t),t, fg,ax,P,fshift)
             except KeyError as e:
-                logging.error('{} plotting {} {}'.format(e,fshift,t))
+                logging.error(f'{e} plotting {fshift} {t}')
 
         fg.tight_layout()
 
@@ -388,10 +393,10 @@ def plotplasmamesh(spec,fg,ax,P,ptype=''):
     fg.tight_layout()
 
 def plotbeampattern(fn,P,beamkey,beamids=None):
-  """
-  plots beams used in the file
-  """
-  try:
+    """
+    plots beams used in the file
+    """
+#  try:
     beamcodes = unique(beamkey)  # for some files they're jumbled
 
     def _pullbeams(f):
@@ -417,14 +422,13 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
 
     fg = polarplot(beams.loc[beamcodes,'az'], beams.loc[beamcodes,'el'], # FIXME .sel()
-                   title='ISR {} Beam Pattern: {}'.format(beamcodes.size,date),
+                   title=f'ISR {beamcodes.size} Beam Pattern: {date}',
                    markerarea=27.4)
 
-    print('{} beam pattern {}'.format(beamcodes.size,fn))
-    writeplots(fg, odir=P['odir'], ctxt='beams_{}'.format(h5fn))
-
-  except Exception as e:
-      print(e)
+    logging.info(f'{beamcodes.size} beam pattern {fn}')
+    writeplots(fg, odir=P['odir'], ctxt=f'beams_{h5fn}', ext='.eps')
+#  except Exception as e:
+#      print(e)
 
 
 
@@ -447,16 +451,22 @@ def plotsumionline(dsum,ax,fn,P):
         print(e,file=stderr)
         return
 
-    if P['verbose']:
-        med = median(dsum.values)
-        ax.axhline(med,color='gold',linestyle='--',label='median')
-        if 'medthres' in P:
-            medthres = P['medthres']*med
-            ax.axhline(medthres,color='red',linestyle='--',label='threshold')
+#%% threshold
+    med = median(dsum.values)
+    ax.axhline(med,color='gold',linestyle='--',label='median')
+
+    medthres = P['medthres'] * med
+    ax.axhline(medthres,color='red',linestyle='--',label='threshold')
+
+    if (med > medthres).any():
+        hit = True
+    else:
+        hit = False
+
 
     ax.set_ylabel('summed power')
     ax.set_xlabel('time [UTC]')
-    ax.set_title('{} summed over ranges ({}..{})km'.format(expfn(fn),P['zlim'][0],P['zlim'][1]))
+    ax.set_title(f'{expfn(fn)} summed over range: ({P["zsum"][0]}..{P["zsum"][1]}) km')
 
     ax.set_yscale('log')
     ax.grid(True)
@@ -465,6 +475,8 @@ def plotsumionline(dsum,ax,fn,P):
     fg.autofmt_xdate()
 
     writeplots(fg, dsum.time[0].item(), P['odir'],'summedAlt',ext='.eps')
+
+    return hit
 
 def plotsumplasmaline(plsum):
     assert isinstance(plsum,DataArray)

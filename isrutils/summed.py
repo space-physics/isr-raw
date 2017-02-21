@@ -17,7 +17,6 @@ import matplotlib.animation as anim
 from . import  writeplots,expfn
 from .plasmaline import readplasmaline
 from .common import findindex2Dsphere,timesync,projectisrhist
-from .snrpower import readpower_samples
 from .plots import plotsumionline
 #
 from GeoData.plotting import plotazelscale
@@ -76,13 +75,13 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
     first = True
     Writer = anim.writers['ffmpeg']
     writer = Writer(fps=5,
-                    metadata=dict(artist='Michael Hirsch'),
+                    metadata=dict(artist='Michael Hirsch, Ph.D.'),
                     codec='ffv1')
 
     ofn = Path(P['odir']).expanduser() / ('joint_' +
             pathvalidate.sanitize_filename(str(datetime.fromtimestamp(utopt[0]))[:-3]) + '.mkv')
 
-    print('writing {}'.format(ofn))
+    print(f'writing {ofn}')
     with writer.saving(fg, str(ofn),150):
       for iisr,iopt in zip(Iisr,Iopt):
         ctisr = tisr[iisr]
@@ -107,11 +106,11 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
 
         if ofn.suffix == '.png':
             try:
-                writeplots(fg,ctopt,ofn,P['makeplot'],ctxt='joint')
+                writeplots(fg,ctopt,ofn,ctxt='joint')
             except UnboundLocalError:
-                writeplots(fg,ctisr,ofn,P['makeplot'],ctxt='isr')
+                writeplots(fg,ctisr,ofn,ctxt='isr')
 
-def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
+def compclim(imgs,lower:float=0.5, upper:float=99.9, Nsamples:int=50):
     """
     inputs:
     images: Nframe x ypix x xpix grayscale image stack (have not tried with 4-D color)
@@ -126,13 +125,11 @@ def compclim(imgs,lower=0.5,upper=99.9,Nsamples=50):
     return clim
 
 #%% dt3
-def sumionline(fn,P):
-    snrsamp,azel,lla = readpower_samples(fn,P)
-
-    if isinstance(snrsamp,DataArray):
-        return snrsamp.sum(dim='srng'),azel,lla
-    else:
-        return None,azel,lla
+def sumionline(snrsamp:DataArray, P:dict):
+    if isinstance(snrsamp,DataArray) and 'zsum' in P:
+        srng = snrsamp.srng
+        i = (srng>P['zsum'][0]) & (srng<P['zsum'][1])
+        return snrsamp.isel(srng=i).sum(dim='srng')
 
 #%% plasma line
 def sumplasmaline(fn,P):
