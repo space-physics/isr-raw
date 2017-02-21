@@ -444,7 +444,7 @@ def plotsumionline(dsum,ax,fn,P):
     med = median(dsum.values)
     medthres = P['medthres'] * med
 
-    if (med > medthres).any():
+    if (dsum > medthres).any():
         hit = True
     else:
         hit = False

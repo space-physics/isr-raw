@@ -73,10 +73,11 @@ def simpleloop(flist, P:dict):
         # summed ion line over altitude range
 #        tic = time()
         hit = plotsumionline(ionsum,None,f,P)
+        print(f.stem, hit)
 #        if P['verbose']: print(f'sum plot took {(time()-tic):.1f} sec.')
 
         if hit and not P['acf']: # if P['acf'], it was already plotted. Otherwise, we plot only if hit
-            readACF(fn,P)
+            readACF(f,P)
 
         if hit or not P['scan']:
             # 15 sec integration
