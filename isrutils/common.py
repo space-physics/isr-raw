@@ -28,22 +28,6 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
 
     return {'az':az,'el':el,'srng':srng}
 
-def getazel(f,beamid):
-    """
-    f: h5py HDF5 handle
-    beamid: integer beam id number
-
-    returns: azimuth,elevation pair (degrees)
-    """
-    assert isinstance(beamid,int)
-
-    azelrow = (f['/Setup/BeamcodeMap'][:,0] == beamid).nonzero()[0]
-    assert azelrow.size == 1, 'each beam should have a unique az,el'
-
-    azel = f['/Setup/BeamcodeMap'][azelrow,1:3]
-    assert azel.size==2
-    return azel
-
 def timesync(tisr,topt,tlim=[None,None]):
     """
     TODO: for now, assume optical is always faster
@@ -118,13 +102,6 @@ def findindex2Dsphere(azimg,elimg,az,el):
 
     adist = angledist(azimg,elimg,az,el)
     return unravel_index(adist.argmin(), azimg.shape)
-
-def findstride(beammat:Dataset, bid:int):
-    assert isinstance(bid,int)
-    assert beammat.ndim==2
-    # NOTE: Pre-2013 files have distinct rows, so touch each value in beamcode!
-
-    return beammat[:]==bid #boolean
 
 
 def sampletime(t,bstride):

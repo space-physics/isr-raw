@@ -7,8 +7,7 @@ from numpy import (empty,zeros,complex128,conj,append,linspace,column_stack,isco
 from numpy import correlate as xcorr
 from numpy.fft import fft,fftshift
 #
-from . import ftype,ut2dt,cliptlim,filekey
-from .common import findstride,getazel
+from . import ftype,ut2dt,cliptlim,filekey,findstride, getazel
 from .plots import plotacf
 
 freqscalefact=100/6  #100/2

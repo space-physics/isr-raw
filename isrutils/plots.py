@@ -396,7 +396,10 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
     """
     plots beams used in the file
     """
-#  try:
+    if P['scan']:
+        return
+
+
     beamcodes = unique(beamkey)  # for some files they're jumbled
 
     def _pullbeams(f):
@@ -427,8 +430,6 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
     logging.info(f'{beamcodes.size} beam pattern {fn}')
     writeplots(fg, odir=P['odir'], ctxt=f'beams_{h5fn}', ext='.eps')
-#  except Exception as e:
-#      print(e)
 
 
 
@@ -439,30 +440,30 @@ def plotsumionline(dsum,ax,fn,P):
     assert isinstance(dsum,DataArray) and dsum.ndim==1,'incorrect input type'
     assert dsum.size > 1,'must have at least two data points to plot'
 
-    if not ax:
-        fg = figure()
-        ax = fg.gca()
-    else:
-        fg = gcf()
-
-    try:
-        ax.plot(dsum.time,dsum.values,label='$\sum_{range} |P_{rx}|$')
-    except ValueError as e:
-        print(e,file=stderr)
-        return
-
 #%% threshold
     med = median(dsum.values)
-    ax.axhline(med,color='gold',linestyle='--',label='median')
-
     medthres = P['medthres'] * med
-    ax.axhline(medthres,color='red',linestyle='--',label='threshold')
 
     if (med > medthres).any():
         hit = True
     else:
         hit = False
 
+    if not hit and P['scan']:
+        return hit
+#%% plot
+
+    if not ax:
+        fg = figure()
+        ax = fg.gca()
+    else:
+        fg = gcf()
+
+    ax.plot(dsum.time,dsum.values,label='$\sum_{range} |P_{rx}|$')
+
+    ax.axhline(med,color='gold',linestyle='--',label='median')
+
+    ax.axhline(medthres,color='red',linestyle='--',label='threshold')
 
     ax.set_ylabel('summed power')
     ax.set_xlabel('time [UTC]')
@@ -470,11 +471,16 @@ def plotsumionline(dsum,ax,fn,P):
 
     ax.set_yscale('log')
     ax.grid(True)
-    ax.legend()
+    ax.legend(loc='upper right')
 
     fg.autofmt_xdate()
+#%% save plot efficiently
+    if dsum.size <= 1000:
+        ext = '.eps'
+    else:
+        ext = '.png' # EPS is slow with tons of points
 
-    writeplots(fg, dsum.time[0].item(), P['odir'],'summedAlt',ext='.eps')
+    writeplots(fg, dsum.time[0].item(), P['odir'],'summedAlt',ext=ext)
 
     return hit
 

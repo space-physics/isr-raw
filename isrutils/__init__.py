@@ -1,6 +1,7 @@
 from pathlib import Path
 import pathvalidate
 from xarray import DataArray
+from h5py import Dataset
 from dateutil.parser import parse
 from numpy import atleast_1d, ndarray,ones,array
 from datetime import datetime
@@ -29,7 +30,23 @@ def writeplots(fg,t='',odir=None,ctxt='',ext='.png'):
 
         close(fg)
 
-def ut2dt(ut):
+def getazel(f,beamid):
+    """
+    f: h5py HDF5 handle
+    beamid: integer beam id number
+
+    returns: azimuth,elevation pair (degrees)
+    """
+    assert isinstance(beamid,int)
+
+    azelrow = (f['/Setup/BeamcodeMap'][:,0] == beamid).nonzero()[0]
+    assert azelrow.size == 1, 'each beam should have a unique az,el'
+
+    azel = f['/Setup/BeamcodeMap'][azelrow,1:3]
+    assert azel.size==2
+    return azel
+
+def ut2dt(ut) -> ndarray:
     assert isinstance(ut,ndarray) and ut.ndim in (1,2)
 
     if ut.ndim==1:
@@ -40,7 +57,7 @@ def ut2dt(ut):
     return array([datetime.fromtimestamp(t,tz=UTC) for t in T])
 
 
-def str2dt(tstr):
+def str2dt(tstr) -> list:
     """
     converts parseable string to datetime, pass other suitable types back through.
     FIXME: assumes all elements are of same type as first element.
@@ -59,9 +76,16 @@ def str2dt(tstr):
         elif isinstance(t,(float,int)):
             ut.append(datetime.fromtimestamp(t,tz=UTC))
         else:
-            raise TypeError('unknown data type {}'.format(ut[0].dtype))
+            raise TypeError(f'unknown data type {ut[0].dtype}')
 
     return ut
+
+def findstride(beammat:Dataset, bid:int) -> bool:
+    assert isinstance(bid,int)
+    assert beammat.ndim==2
+    # NOTE: Pre-2013 files have distinct rows, so touch each value in beamcode!
+
+    return beammat[:]==bid
 
 def filekey(f):
     # detect old and new HDF5 AMISR files

@@ -5,8 +5,8 @@ from numpy import ones
 import h5py
 from xarray import DataArray
 #
-from . import ut2dt,cliptlim,filekey
-from .common import findstride,sampletime,getazel
+from . import ut2dt,cliptlim,filekey,findstride,getazel
+from .common import sampletime
 from .plots import plotbeampattern
 
 def samplepower(sampiq,bstride,ut,srng,P:dict):
@@ -57,7 +57,7 @@ def readpower_samples(fn,P:dict):
                   f['/Site/Longitude'].value,
                   f['/Site/Altitude'].value)
         azel = getazel(f,P['beamid'])
-
+#%%
         rawkey = filekey(f)
         try:
             bstride = findstride(f[rawkey+'/RadacHeader/BeamCode'],P['beamid'])
@@ -67,7 +67,7 @@ def readpower_samples(fn,P:dict):
             bstride = findstride(f['/RadacHeader/BeamCode'],P['beamid']) # old 2007 DT3 files (DT0 2007 didn't have raw data?)
             ut = sampletime(f['/RadacHeader/RadacTime'],bstride)
             plotbeampattern(f,P,f['/RadacHeader/BeamCode'])
-
+#%%
         srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
 
         try:

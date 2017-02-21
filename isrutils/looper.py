@@ -5,6 +5,7 @@ This isn't in __init__.py due to matplotlib & seaborn imports.
 from pathlib import Path
 from copy import deepcopy
 from numpy import asarray
+from time import time
 #
 import matplotlib
 matplotlib.use('agg') # NOTE comment out this line to enable visible plots
@@ -70,7 +71,9 @@ def simpleloop(flist, P:dict):
         specdown,specup,snrsamp,azel,isrlla,snrint,snr30int,ionsum = isrselect(Path(P['path'])/f, P)
 #%% plot
         # summed ion line over altitude range
+#        tic = time()
         hit = plotsumionline(ionsum,None,f,P)
+#        if P['verbose']: print(f'sum plot took {(time()-tic):.1f} sec.')
 
         if hit and not P['acf']: # if P['acf'], it was already plotted. Otherwise, we plot only if hit
             readACF(fn,P)

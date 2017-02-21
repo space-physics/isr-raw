@@ -61,11 +61,12 @@ def isrselect(fn,P):
 #%% ~ 200 millisecond raw altcode and longpulse
     snrsamp=None; isrlla=None; ionsum=None
     if ft in ('dt0','dt3'):
-#        tic = time()
+        #tic = time()
         snrsamp,azel,isrlla = readpower_samples(fn,P)
-#        if P['verbose']:
-#            print('sample read took {:.1f} sec.'.format(time()-tic))
+        #if P['verbose']: print(f'sample read took {(time()-tic):.2f} sec.')
+        #tic=time()
         ionsum = sumionline(snrsamp,P) # sum over altitude range (for detection)
+        #if P['verbose']: print(f'sample sum took {(time()-tic):.2f} sec.')
 #%% ACF
     if ft in ('dt0','dt3') and P['acf']:
         tic = time()
