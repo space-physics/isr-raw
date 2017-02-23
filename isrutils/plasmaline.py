@@ -5,7 +5,7 @@ from . import ut2dt,cliptlim
 import h5py
 from xarray import DataArray
 #
-from .common import findstride,getazel
+from . import findstride, getazel
 
 def readplasmaline(fn,P):
     """

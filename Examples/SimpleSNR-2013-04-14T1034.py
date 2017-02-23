@@ -3,7 +3,6 @@ from isrutils.looper import simpleloop
 #%% users param
 P={
 'path':'~/data/2013-04-14/isr',
-'makeplot': [],
 'beamid': 64157,
 'acf': False,
 'vlimacf': (20,50),
@@ -15,7 +14,6 @@ P={
 'odir': 'out/2013-04-14T1034',
 'vlim': [30, 60],
 'zlim': (90, None),
-'tlim': (None,None),
 'tlim': ('2013-04-14T10:34Z',
          '2013-04-14T10:36Z'),
 'tmark':[],

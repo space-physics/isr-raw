@@ -7,6 +7,7 @@ matplotlib.use('agg') # NOTE comment out this line to enable visible plots
 from . import  str2dt
 from .plasmaline import readplasmaline#,plotplasmaline
 from .summed import sumionline,dojointplot
+from .snrpower import readpower_samples
 #
 from GeoData.utilityfuncs import readNeoCMOS
 #
@@ -34,7 +35,8 @@ def overlayisrhist(P):
     spec,freq = readplasmaline(P['isrfn'],P)
     #plotplasmaline(spec,freq,isrfn,P)
 #%% (2-3) read ISR long pulse
-    lpsum,beamazel,isrlla = sumionline(P['isrfn'],P)
+    snrsamp,beamazel,isrlla = readpower_samples(P['isrfn'],P)
+    lpsum = sumionline(snrsamp,P)
 #%% (4) load optical data
     if optfn is not None:
         #hst = []; hstazel=[]; hstlla=[]; hstut=[]
