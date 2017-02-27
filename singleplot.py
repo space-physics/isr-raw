@@ -10,7 +10,7 @@ from isrutils.looper import simpleloop
 if __name__ == '__main__':
     from argparse import ArgumentParser
     p = ArgumentParser()
-    p.add_argument('fn',help='.ini file to read')
+    p.add_argument('fn', help='.ini file to read')
     p = p.parse_args()
 
     simpleloop(p.fn)
