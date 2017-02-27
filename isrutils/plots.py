@@ -28,6 +28,11 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 
     P['tlim'] = str2dt(P['tlim'])
 
+    if 'int' in ctxt:
+        vlim = P['vlimint']
+    else:
+        vlim = P['vlim']
+
     assert snr.ndim==2 and snr.shape[1]>0, f'you seem to have extracted zero times, look at tlim {P["tlim"]}'
 
     fg = figure()#figsize=(30,12))
@@ -36,7 +41,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
     try:
         h=ax.pcolormesh(snr.time, snr.srng,
                 10*masked_invalid(log10(snr.values)),
-                vmin=P['vlim'][0], vmax=P['vlim'][1],
+                vmin=vlim[0], vmax=vlim[1],
                 cmap='cubehelix_r')
     except ValueError as e:
         print(e,file=stderr)
@@ -53,10 +58,9 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
     ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
 #%% date ticks
     fg.autofmt_xdate()
-    if P['tlim'][0] is None or P['tlim'][1] is None:
-        tdiff = snr.time[-1] - snr.time[0]
-    else:
-        tdiff = P['tlim'][1] - P['tlim'][0]
+
+    tdiff = snr.time[-1] - snr.time[0]
+
 
     majtick,mintick = timeticks(tdiff)
     ax.xaxis.set_major_locator(majtick)

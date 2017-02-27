@@ -46,12 +46,11 @@ def isrstacker(flist,P):
 
 
 
-def isrselect(fn,P):
+def isrselect(fn:Path, P:dict):
     """
     this function is a switchyard to pick the right function to read and plot
     the desired data based on filename and user requests.
     """
-    fn = Path(fn).expanduser() #need this here
 #%% handle path, detect file type
     ft = ftype(fn)
 #%% plasma line

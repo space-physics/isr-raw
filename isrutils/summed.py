@@ -126,7 +126,7 @@ def compclim(imgs,lower:float=0.5, upper:float=99.9, Nsamples:int=50):
 
 #%% dt3
 def sumionline(snrsamp:DataArray, P:dict):
-    if isinstance(snrsamp,DataArray) and 'zsum' in P:
+    if 'zsum' in P:
         srng = snrsamp.srng
         i = (srng>P['zsum'][0]) & (srng<P['zsum'][1])
         return snrsamp.isel(srng=i).sum(dim='srng')

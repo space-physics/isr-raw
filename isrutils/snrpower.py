@@ -18,6 +18,7 @@ def samplepower(sampiq,bstride,ut,srng,P:dict):
     """
     assert sampiq.ndim == 4
     assert bstride.ndim== 2 and sampiq.shape[:2] == bstride.shape and bstride.dtype==bool
+    assert 'zlim' in P, 'did not specifiy zlim'
     zlim = P['zlim']
 #%% filter by range
     Nr = srng.size
@@ -42,12 +43,11 @@ def samplepower(sampiq,bstride,ut,srng,P:dict):
                      dims=['srng','time'],
                      coords={'srng':srng,'time':t})
 
-def readpower_samples(fn,P:dict):
+def readpower_samples(fn:Path, P:dict):
     """
     reads samples (lowest level data) and computes power for a particular beam.
     returns power measurements
     """
-    fn=Path(fn).expanduser()
     assert isinstance(P['beamid'],int),'beam specification must be a scalar integer!'
 
     try:
@@ -72,13 +72,14 @@ def readpower_samples(fn,P:dict):
 
         try:
             power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,P) #I + jQ   # Ntimes x striped x alt x real/comp
-        except KeyError:
+        except KeyError as e:
+            print(f'raw pulse data not found {fn} \n {e}', file=stderr)
             return None,azel,isrlla
     except OSError as e: #problem with file
-        print('{} OSError when reading: \n {}'.format(fn,e),file=stderr)
+        print(f'{fn} OSError when reading: \n {e}', file=stderr)
         return None,azel,isrlla
     except KeyError as e:
-        print('raw pulse data not found {} \n {}'.format(fn,e),file=stderr)
+        print(f'raw pulse data not found {fn} \n {e}', file=stderr)
         return None,azel,isrlla
 
     return power,azel,isrlla

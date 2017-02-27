@@ -5,6 +5,7 @@ from dateutil.parser import parse
 from numpy import atleast_1d, ndarray,ones,array
 from datetime import datetime
 from pytz import UTC
+from h5py import Dataset
 
 
 def writeplots(fg,t='',odir=None,ctxt='',ext='.png'):
@@ -62,6 +63,9 @@ def str2dt(tstr) -> list:
     FIXME: assumes all elements are of same type as first element.
     can't just do list comprehension in case all None
     """
+    if not tstr:
+        return
+
     tstr = atleast_1d(tstr)
     assert tstr.ndim == 1
 
@@ -86,7 +90,7 @@ def findstride(beammat:Dataset, bid:int) -> bool:
 
     return beammat[:]==bid
 
-def filekey(f):
+def filekey(f:Dataset) -> str:
     # detect old and new HDF5 AMISR files
     if   '/Raw11/Raw/PulsesIntegrated' in f:        # new 2013
         return '/Raw11/Raw'
@@ -99,13 +103,13 @@ def filekey(f):
     else:
         raise KeyError('not an old or new file?')
 
-def ftype(fn):
+def ftype(fn:Path) -> str:
     """
     returns file type i.e.  'dt0','dt1','dt2','dt3'
     """
-    return Path(fn).stem.rsplit('.',1)[-1]
+    return fn.stem.rsplit('.',1)[-1]
 
-def expfn(fn):
+def expfn(fn:Path) -> str:
     """
     returns text string based on file suffix
     """
@@ -124,13 +128,14 @@ def expfn(fn):
 
 def cliptlim(t,tlim):
     assert isinstance(t,ndarray) and t.ndim==1
-    assert len(tlim) == 2
     # FIXME what if tlim has 'NaT'?  as of Numpy 1.11, only Pandas understands NaT with .isnull()
+
     tind = ones(t.size,dtype=bool)
 
-    if tlim[0] is not None:
-        tind &= tlim[0] <= t
-    if tlim[1] is not None:
-        tind &= t <= tlim[1]
+    if tlim is not None:
+        if tlim[0] is not None:
+            tind &= tlim[0] <= t
+        if tlim[1] is not None:
+            tind &= t <= tlim[1]
 
     return t[tind],tind

@@ -18,7 +18,7 @@ fn = path/name
 
 
 P={'beamid':64157,
-   'tlim':[None,None],
+   'tlim':None,
     'zlim':(200,300)} #km
 
 def test_readpowersnr():

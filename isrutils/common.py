@@ -28,7 +28,7 @@ def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
 
     return {'az':az,'el':el,'srng':srng}
 
-def timesync(tisr,topt,tlim=[None,None]):
+def timesync(tisr,topt,tlim=None):
     """
     TODO: for now, assume optical is always faster
     inputs
@@ -47,7 +47,7 @@ def timesync(tisr,topt,tlim=[None,None]):
 
     assert ((tisr>1e9) & (tisr<2e9)).all(),'date sanity check'
 
-    if isinstance(tlim[0],datetime):
+    if tlim is not None and isinstance(tlim[0],datetime):
         tlim = array([t.timestamp() for t in tlim])
 
     assert isinstance(tisr[0],float), 'datetime64 is not wanted here, lets use ut1_unix float for minimum conversion effort'
@@ -55,8 +55,13 @@ def timesync(tisr,topt,tlim=[None,None]):
     if topt is None:
         topt = (nan,nan)
 #%% interpolate isr indices to opt (assume opt is faster, a lot of duplicates iisr)
-    tstart = nanmax([tlim[0], tisr[0], topt[0]])
-    tend   = nanmin([tlim[1], tisr[-1], topt[-1]])
+    if tlim is not None:
+        tstart = nanmax([tlim[0], tisr[0], topt[0]])
+        tend   = nanmin([tlim[1], tisr[-1], topt[-1]])
+    else:
+        tstart = nanmax([tisr[0], topt[0]])
+        tend   = nanmin([tisr[-1], topt[-1]])
+
 
     if topt is not None and isfinite(topt[0]):
         f = interp1d(tisr,range(tisr.size),'nearest',assume_sorted=True)
