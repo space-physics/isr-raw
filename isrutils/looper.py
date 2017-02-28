@@ -3,7 +3,6 @@ This isn't in __init__.py due to matplotlib & seaborn imports.
 """
 from pathlib import Path
 from configparser import ConfigParser
-from copy import deepcopy
 from numpy import array
 from time import time
 #
@@ -14,7 +13,6 @@ import seaborn as sns
 sns.set_context('talk',1.75)
 sns.set_style('ticks')
 #
-
 from . import str2dt
 from .switchyard import isrselect
 from .rawacf import readACF
