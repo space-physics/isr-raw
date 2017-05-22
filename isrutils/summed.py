@@ -125,10 +125,13 @@ def compclim(imgs,lower:float=0.5, upper:float=99.9, Nsamples:int=50):
     return clim
 
 #%% dt3
-def sumionline(snrsamp:DataArray, P:dict):
-    if 'zsum' in P:
+def sumionline(snrsamp:DataArray, P:dict, ft:str):
+
+    if ft in ('dt0','dt3') and 'zsum' in P and isinstance(snrsamp, DataArray):
+
         srng = snrsamp.srng
         i = (srng>P['zsum'][0]) & (srng<P['zsum'][1])
+
         return snrsamp.isel(srng=i).sum(dim='srng')
 
 #%% plasma line

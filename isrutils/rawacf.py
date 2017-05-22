@@ -48,14 +48,16 @@ def acf2psd(acfall,noiseall,Nr,dns):
 
     return spec,acf
 
-def readACF(fn,P):
+def readACF(fn:Path, P:dict, ft:str):
     """
     reads incoherent scatter radar autocorrelation function (ACF)
     """
-    fn = Path(fn).expanduser()
+    if not ft in ('dt0','dt3'):
+        return
+
     assert isinstance(P['beamid'],int),'beam specification must be a scalar integer'
 
-    with h5py.File(str(fn),'r',libver='latest') as f:
+    with h5py.File(fn, 'r', libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'].value)
 
         ft = ftype(fn)
@@ -77,8 +79,8 @@ def readACF(fn,P):
             srng = f[rk + 'Data/Acf/Range']
             bstride = findstride(f[rk+'Data/Beamcodes'],P['beamid'])
         except KeyError: # old 2007 files
-            srng = f[filekey(f)+'/Power/Range']
-            bstride = findstride(f['/RadacHeader/BeamCode'],P['beamid'])
+            srng = f[filekey(f) + '/Power/Range']
+            bstride = findstride(f['/RadacHeader/BeamCode'], P['beamid'])
 #%% get azel
         azel = getazel(f,P['beamid'])
 #%% get times
@@ -122,7 +124,7 @@ def dt3keys(f):
         acfkey = f[rk+'Data/Acf/Data']
         noisekey = f[rk+'Noise/Acf/Data']
     except KeyError:
-        acfkey = f[filekey(f)+'/Samples/Data'] #2007 dt3 raw data
+        acfkey = f[filekey(f) + '/Samples/Data'] #2007 dt3 raw data
         noisekey=None
 
     return rk,acfkey,noisekey

@@ -24,9 +24,23 @@ Install
 
     python setup.py develop
 
+Usage
+=====
+``singleplot.py`` is a main program used to examine raw ISR data.
+It's configured via ``.ini`` files.
+Some important parameters are:
+
+============ =======================
+parameter    description
+============ =======================
+scan          CFAR detection of turbulent activity (possible association with Alfven waves)
+tlim          unless scan=yes, usually you use tlim to only plot over time range of interest (to avoid enormous amount of plots)
+============ =======================
+
+
 Examples
 ========
-From the Akbari GRL 2012: Anomalous ISR echoes preceding auroral breakup: 
+From the Akbari GRL 2012: Anomalous ISR echoes preceding auroral breakup:
 Evidence for strong Langmuir turbulence  doi:10.1029/2011GL050288
 
 .. image:: gfx/Akbari2012_fig1a.png

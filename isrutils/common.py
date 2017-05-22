@@ -1,7 +1,5 @@
-import logging
 from datetime import datetime
 from pytz import UTC
-from h5py import Dataset
 from numpy import (array,unravel_index, datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from argparse import ArgumentParser
@@ -107,24 +105,6 @@ def findindex2Dsphere(azimg,elimg,az,el):
 
     adist = angledist(azimg,elimg,az,el)
     return unravel_index(adist.argmin(), azimg.shape)
-
-
-def sampletime(t,bstride):
-    """
-    read the time of the pulses to the microsecond level
-    t: h5py variable
-    bstride: 2-D boolean
-
-    returns: 2-D single of UTC time unix epoch
-    """
-    assert isinstance(t,Dataset), 'hdf5 only'
-    assert t.ndim == 2
-
-    t = t[bstride]
-    if t.max() > 1.01*t.mean():
-        logging.warning('at least one time gap in radar detected')
-
-    return t
 
 
 def boilerplateapi(descr='loading, processing, plotting raw ISR data'):

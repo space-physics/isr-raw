@@ -6,7 +6,7 @@ print(matplotlib.get_backend())
 from pathlib import Path
 from numpy.testing import run_module_suite
 #
-from isrutils.snrpower import (readpower_samples,readsnr_int,snrvtime_fit)
+from isrutils import (readpower_samples,readsnr_int,snrvtime_fit)
 from isrutils.plots import plotsnr,plotsnr1d,plotsnrmesh
 from isrutils.rawacf import readACF
 from isrutils.plasmaline import readplasmaline

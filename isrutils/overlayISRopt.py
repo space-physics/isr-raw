@@ -4,10 +4,9 @@ from pathlib import Path
 import matplotlib
 matplotlib.use('agg') # NOTE comment out this line to enable visible plots
 #
-from . import  str2dt
+from . import  str2dt, readpower_samples
 from .plasmaline import readplasmaline#,plotplasmaline
 from .summed import sumionline,dojointplot
-from .snrpower import readpower_samples
 #
 from GeoData.utilityfuncs import readNeoCMOS
 #

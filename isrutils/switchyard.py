@@ -3,10 +3,9 @@ from pathlib import Path
 from time import time
 from xarray import concat
 #
-from . import ftype
+from . import readpower_samples,readsnr_int,snrvtime_fit
 from .rawacf import readACF
 from .plasmaline import readplasmaline
-from .snrpower import readpower_samples,readsnr_int,snrvtime_fit
 from .summed import sumionline
 from .plots import plotsnr,plotsnr1d,plotplasmaline
 
@@ -51,31 +50,23 @@ def isrselect(fn:Path, P:dict):
     this function is a switchyard to pick the right function to read and plot
     the desired data based on filename and user requests.
     """
-#%% handle path, detect file type
-    ft = ftype(fn)
 #%% plasma line
-    specdown=None; specup=None
-    if ft in ('dt1','dt2'):
-        specdown,specup,azel = readplasmaline(fn,P)
+    specdown,specup,azel = readplasmaline(fn, P)
 #%% ~ 200 millisecond raw altcode and longpulse
-    snrsamp=None; isrlla=None; ionsum=None
-    if ft in ('dt0','dt3'):
-        #tic = time()
-        snrsamp,azel,isrlla = readpower_samples(fn,P)
-        #if P['verbose']: print(f'sample read took {(time()-tic):.2f} sec.')
-        #tic=time()
-        ionsum = sumionline(snrsamp,P) # sum over altitude range (for detection)
-        #if P['verbose']: print(f'sample sum took {(time()-tic):.2f} sec.')
+    #tic = time()
+    snrsamp,azel,isrlla = readpower_samples(fn, P)
+    #if P['verbose']: print(f'sample read took {(time()-tic):.2f} sec.')
+    #tic=time()
+    ionsum = sumionline(snrsamp, P) # sum over altitude range (for detection)
+    #if P['verbose']: print(f'sample sum took {(time()-tic):.2f} sec.')
 #%% ACF
-    if ft in ('dt0','dt3') and P['acf']:
+    if P['acf']:
         tic = time()
         readACF(fn,P)
         if P['verbose']:
-            print('ACF/PSD read & plot took {:.1f} sec.'.format(time()-tic))
+            print(f'ACF/PSD read & plot took {time()-tic:.1f} sec.')
 #%% multi-second integration (numerous integrated pulses)
-    snrint=None
-    if ft in ('dt0','dt3'):
-        snrint = readsnr_int(fn,P['beamid'])
+    snrint = readsnr_int(fn, P['beamid'])
 #%% 30 second integration plots
     if fn.stem.rsplit('_',1)[-1] == '30sec':
         snr30int = snrvtime_fit(fn,P['beamid'])

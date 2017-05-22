@@ -26,17 +26,19 @@ def simpleloop(inifn):
     dpath = Path(ini.get('data','path')).expanduser()
     ftype = ini.get('data','ftype',fallback=None)
 #%% parse user directory / file list input
-    if dpath.is_dir() and not ftype:
+    if dpath.is_dir() and not ftype:  # ftype=None or ''
         flist = dpath.glob('*dt*.h5')
     elif dpath.is_dir() and ftype: #glob pattern
-            flist = dpath.glob(f'*.{ftype}.h5')
+        flist = dpath.glob(f'*.{ftype}.h5')
     elif dpath.is_file(): # a single file was specified
         flist = [flist]
     else:
         raise FileNotFoundError(f'unknown path/filetype {dpath} / {ftype}')
 
-    flist=sorted(flist) #in case glob
-    assert len(flist)>0, f'no files found in {dpath}'
+    flist = sorted(flist) #in case glob
+    if not flist:
+        raise FileNotFoundError(f'no files found in {dpath}')
+
     print(f'examining {len(flist)} files in {dpath}\n')
 #%% api catchall
     P = {
