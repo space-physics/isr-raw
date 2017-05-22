@@ -1,7 +1,6 @@
 from pathlib import Path
 from configparser import ConfigParser
 import logging
-from sys import stderr
 import xarray
 from dateutil.parser import parse
 import numpy as np
@@ -92,7 +91,7 @@ def filekey(f:h5py.Dataset) -> str:
     elif '/S/Data/PulsesIntegrated' in f:           # 2007
         return '/S/Data'
     else:
-        print('not an old or new file?',file=stderr)
+        logging.error(f'{f.filename} is not an old or new file?')
 
 def ftype(fn:Path) -> str:
     """
@@ -197,7 +196,7 @@ def readplasma(fn,beamid,fshift,tlim):
             freq  = f['/PLFFTS/Data/Spectra/Frequency'].value.squeeze() + fshift
             azel = getazel(f,beamid)
     except OSError as e: #problem with file
-        print('reading error',fn,e, file=stderr)
+        logging.error(f'{fn} reading error {e}')
         return (None,)*2
 #%% spectrum compute
     T,tind = cliptlim(T,tlim)
@@ -286,11 +285,11 @@ def readpower_samples(fn:Path, P:dict):
         if rawkey+'/Samples/Data' in f:
             power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,P) #I + jQ   # Ntimes x striped x alt x real/comp
         else:
-            print(f'raw pulse data not found {fn}', file=stderr)
+            logging.error(f'{fn} raw pulse data not found')
             power = None
 
     except OSError as e: #problem with file
-        print(f'{fn} OSError when reading: \n {e}', file=stderr)
+        logging.error(f'{fn} OSError when reading: \n {e}')
         power = None
 
     return power,azel,isrlla
@@ -320,7 +319,7 @@ def readsnr_int(fn, bid:int) -> xarray.DataArray:
                                            dims=['srng','time'],
                                            coords={'srng':srng,'time':t})
     except KeyError as e:
-        print('integrated pulse data not found',fn,e,file=stderr)
+        logging.error(f'{fn} integrated pulse data not found {e}')
         snrint = None
 
     return snrint
@@ -418,6 +417,9 @@ def readACF(fn:Path, P:dict):
 
         dt = (t[1]-t[0]).seconds if len(t)>=2 else None
 #%% get PSD
+        if bstride.sum() == 0:
+            logging.warning(f'did not plot ACF since {fn} did not use selected beam {P["beamid"]}')
+            return
 
         istride = np.column_stack(bstride.nonzero())[tind,:]
         for tt,s in zip(t,istride):
@@ -524,8 +526,8 @@ def simpleloop(inifn):
         # summed ion line over altitude range
 #        tic = time()
         hit = plotsumionline(ionsum,None,f,P)
-        assert isinstance(hit,bool), 'is summed data being properly read?'
-        print(f.stem, hit)
+        if isinstance(hit,bool):
+            print(f.stem, hit)
 #        if P['verbose']: print(f'sum plot took {(time()-tic):.1f} sec.')
 
         if hit and not P['acf']: # if P['acf'], it was already plotted. Otherwise, we plot only if hit
@@ -538,6 +540,8 @@ def simpleloop(inifn):
             plotsnr(snrsamp,f,P,azel)
             # plasma line spectrum
             plotplasmaline(specdown,specup,f,P,azel)
+# %%
+
 
 def isrstacker(flist,P):
 

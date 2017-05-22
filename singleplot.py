@@ -11,7 +11,7 @@ import seaborn as sns
 sns.set_context('talk',1.75)
 sns.set_style('ticks')
 #
-from isrutils.looper import simpleloop
+from isrutils import simpleloop
 
 
 if __name__ == '__main__':
