@@ -527,8 +527,12 @@ def simpleloop(inifn):
     P['tlim'] = str2dt(P['tlim'])
 
     for p in ('flim_pl','vlim','vlim_pl','vlim','vlimacf','vlimacfslice','vlimint',
-              'zlim','zsum'):
-        P[p] = np.array(ini.get('plot',p,fallback='nan').split(',')).astype(float)
+              'zlim','zlim_pl','zsum'):
+        val = ini.get('plot',p,fallback=None)
+        if not val:  # None or ''
+            P[p] = val
+            continue
+        P[p] = np.array(val.split(',')).astype(float)
 
 #%% loop over files
     for f in flist:
