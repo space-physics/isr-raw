@@ -8,7 +8,7 @@ from pytz import UTC
 from h5py import Dataset
 
 
-def writeplots(fg,t='',odir=None,ctxt='',ext='.png'):
+def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
     from matplotlib.pyplot import close
 
     if odir:
@@ -24,13 +24,13 @@ def writeplots(fg,t='',odir=None,ctxt='',ext='.png'):
             #:-6 keeps up to millisecond if present.
         ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + ext,'-').replace(' ','')
 
-        print(f'saving {ppth}')
+        print('saving',ppth)
 
         fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
 
         close(fg)
 
-def getazel(f,beamid:int):
+def getazel(f, beamid:int):
     """
     f: h5py HDF5 handle
     beamid: integer beam id number
@@ -74,9 +74,9 @@ def str2dt(tstr) -> list:
     for t in tstr:
         if t is None or isinstance(t,datetime):
             ut.append(t)
-        elif isinstance(t,str):
+        elif isinstance(t, str):
             ut.append(parse(t))
-        elif isinstance(t,(float,int)):
+        elif isinstance(t, (float,int)):
             ut.append(datetime.fromtimestamp(t,tz=UTC))
         else:
             raise TypeError(f'unknown data type {ut[0].dtype}')

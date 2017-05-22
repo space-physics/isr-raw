@@ -21,6 +21,6 @@ def quiet():
     ax.set_ylabel('amplitude [unitless]')
     ax.set_title('quiet ISR PSD')
 
-
-quiet()
-show()
+if __name__ == '__main__':
+    quiet()
+    show()
