@@ -530,7 +530,7 @@ def simpleloop(inifn):
               'zlim','zlim_pl','zsum'):
         val = ini.get('plot',p,fallback=None)
         if not val:  # None or ''
-            P[p] = val
+            P[p] = None
             continue
         P[p] = np.array(val.split(',')).astype(float)
 
