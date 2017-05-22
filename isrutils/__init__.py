@@ -83,15 +83,18 @@ def findstride(beammat:h5py.Dataset, bid:int) -> bool:
 def filekey(f:h5py.Dataset) -> str:
     # detect old and new HDF5 AMISR files
     if   '/Raw11/Raw/PulsesIntegrated' in f:        # new 2013
-        return '/Raw11/Raw'
+        key = '/Raw11/Raw'
     elif '/Raw11/RawData/PulsesIntegrated' in f:    # old 2011
-        return '/Raw11/RawData'
+        key = '/Raw11/RawData'
     elif '/RAW10/Data/Samples' in f:                # 2007
-        return '/RAW10/Data/'
+        key = '/RAW10/Data/'
     elif '/S/Data/PulsesIntegrated' in f:           # 2007
-        return '/S/Data'
+        key = '/S/Data'
     else:
-        logging.error(f'{f.filename} is not an old or new file?')
+        key = '/S/Cal'
+        logging.error(f'{f.filename}: does it contain raw data')
+
+    return key
 
 def ftype(fn:Path) -> str:
     """
@@ -270,9 +273,11 @@ def readpower_samples(fn:Path, P:dict):
         elif '/RadacHeader/BeamCode' in f:  # old 2007 DT3 files (DT0 2007 didn't have raw data?)
             beampatkey = '/RadacHeader/BeamCode'
             timekey = '/RadacHeader/RadacTime'
-        else: # very old 2007 files
+        elif rawkey + '/Beamcodes' in f: # very old 2007 files
             beampatkey = rawkey + '/Beamcodes'
             timekey = '/Time/RadacTime'
+        else:
+            return None, azel, isrlla
 
         bstride = findstride(f[beampatkey],P['beamid'])
 
@@ -461,17 +466,17 @@ def dt3keys(f):
 
     return rk,acfkey,noisekey
 
-def dt0keys(f):
-    try:
+def dt0keys(f:h5py.Dataset):
+
+    if '/IncohCodeFl/Data/Acf/Data' in f:
         rk = '/IncohCodeFl/'
         acfkey = f[rk+'Data/Acf/Data']
-    except KeyError: # note for March 2011 PFISR, /S/ was in DT3 only not DT0, per Hassan
-        try:
-            rk = '/S/'
-            acfkey = f[rk+'Data/Acf/Data'] # 2007 dt0 acf data
-        except KeyError:
-            acfkey=None
-            logging.error('did not find ACF in {}. Try the .dt3 file (esp. if 2011 data)'.format(f.filename))
+    elif '/S/Data/Acf/Data' in f: # note for March 2011 PFISR, /S/ was in DT3 only not DT0, per Hassan
+         rk = '/S/'
+         acfkey = f[rk+'Data/Acf/Data'] # 2007 dt0 acf data
+    else:
+        rk=acfkey=None
+        logging.error(f'did not find ACF in {f.filename}. Try the .dt3 file (esp. if <= 2011)')
 
     return rk,acfkey
 
