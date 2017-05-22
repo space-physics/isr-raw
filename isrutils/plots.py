@@ -15,18 +15,42 @@ from matplotlib.pyplot import figure,subplots,gcf
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.dates import DateFormatter
 #
-from . import writeplots,expfn,str2dt
+import pathvalidate
+#
+import isrutils
 from GeoData.plotting import polarplot
 from sciencedates import find_nearest as findnearest
 from sciencedates import timeticks
 
 ALTMIN = 60e3 # meters
 
+def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
+    from matplotlib.pyplot import close
+
+    if odir:
+        odir = Path(odir).expanduser()
+        odir.mkdir(parents=True,exist_ok=True)
+
+
+        if isinstance(t,(DataArray)):
+            t = datetime.fromtimestamp(t.item()/1e9, tz=UTC)
+        elif isinstance(t,(float,int)): # UTC assume
+            t = datetime.fromtimestamp(t/1e9, tz=UTC)
+
+            #:-6 keeps up to millisecond if present.
+        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + ext,'-').replace(' ','')
+
+        print('saving',ppth)
+
+        fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
+
+        close(fg)
+
 def plotsnr(snr,fn,P,azel,ctxt=''):
     if not isinstance(snr,DataArray):
         return
 
-    P['tlim'] = str2dt(P['tlim'])
+    P['tlim'] = isrutils.str2dt(P['tlim'])
 
     if 'int' in ctxt:
         vlim = P['vlimint']
@@ -72,7 +96,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 
     Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
 
-    ax.set_title('Az,El {:.1f},{:.1f}  {}  {}  $T_{{sample}}$={:.3f} sec.'.format(azel[0],azel[1],expfn(fn),
+    ax.set_title('Az,El {:.1f},{:.1f}  {}  {}  $T_{{sample}}$={:.3f} sec.'.format(azel[0],azel[1], isrutils.expfn(fn),
                          str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10], Ts.item()/1e9))
 
     try:
@@ -91,7 +115,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 
     fg.tight_layout()
 #%% output
-    ofn = ctxt +'power_' + expfn(fn)
+    ofn = ctxt +'power_' + isrutils.expfn(fn)
 
     writeplots(fg, snr.time[0].item(), P['odir'],ofn)
 
@@ -173,14 +197,14 @@ def plotacf(spec,fn,azel,t,dt,P):
     c=fg.colorbar(h,ax=ax)
     c.set_label('Power [dB]')
     ax.set_ylabel('slant range [km]')
-    ax.set_title('ISR PSD: Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], expfn(fn), dt, str(t)[:-6]))
+    ax.set_title('ISR PSD: Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}'.format(azel[0],azel[1], isrutils.expfn(fn), dt, str(t)[:-6]))
     ax.autoscale(True,axis='x',tight=True)
     ax.set_xlabel('frequency [kHz]')
 
-    writeplots(fg,t,P['odir'],'acf_'+expfn(fn))
+    writeplots(fg,t,P['odir'],' acf_' + isrutils.expfn(fn))
 #%% freq at alt
     if 'zslice' in P:
-        plotzslice(spec,P['zslice'],P['vlimacfslice'],azel,fn,dt,t,P['odir'], 'acfslice_'+expfn(fn))
+        plotzslice(spec,P['zslice'],P['vlimacfslice'],azel,fn,dt,t,P['odir'], 'acfslice_'+ isrutils.expfn(fn))
 
 
 def plotzslice(psd,zslice,vlim,azel,fn,dt,t,odir,stem,ttxt=None,flim=(None,None)):
@@ -221,7 +245,7 @@ def plotzslice(psd,zslice,vlim,azel,fn,dt,t,odir,stem,ttxt=None,flim=(None,None)
     ax.set_ylabel('Power [dB]')
 
     if ttxt is None:
-        ttxt = expfn(fn)
+        ttxt = isrutils.expfn(fn)
 
     ax.set_title(f'Az,El {azel[0]:.1f},{azel[1]:.1f}  @ {zslice[0]}..{zslice[1]} km  {ttxt}  $T_s$: {dt} [sec.] {str(t)[:-6]} \n' )
 
@@ -400,7 +424,7 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
     """
     plots beams used in the file
     """
-    if P['scan']:
+    if P['scan'] or P['odir'] is None:
         return
 
 
@@ -422,7 +446,7 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
         beams,date = _pullbeams(fn)
         h5fn = Path(fn.filename).name
     else:
-        with h5py.File(str(fn),'r',libver='latest') as f:
+        with h5py.File(fn, 'r', libver='latest') as f:
             beams,date = _pullbeams(f)
         h5fn = Path(fn).name
 
@@ -471,7 +495,7 @@ def plotsumionline(dsum,ax,fn,P):
 
     ax.set_ylabel('summed power')
     ax.set_xlabel('time [UTC]')
-    ax.set_title(f'{expfn(fn)} summed over range: ({P["zsum"][0]}..{P["zsum"][1]}) km')
+    ax.set_title(f'{isrutils.expfn(fn)} summed over range: ({P["zsum"][0]}..{P["zsum"][1]}) km')
 
     ax.set_yscale('log')
     ax.grid(True)

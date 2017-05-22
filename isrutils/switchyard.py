@@ -3,9 +3,8 @@ from pathlib import Path
 from time import time
 from xarray import concat
 #
-from . import readpower_samples,readsnr_int,snrvtime_fit
+from . import readpower_samples,readsnr_int,snrvtime_fit,readplasmaline
 from .rawacf import readACF
-from .plasmaline import readplasmaline
 from .summed import sumionline
 from .plots import plotsnr,plotsnr1d,plotplasmaline
 

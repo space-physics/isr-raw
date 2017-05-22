@@ -6,10 +6,9 @@ print(matplotlib.get_backend())
 from pathlib import Path
 from numpy.testing import run_module_suite
 #
-from isrutils import (readpower_samples,readsnr_int,snrvtime_fit)
+from isrutils import readpower_samples,readsnr_int,snrvtime_fit, readplasmaline, readACF
 from isrutils.plots import plotsnr,plotsnr1d,plotsnrmesh
-from isrutils.rawacf import readACF
-from isrutils.plasmaline import readplasmaline
+
 
 rdir = Path(__file__).parents[1]
 name = 'test.dt3.h5'
@@ -18,8 +17,10 @@ fn = path/name
 
 
 P={'beamid':64157,
-   'tlim':None,
-    'zlim':(200,300)} #km
+   'tlim':('06 Apr 2013 00:01:17','06 Apr 2013 00:02:30'),
+    'zlim':(200,300),
+    'scan':False,
+    'odir': None} #km
 
 def test_readpowersnr():
     readpower_samples(fn,P)

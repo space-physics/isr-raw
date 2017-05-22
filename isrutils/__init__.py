@@ -3,39 +3,22 @@ import logging
 from sys import stderr
 from xarray import DataArray
 from dateutil.parser import parse
-from numpy import atleast_1d, ndarray,ones,array
+import numpy as np
+from numpy import correlate as xcorr
+from numpy.fft import fft,fftshift
 from datetime import datetime
 from pytz import UTC
 import h5py
 from time import time
 #
-import pathvalidate
+from .plots import plotbeampattern,plotacf
 #
-from .plots import plotbeampattern
+from sciencedates import forceutc
 
-def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
-    from matplotlib.pyplot import close
+ACFfreqscale=100/6  #100/2
+ACFdns=1071/3 #TODO scalefactor
 
-    if odir:
-        odir = Path(odir).expanduser()
-        odir.mkdir(parents=True,exist_ok=True)
-
-
-        if isinstance(t,(DataArray)):
-            t = datetime.fromtimestamp(t.item()/1e9, tz=UTC)
-        elif isinstance(t,(float,int)): # UTC assume
-            t = datetime.fromtimestamp(t/1e9, tz=UTC)
-
-            #:-6 keeps up to millisecond if present.
-        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + ext,'-').replace(' ','')
-
-        print('saving',ppth)
-
-        fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
-
-        close(fg)
-
-def getazel(f, beamid:int) -> ndarray:
+def getazel(f, beamid:int) -> np.ndarray:
     """
     f: h5py HDF5 handle
     beamid: integer beam id number
@@ -52,15 +35,15 @@ def getazel(f, beamid:int) -> ndarray:
 
     return azel
 
-def ut2dt(ut) -> ndarray:
-    assert isinstance(ut,ndarray) and ut.ndim in (1,2)
+def ut2dt(ut) -> np.ndarray:
+    assert isinstance(ut, np.ndarray) and ut.ndim in (1,2)
 
     if ut.ndim==1:
         T=ut
     elif ut.ndim==2:
         T=ut[:,0]
     #return array([datetime64(int(t*1e3),'ms') for t in T]) # datetime64 is too buggy as of Numpy 1.11 and xarray 0.7
-    return array([datetime.fromtimestamp(t,tz=UTC) for t in T])
+    return np.array([datetime.fromtimestamp(t,tz=UTC) for t in T])
 
 
 def str2dt(tstr) -> list:
@@ -72,7 +55,7 @@ def str2dt(tstr) -> list:
     if not tstr:
         return
 
-    tstr = atleast_1d(tstr)
+    tstr = np.atleast_1d(tstr)
     assert tstr.ndim == 1
 
     ut = []
@@ -81,7 +64,7 @@ def str2dt(tstr) -> list:
         if t is None or isinstance(t,datetime):
             ut.append(t)
         elif isinstance(t, str):
-            ut.append(parse(t))
+            ut.append(forceutc(parse(t)))
         elif isinstance(t, (float,int)):
             ut.append(datetime.fromtimestamp(t,tz=UTC))
         else:
@@ -132,11 +115,13 @@ def expfn(fn:Path) -> str:
     else:
         raise ValueError(f'unknown file type {ft}')
 
-def cliptlim(t,tlim):
-    assert isinstance(t,ndarray) and t.ndim==1
+def cliptlim(t:np.ndarray, tlim):
+    assert isinstance(t, np.ndarray) and t.ndim==1
     # FIXME what if tlim has 'NaT'?  as of Numpy 1.11, only Pandas understands NaT with .isnull()
 
-    tind = ones(t.size,dtype=bool)
+    tlim = str2dt(tlim)
+
+    tind = np.ones(t.size, bool)
 
     if tlim is not None:
         if tlim[0] is not None:
@@ -155,7 +140,7 @@ def sampletime(t, bstride):
 
     returns: 2-D single of UTC time unix epoch
     """
-    assert isinstance(t, (ndarray, h5py.Dataset)), 'Numpy or h5py array only'
+    assert isinstance(t, (np.ndarray, h5py.Dataset)), 'Numpy or h5py array only'
     assert t.ndim == 2
 
     assert t.shape[0] == bstride.shape[0]  # number of times
@@ -180,7 +165,7 @@ def readplasmaline(fn:Path, P:dict):
     spec: Ntime x Nrange x Nfreq
     """
     if not ftype(fn) in ('dt1','dt2'):
-        return
+        return [None]*3
 
     tic = time()
     fn = Path(fn).expanduser()
@@ -237,7 +222,7 @@ def samplepower(sampiq,bstride,ut,srng,P:dict):
     zlim = P['zlim']
 #%% filter by range
     Nr = srng.size
-    zind = ones(Nr,dtype=bool)
+    zind = np.ones(Nr, bool)
     if zlim[0] is not None:
         zind &= zlim[0]<=srng
     if zlim[1] is not None:
@@ -308,8 +293,8 @@ def readpower_samples(fn:Path, P:dict):
 
     return power,azel,isrlla
 
-def readsnr_int(fn, bid:int, ft:str) -> DataArray:
-    if not ft in ('dt0','dt3'):
+def readsnr_int(fn, bid:int) -> DataArray:
+    if not ftype(fn) in ('dt0','dt3'):
         return
 
     assert isinstance(bid, int),'beam specification must be a scalar integer!'
@@ -327,7 +312,7 @@ def readsnr_int(fn, bid:int, ft:str) -> DataArray:
             srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
 #%% return requested beam data only
             snrint = DataArray(data=power,
-#                               dims=['srng','time'],
+                               dims=['srng','time'],
                                coords={'srng':srng,'time':t})
     except KeyError as e:
         print('integrated pulse data not found',fn,e,file=stderr)
@@ -347,3 +332,138 @@ def snrvtime_fit(fn,bid:int) -> DataArray:
         return DataArray(data=snr,
                          dims=['alt','time'],
                          coords={'alt':z,'time':t})
+
+
+#%% ACF
+
+def acf2psd(acfall,noiseall,Nr,dns):
+    """
+    acf all:  Nlag x Nslantrange x real/comp
+
+    """
+    assert acfall.ndim in (3,2)
+
+    Nlag = acfall.shape[0]
+    spec = np.empty((Nr,2*Nlag-1), 'complex128')
+
+    if acfall.ndim == 3: # last dim real,cplx
+        acf = (acfall[...,0] + 1j*acfall[...,1]).T / dns / 2.
+    elif acfall.ndim == 2 and np.iscomplex(acfall[0,0]):
+        acf = acfall / dns / 2.
+    else:
+        raise TypeError('is this really ACF? I expect complex 2-D matrix')
+
+    try:
+        acf_noise = (noiseall[...,0] + 1j*noiseall[...,1]).T / dns / 2.
+    except TypeError:
+        acf_noise= None
+        spec_noise= 0.
+#%% spectrum noise
+    if acf_noise is not None:
+        spec_noise = np.zeros(2*Nlag-1, 'complex128')
+        for i in range(Nlag):
+            spec_noise += fftshift(fft(np.append(np.conj(acf_noise[i,1:][::-1]),acf_noise[i,:])))
+        #
+        spec_noise = spec_noise / Nlag
+#%% spectrum from ACF
+    for i in range(Nr):
+        spec[i,:] = fftshift(fft(np.append(np.conj(acf[i,1:][::-1]), acf[i,:])))-spec_noise
+
+    return spec,acf
+
+def readACF(fn:Path, P:dict):
+    """
+    reads incoherent scatter radar autocorrelation function (ACF)
+    """
+    if not ftype(fn) in ('dt0','dt3'):
+        return
+
+    assert isinstance(P['beamid'],int),'beam specification must be a scalar integer'
+
+    with h5py.File(fn, 'r', libver='latest') as f:
+        t = ut2dt(f['/Time/UnixTime'].value)
+
+        ft = ftype(fn)
+        noisekey = None
+#%%
+        if ft == 'dt3':
+            rk,acfkey,noisekey = dt3keys(f)
+        elif ft == 'dt0':
+            rk,acfkey = dt0keys(f)
+        else:
+            raise TypeError('unexpected file type {}'.format(ft))
+
+        if acfkey is None or rk not in f:
+            if ft == 'dt3':
+                print('try DT0 file for ACF (esp. for 2007 PFISR)')
+            return
+#%% get ranges
+        try:
+            srng = f[rk + 'Data/Acf/Range']
+            bstride = findstride(f[rk+'Data/Beamcodes'],P['beamid'])
+        except KeyError: # old 2007 files
+            srng = f[filekey(f) + '/Power/Range']
+            bstride = findstride(f['/RadacHeader/BeamCode'], P['beamid'])
+#%% get azel
+        azel = getazel(f,P['beamid'])
+#%% get times
+        t,tind = cliptlim(t,P['tlim'])
+        if len(t)==0:
+            logging.warning(f'did not plot ACF since {fn} not within tlim {P["tlim"]}')
+
+        dt = (t[1]-t[0]).seconds if len(t)>=2 else None
+#%% get PSD
+
+        istride = np.column_stack(bstride.nonzero())[tind,:]
+        for tt,s in zip(t,istride):
+            if noisekey is not None:
+                spectrum,acf = acf2psd(acfkey[s[0],s[1],...],
+                                       noisekey[s[0],s[1],...],
+                                       srng.size, ACFdns)
+            elif acfkey.ndim==5:
+                spectrum,acf = acf2psd(acfkey[s[0],s[1],...],
+                                       noisekey,
+                                       srng.size, ACFdns)
+            elif acfkey.ndim==4: # TODO raw samples from 2007 file
+                raise NotImplementedError('TODO this code not complete--need to have all the lags as a dimension. See Swoboda PhD code for proper computation of lags from complex voltage. https://github.com/jswoboda')
+                tdat = acfkey[s[0],s[1],:,0] + 1j*acfkey[s[0],s[1],:,1]
+                acfall = xcorr(tdat, tdat, 'full')
+                spectrum,acf = acf2psd(acfall,
+                                       noisekey,
+                                       srng.size, ACFdns)
+
+            specdf = DataArray(data=spectrum,
+                               dims=['srng','freq'],
+                               coords={'srng': srng.value.squeeze(),
+                                       'freq': np.linspace(-ACFfreqscale, ACFfreqscale, spectrum.shape[1])})
+            try:
+                plotacf(specdf,fn,azel,tt, dt, P)
+            except Exception as e:
+                logging.error(f'failed to plot ACF due to {e}')
+
+def dt3keys(f):
+
+    rk = '/S/'
+
+    try:
+        acfkey = f[rk+'Data/Acf/Data']
+        noisekey = f[rk+'Noise/Acf/Data']
+    except KeyError:
+        acfkey = f[filekey(f) + '/Samples/Data'] #2007 dt3 raw data
+        noisekey=None
+
+    return rk,acfkey,noisekey
+
+def dt0keys(f):
+    try:
+        rk = '/IncohCodeFl/'
+        acfkey = f[rk+'Data/Acf/Data']
+    except KeyError: # note for March 2011 PFISR, /S/ was in DT3 only not DT0, per Hassan
+        try:
+            rk = '/S/'
+            acfkey = f[rk+'Data/Acf/Data'] # 2007 dt0 acf data
+        except KeyError:
+            acfkey=None
+            logging.error('did not find ACF in {}. Try the .dt3 file (esp. if 2011 data)'.format(f.filename))
+
+    return rk,acfkey

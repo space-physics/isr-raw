@@ -14,10 +14,9 @@ import matplotlib.gridspec as gridspec
 from matplotlib.colors import LogNorm
 import matplotlib.animation as anim
 #
-from . import  writeplots,expfn
-from .plasmaline import readplasmaline
+from . import  expfn, readplasmaline
 from .common import findindex2Dsphere,timesync,projectisrhist
-from .plots import plotsumionline
+from .plots import plotsumionline,writeplots
 #
 from GeoData.plotting import plotazelscale
 
@@ -125,9 +124,9 @@ def compclim(imgs,lower:float=0.5, upper:float=99.9, Nsamples:int=50):
     return clim
 
 #%% dt3
-def sumionline(snrsamp:DataArray, P:dict, ft:str):
+def sumionline(snrsamp:DataArray, P:dict):
 
-    if ft in ('dt0','dt3') and 'zsum' in P and isinstance(snrsamp, DataArray):
+    if 'zsum' in P and isinstance(snrsamp, DataArray):
 
         srng = snrsamp.srng
         i = (srng>P['zsum'][0]) & (srng<P['zsum'][1])
