@@ -1,3 +1,4 @@
+from sys import stderr
 from pathlib import Path
 from configparser import ConfigParser
 import logging
@@ -31,7 +32,7 @@ def getazel(f, beamid:int) -> np.ndarray:
     azelrow = (f['/Setup/BeamcodeMap'][:,0] == beamid).nonzero()[0]
     assert azelrow.size == 1, 'each beam should have a unique az,el'
 
-    azel = f['/Setup/BeamcodeMap'][azelrow,1:3]
+    azel = f['/Setup/BeamcodeMap'][azelrow,1:3].squeeze()
     assert azel.size==2
 
     return azel
@@ -136,7 +137,7 @@ def cliptlim(t:np.ndarray, tlim):
     return t[tind],tind
 
 
-def sampletime(t, bstride):
+def sampletime(t:h5py.Dataset, bstride):
     """
     read the time of the pulses to the microsecond level
     t: h5py variable
@@ -146,15 +147,22 @@ def sampletime(t, bstride):
     """
     assert isinstance(t, (np.ndarray, h5py.Dataset)), 'Numpy or h5py array only'
     assert t.ndim == 2
+    assert bstride.dtype=='bool'
 
     assert t.shape[0] == bstride.shape[0]  # number of times
 
     if bstride.sum() == 0:  # selected beam was never used in this file
         t = None
-    else:
+    elif t.shape==bstride.shape:  # usual case
         t = t[bstride]
         if t.max() > 1.01*t.mean():
             logging.warning('at least one time gap in radar detected')
+    elif t.shape[1] == 2:   # improvised case for the oldest AMISR files
+        logging.warning('improvised time method for very old AMISR files 2006-2007, may be inaccuate time')
+        assert (bstride.sum(axis=1)<=1).all(), 'were some times without pulses?'
+        bstride = bstride.any(axis=1)
+
+        t = t[bstride,0]
 
     return t
 
@@ -252,9 +260,6 @@ def readpower_samples(fn:Path, P:dict):
     reads samples (lowest level data) and computes power for a particular beam.
     returns power measurements
     """
-    if not ftype(fn) in ('dt0','dt3'):
-        return
-
     assert isinstance(P['beamid'],int),'beam specification must be a scalar integer!'
 
     try:
@@ -290,7 +295,7 @@ def readpower_samples(fn:Path, P:dict):
         if rawkey+'/Samples/Data' in f:
             power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,P) #I + jQ   # Ntimes x striped x alt x real/comp
         else:
-            logging.error(f'{fn} raw pulse data not found')
+            logging.warning(f'{fn} raw pulse data not found')
             power = None
 
     except OSError as e: #problem with file
@@ -362,18 +367,16 @@ def acf2psd(acfall,noiseall,Nr,dns):
     else:
         raise TypeError('is this really ACF? I expect complex 2-D matrix')
 
-    try:
+    if noiseall is not None:
         acf_noise = (noiseall[...,0] + 1j*noiseall[...,1]).T / dns / 2.
-    except TypeError:
-        acf_noise= None
-        spec_noise= 0.
-#%% spectrum noise
-    if acf_noise is not None:
         spec_noise = np.zeros(2*Nlag-1, 'complex128')
         for i in range(Nlag):
             spec_noise += fftshift(fft(np.append(np.conj(acf_noise[i,1:][::-1]),acf_noise[i,:])))
         #
         spec_noise = spec_noise / Nlag
+    else:
+        acf_noise= None
+        spec_noise= 0.
 #%% spectrum from ACF
     for i in range(Nr):
         spec[i,:] = fftshift(fft(np.append(np.conj(acf[i,1:][::-1]), acf[i,:])))-spec_noise
@@ -404,7 +407,7 @@ def readACF(fn:Path, P:dict):
 
         if acfkey is None or rk not in f:
             if ft == 'dt3':
-                print('try DT0 file for ACF (esp. for 2007 PFISR)')
+                print('try DT0 file for ACF (esp. for 2007 PFISR)', file=stderr)
             return
 #%% get ranges
         try:
@@ -448,10 +451,9 @@ def readACF(fn:Path, P:dict):
                                dims=['srng','freq'],
                                coords={'srng': srng.value.squeeze(),
                                        'freq': np.linspace(-ACFfreqscale, ACFfreqscale, spectrum.shape[1])})
-            try:
-                plotacf(specdf,fn,azel,tt, dt, P)
-            except Exception as e:
-                logging.error(f'failed to plot ACF due to {e}')
+
+            plotacf(specdf,fn,azel,tt, dt, P)
+
 
 def dt3keys(f):
 
@@ -468,15 +470,20 @@ def dt3keys(f):
 
 def dt0keys(f:h5py.Dataset):
 
-    if '/IncohCodeFl/Data/Acf/Data' in f:
+    stem = '/Data/Acf/Data'
+
+    if '/IncohCodeFl' + stem in f:
         rk = '/IncohCodeFl/'
-        acfkey = f[rk+'Data/Acf/Data']
-    elif '/S/Data/Acf/Data' in f: # note for March 2011 PFISR, /S/ was in DT3 only not DT0, per Hassan
+    elif '/S' + stem in f: # note for March 2011 PFISR, /S/ was in DT3 only not DT0, per Hassan
          rk = '/S/'
-         acfkey = f[rk+'Data/Acf/Data'] # 2007 dt0 acf data
+    elif '/IncohCode' + stem in f: # older 2007 files
+        rk = '/IncohCode/'
     else:
         rk=acfkey=None
         logging.error(f'did not find ACF in {f.filename}. Try the .dt3 file (esp. if <= 2011)')
+
+    if rk is not None:
+        acfkey = f[rk+'Data/Acf/Data']
 
     return rk,acfkey
 

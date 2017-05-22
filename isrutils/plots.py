@@ -8,8 +8,7 @@ from datetime import datetime
 from pytz import UTC
 from numpy import log10,absolute, meshgrid, sin, radians,unique,atleast_1d, median
 from numpy.ma import masked_invalid
-from pandas import DataFrame
-from xarray import DataArray
+import xarray
 #
 from matplotlib.pyplot import figure,subplots,gcf
 from mpl_toolkits.mplot3d import Axes3D
@@ -32,7 +31,7 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
         odir.mkdir(parents=True,exist_ok=True)
 
 
-        if isinstance(t,(DataArray)):
+        if isinstance(t,xarray.DataArray):
             t = datetime.fromtimestamp(t.item()/1e9, tz=UTC)
         elif isinstance(t,(float,int)): # UTC assume
             t = datetime.fromtimestamp(t/1e9, tz=UTC)
@@ -47,7 +46,7 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
         close(fg)
 
 def plotsnr(snr,fn,P,azel,ctxt=''):
-    if not isinstance(snr,DataArray):
+    if not isinstance(snr,xarray.DataArray):
         return
 
     P['tlim'] = isrutils.str2dt(P['tlim'])
@@ -123,7 +122,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 
 
 def plotsnr1d(snr,P):
-    if not isinstance(snr,DataArray):
+    if not isinstance(snr,xarray.DataArray):
         return
 
     tind=absolute(snr.time-P['t0']).argmin()
@@ -147,7 +146,7 @@ def plotsnr1d(snr,P):
     ax.set_ylabel('altitude [km]')
 
 def plotsnrmesh(snr,fn,P):
-    if not isinstance(snr,DataArray):
+    if not isinstance(snr,xarray.DataArray):
         return
 
     tind=absolute(snr.time-P['t0']).argmin()
@@ -175,6 +174,8 @@ def plotacf(spec,fn,azel,t,dt,P):
     """
     plot PSD derived from ACF.
     """
+    if not isinstance(spec,xarray.DataArray):
+        return
 #%% alt vs freq
     fg = figure()
     ax = fg.gca()
@@ -255,7 +256,7 @@ def plotzslice(psd,zslice,vlim,azel,fn,dt,t,odir,stem,ttxt=None,flim=(None,None)
 def plotplasmaline(specdown,specup,fn, P, azel):
     tic = time()
 
-    spec = [s for s in (specdown,specup) if isinstance(s,DataArray)]
+    spec = [s for s in (specdown,specup) if isinstance(s,xarray.DataArray)]
     Nspec = len(spec)
     if Nspec==0:
         return
@@ -286,9 +287,9 @@ def plotplasmaline(specdown,specup,fn, P, azel):
             #writeplots(fg,t,P['odir'],'plasmaLineOverlay')
             #continue
 #            import pdb; pdb.set_trace()
-            if isinstance(specdown,DataArray):
+            if isinstance(specdown,xarray.DataArray):
                 plotzslice(specdown.sel(time=t),P['zslice'],P['vlim_pl'],azel,fn,dT,t,P['odir'],'plasmaDOWNslice','downshifted plasma line',P['flim_pl'])
-            if isinstance(specup,DataArray):
+            if isinstance(specup,xarray.DataArray):
                 plotzslice(specup.sel(time=t),P['zslice'],P['vlim_pl'],azel,fn,dT,t,P['odir'],'plasmaUPslice','upshifted plasma line',P['flim_pl'])
 
         if fg is None:
@@ -349,7 +350,7 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
 
 
 def plotplasmatime(spec,t,fg,ax,P,ctxt):
-    if not isinstance(spec,DataArray):
+    if not isinstance(spec,xarray.DataArray):
         return
 
     srng = spec.srng.values
@@ -388,7 +389,7 @@ def xfreq(ax,spec,Pflim):
 
 
 def plotplasmamesh(spec,fg,ax,P,ptype=''):
-    if not isinstance(spec,DataArray):
+    if not isinstance(spec,xarray.DataArray):
         return
 
     if not fg and not ax:
@@ -430,12 +431,17 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
     beamcodes = unique(beamkey)  # for some files they're jumbled
 
-    def _pullbeams(f):
+    def _pullbeams(f, beamcodes=None):
         M = f['/Setup/BeamcodeMap']
 
-        azel =  DataFrame(index=M[:,0].astype(int),
-                          columns=['az','el'],
-                          data=M[:,1:3])
+        azel =  xarray.DataArray(data= M[:,1:3],
+                          dims = ['beamid','azel'],
+                          coords={'beamid':M[:,0].astype(int),
+                                  'azel':['az','el']}
+                          )
+
+        if beamcodes is not None:
+            azel = azel.loc[beamcodes,:]
 
         date = f['/Time/RadacTimeString'][0][0][:10].decode('utf8')
 
@@ -443,16 +449,14 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
 
     if isinstance(fn,h5py.File):
-        beams,date = _pullbeams(fn)
+        beams,date = _pullbeams(fn,beamcodes)
         h5fn = Path(fn.filename).name
     else:
         with h5py.File(fn, 'r', libver='latest') as f:
-            beams,date = _pullbeams(f)
+            beams,date = _pullbeams(f,beamcodes)
         h5fn = Path(fn).name
 
-
-
-    fg = polarplot(beams.loc[beamcodes,'az'], beams.loc[beamcodes,'el'], # FIXME .sel()
+    fg = polarplot(beams.loc[:,'az'], beams.loc[:,'el'], # FIXME .sel()
                    title=f'ISR {beamcodes.size} Beam Pattern: {date}',
                    markerarea=27.4)
 
@@ -465,7 +469,7 @@ def plotsumionline(dsum,ax,fn,P):
     if dsum is None:
         return
 
-    assert isinstance(dsum,DataArray) and dsum.ndim==1,'incorrect input type'
+    assert isinstance(dsum,xarray.DataArray) and dsum.ndim==1,'incorrect input type'
     assert dsum.size > 1,'must have at least two data points to plot'
 
 #%% threshold
@@ -513,7 +517,7 @@ def plotsumionline(dsum,ax,fn,P):
     return hit
 
 def plotsumplasmaline(plsum):
-    assert isinstance(plsum,DataArray)
+    assert isinstance(plsum,xarray.DataArray)
 
     fg = figure()
     ax = fg.gca()
