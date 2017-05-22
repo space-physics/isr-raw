@@ -1,7 +1,8 @@
 from pathlib import Path
+from configparser import ConfigParser
 import logging
 from sys import stderr
-from xarray import DataArray
+import xarray
 from dateutil.parser import parse
 import numpy as np
 from numpy import correlate as xcorr
@@ -11,7 +12,8 @@ from pytz import UTC
 import h5py
 from time import time
 #
-from .plots import plotbeampattern,plotacf
+from .summed import sumionline
+from .plots import plotbeampattern,plotacf,plotsnr,plotsnr1d,plotplasmaline,plotsumionline
 #
 from sciencedates import forceutc
 
@@ -200,9 +202,9 @@ def readplasma(fn,beamid,fshift,tlim):
 #%% spectrum compute
     T,tind = cliptlim(T,tlim)
 
-    spec = DataArray(data = data[:,:,tind].transpose(2,0,1),
-                     dims=['time','srng','freq'],
-                     coords={'time':T, 'srng':srng, 'freq':freq})
+    spec = xarray.DataArray(data = data[:,:,tind].transpose(2,0,1),
+                            dims=['time','srng','freq'],
+                            coords={'time':T, 'srng':srng, 'freq':freq})
 
 
     return spec,azel
@@ -239,9 +241,9 @@ def samplepower(sampiq,bstride,ut,srng,P:dict):
     power = (sampiq[...,0]**2. + sampiq[...,1]**2.).T
 
 
-    return DataArray(data=power,
-                     dims=['srng','time'],
-                     coords={'srng':srng,'time':t})
+    return xarray.DataArray(data=power,
+                         dims=['srng','time'],
+                         coords={'srng':srng,'time':t})
 
 def readpower_samples(fn:Path, P:dict):
     """
@@ -293,34 +295,37 @@ def readpower_samples(fn:Path, P:dict):
 
     return power,azel,isrlla
 
-def readsnr_int(fn, bid:int) -> DataArray:
+def readsnr_int(fn, bid:int) -> xarray.DataArray:
     if not ftype(fn) in ('dt0','dt3'):
         return
 
-    assert isinstance(bid, int),'beam specification must be a scalar integer!'
+    if not isinstance(bid, int):
+        raise TypeError('beam specification must be a scalar integer!')
 
     try:
         with h5py.File(fn, 'r', libver='latest') as f:
             t = ut2dt(f['/Time/UnixTime'][:])
             rawkey = filekey(f)
-            try:
-                bind  = f[rawkey+'/Beamcodes'][0,:] == bid
-                power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
-            except KeyError:
-                power = f[rawkey+'/Power/Data'][:].T
 
-            srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
-#%% return requested beam data only
-            snrint = DataArray(data=power,
-                               dims=['srng','time'],
-                               coords={'srng':srng,'time':t})
+            bind  = f[rawkey+'/Beamcodes'][0,:] == bid
+            assert bind.size ==  f[rawkey+'/Power/Data'].shape[1]
+
+            if bind.sum() == 0:  # selected beam not used
+                snrint = None
+            else:
+                power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
+                srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
+
+                snrint = xarray.DataArray(data=power,
+                                           dims=['srng','time'],
+                                           coords={'srng':srng,'time':t})
     except KeyError as e:
         print('integrated pulse data not found',fn,e,file=stderr)
         snrint = None
 
     return snrint
 
-def snrvtime_fit(fn,bid:int) -> DataArray:
+def snrvtime_fit(fn,bid:int) -> xarray.DataArray:
     fn = Path(fn).expanduser()
 
     with h5py.File(fn, 'r', libver='latest') as f:
@@ -329,11 +334,11 @@ def snrvtime_fit(fn,bid:int) -> DataArray:
         snr = f['/NeFromPower/SNR'][:,bind,:].squeeze().T
         z = f['/NeFromPower/Altitude'][bind,:].squeeze()/1e3
 #%% return requested beam data only
-        return DataArray(data=snr,
-                         dims=['alt','time'],
-                         coords={'alt':z,'time':t})
+    snrarray = xarray.DataArray(data=snr,
+                                 dims=['alt','time'],
+                                 coords={'alt':z,'time':t})
 
-
+    return snrarray
 #%% ACF
 
 def acf2psd(acfall,noiseall,Nr,dns):
@@ -432,7 +437,7 @@ def readACF(fn:Path, P:dict):
                                        noisekey,
                                        srng.size, ACFdns)
 
-            specdf = DataArray(data=spectrum,
+            specdf = xarray.DataArray(data=spectrum,
                                dims=['srng','freq'],
                                coords={'srng': srng.value.squeeze(),
                                        'freq': np.linspace(-ACFfreqscale, ACFfreqscale, spectrum.shape[1])})
@@ -467,3 +472,136 @@ def dt0keys(f):
             logging.error('did not find ACF in {}. Try the .dt3 file (esp. if 2011 data)'.format(f.filename))
 
     return rk,acfkey
+
+
+def simpleloop(inifn):
+    ini = ConfigParser(allow_no_value=True, empty_lines_in_values=False,
+                      inline_comment_prefixes=(';'), strict=True)
+    ini.read(inifn)
+
+    dpath = Path(ini.get('data','path')).expanduser()
+    ftype = ini.get('data','ftype',fallback=None)
+#%% parse user directory / file list input
+    if dpath.is_dir() and not ftype:  # ftype=None or ''
+        flist = dpath.glob('*dt*.h5')
+    elif dpath.is_dir() and ftype: #glob pattern
+        flist = dpath.glob(f'*.{ftype}.h5')
+    elif dpath.is_file(): # a single file was specified
+        flist = [flist]
+    else:
+        raise FileNotFoundError(f'unknown path/filetype {dpath} / {ftype}')
+
+    flist = sorted(flist) #in case glob
+    if not flist:
+        raise FileNotFoundError(f'no files found in {dpath}')
+
+    print(f'examining {len(flist)} files in {dpath}\n')
+#%% api catchall
+    P = {
+    'odir': ini.get('plot','odir',fallback=None),
+    'verbose': ini.getboolean('plot','verbose',fallback=False),
+    'scan': ini.getboolean('data','scan',fallback=False),
+     # N times the median is declared a detection
+    'medthres': ini.getfloat('data','medthreas',fallback=2.),
+    'tlim': ini.get('plot','tlim',fallback=None),
+    'beamid': ini.getint('data','beamid'),
+    'acf': ini.getboolean('plot','acf',fallback=False)
+         }
+
+    if P['tlim']:
+        P['tlim'] = P['tlim'].split(',')
+    P['tlim'] = str2dt(P['tlim'])
+
+    for p in ('flim_pl','vlim','vlim_pl','vlim','vlimacf','vlimacfslice','vlimint',
+              'zlim','zsum'):
+        P[p] = np.array(ini.get('plot',p,fallback='nan').split(',')).astype(float)
+
+#%% loop over files
+    for f in flist:
+        # read data
+        specdown,specup,snrsamp,azel,isrlla,snrint,snr30int,ionsum = isrselect(dpath/f, P)
+#%% plot
+        # summed ion line over altitude range
+#        tic = time()
+        hit = plotsumionline(ionsum,None,f,P)
+        assert isinstance(hit,bool), 'is summed data being properly read?'
+        print(f.stem, hit)
+#        if P['verbose']: print(f'sum plot took {(time()-tic):.1f} sec.')
+
+        if hit and not P['acf']: # if P['acf'], it was already plotted. Otherwise, we plot only if hit
+            readACF(f,P)
+
+        if hit or not P['scan']:
+            # 15 sec integration
+            plotsnr(snrint,f,P,azel,ctxt='int_')
+            # 200 ms integration
+            plotsnr(snrsamp,f,P,azel)
+            # plasma line spectrum
+            plotplasmaline(specdown,specup,f,P,azel)
+
+def isrstacker(flist,P):
+
+    for fn in flist:
+        fn = Path(fn).expanduser()
+        if not fn.is_file():
+            continue
+
+        specdown,specup,snrsamp,azel,isrlla,snrint,snr30int = isrselect(fn,P)
+        if fn.samefile(flist[0]):
+            specdowns=specdown; specups=specup
+            snrsamps = snrsamp
+            snrints = snrint
+            snr30ints = snr30int
+        else:
+            if snrsamp is not None:
+                snrsamps= xarray.concat((snrsamps,snrsamp), axis=1)
+            if snrint is not None:
+                snrints = xarray.concat((snrints,snrint), axis=1)
+            #TOOD other concat & update to xarray syntax
+
+
+#%% plots
+    plotplasmaline(specdowns,specups,flist,P)
+
+    plotsnr(snrsamps,fn,P)
+#%% ACF
+    readACF(fn,P)
+
+    plotsnr(snrints,fn,P)
+
+    plotsnr1d(snr30ints,fn,P)
+
+    plotsnr(snr30ints,fn,P)
+    #plotsnrmesh(snr,fn,P)
+
+
+
+def isrselect(fn:Path, P:dict):
+    """
+    this function is a switchyard to pick the right function to read and plot
+    the desired data based on filename and user requests.
+    """
+#%% plasma line
+    specdown,specup,azel = readplasmaline(fn, P)
+#%% ~ 200 millisecond raw altcode and longpulse
+    #tic = time()
+    snrsamp,azel,isrlla = readpower_samples(fn, P)
+    #if P['verbose']: print(f'sample read took {(time()-tic):.2f} sec.')
+    #tic=time()
+    ionsum = sumionline(snrsamp, P) # sum over altitude range (for detection)
+    #if P['verbose']: print(f'sample sum took {(time()-tic):.2f} sec.')
+#%% ACF
+    if P['acf']:
+        tic = time()
+        readACF(fn,P)
+        if P['verbose']:
+            print(f'ACF/PSD read & plot took {time()-tic:.1f} sec.')
+#%% multi-second integration (numerous integrated pulses)
+    snrint = readsnr_int(fn, P['beamid'])
+#%% 30 second integration plots
+    if fn.stem.rsplit('_',1)[-1] == '30sec':
+        snr30int = snrvtime_fit(fn,P['beamid'])
+    else:
+        snr30int=None
+
+    return specdown,specup,snrsamp,azel,isrlla,snrint,snr30int,ionsum

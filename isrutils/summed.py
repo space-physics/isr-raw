@@ -14,7 +14,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.colors import LogNorm
 import matplotlib.animation as anim
 #
-from . import  expfn, readplasmaline
+import isrutils
 from .common import findindex2Dsphere,timesync,projectisrhist
 from .plots import plotsumionline,writeplots
 #
@@ -37,7 +37,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
     gs = gridspec.GridSpec(2, 1, height_ratios=[3,1])
 #%% setup radar plot(s)
     a1 = fg.add_subplot(gs[1])
-    plotsumionline(ds,a1,expfn(P['isrfn']),P['zlim'])
+    plotsumionline(ds,a1, isrutils.expfn(P['isrfn']), P['zlim'])
 
     h1 = a1.axvline(nan,color='k',linestyle='--')
     t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
@@ -135,7 +135,7 @@ def sumionline(snrsamp:DataArray, P:dict):
 
 #%% plasma line
 def sumplasmaline(fn,P):
-    spec,freq = readplasmaline(fn,P)
+    spec,freq = isrutils.readplasmaline(fn,P)
     assert isinstance(spec,DataArray) and spec.ndim==4
     assert isinstance(P['flim'][0],float)
 
