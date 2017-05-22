@@ -1,10 +1,17 @@
 #!/usr/bin/env python
-from setuptools import setup
+req = ['nose','python-dateutil','pytz', 'numpy','xarray','matplotlib', 'seaborn', 'h5py']
+pipreq = ['pathvalidate', 'sciencedates','pymap3d',]
+gitreq = ['GeoData',]
 
-req = ['pathvalidate',
-	  'sciencedates','pymap3d',
-         'GeoData',
-	   'nose','python-dateutil','pytz','numpy','xarray','matplotlib','seaborn','h5py']
+import pip
+try:
+    import conda.cli
+    conda.cli.main('install',*req)
+except Exception as e:
+    pip.main(['install'] + req)
+pip.main(['install'] + pipreq)
+# %%
+from setuptools import setup
 
 setup(name='isrutils',
       packages=['isrutils'],
@@ -12,7 +19,6 @@ setup(name='isrutils',
       url='https://github.com/scivision/isrutils',
       description='utilities for reading and plotting ISR raw data',
       version='0.5',
-	  install_requires=req,
-      dependency_links = [
-            'https://github.com/jswoboda/GeoDataPython/tarball/master#egg=GeoData-999.0.0',],
+	  install_requires=gitreq,
+      dependency_links = ['https://github.com/jswoboda/GeoDataPython/tarball/master#egg=GeoData-999.0.0',],
 	  )
