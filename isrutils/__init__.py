@@ -482,7 +482,7 @@ def dt0keys(f:h5py.Dataset):
         rk = '/IncohCode/'
     else:
         rk=acfkey=None
-        logging.error(f'did not find ACF in {f.filename}. Try the .dt3 file (esp. if <= 2011)')
+        logging.info(f'did not find ACF in {f.filename}. Try the .dt3 file (esp. if <= 2011)')
 
     if rk is not None:
         acfkey = f[rk+'Data/Acf/Data']
@@ -533,7 +533,7 @@ def simpleloop(inifn):
               'zlim','zlim_pl','zsum'):
         val = ini.get('plot',p,fallback=None)
         if not val:  # None or ''
-            P[p] = None
+            P[p] = [None,None]
             continue
         P[p] = np.array(val.split(',')).astype(float)
 
