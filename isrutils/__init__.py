@@ -293,9 +293,9 @@ def readpower_samples(fn:Path, P:dict):
         srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
 
         if rawkey+'/Samples/Data' in f:
-            power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,P) #I + jQ   # Ntimes x striped x alt x real/comp
+            power = samplepower(f[rawkey+'/Samples/Data'], bstride, ut, srng, P) #I + jQ   # Ntimes x striped x alt x real/comp
         else:
-            logging.warning(f'{fn} raw pulse data not found')
+            logging.info(f'{fn} raw pulse data not found')
             power = None
 
     except OSError as e: #problem with file
@@ -304,25 +304,28 @@ def readpower_samples(fn:Path, P:dict):
 
     return power,azel,isrlla
 
-def readsnr_int(fn, bid:int) -> xarray.DataArray:
+def readsnr_int(fn, P:dict) -> xarray.DataArray:
     if not ftype(fn) in ('dt0','dt3'):
         return
 
-    if not isinstance(bid, int):
+    if not isinstance(P['beamid'], int):
         raise TypeError('beam specification must be a scalar integer!')
 
     try:
         with h5py.File(fn, 'r', libver='latest') as f:
             t = ut2dt(f['/Time/UnixTime'][:])
+            t,tind = cliptlim(t, P['tlim'])
+
             rawkey = filekey(f)
 
-            bind  = f[rawkey+'/Beamcodes'][0,:] == bid
+            bind  = f[rawkey+'/Beamcodes'][0,:] == P['beamid']
             assert bind.size ==  f[rawkey+'/Power/Data'].shape[1]
 
             if bind.sum() == 0:  # selected beam not used
                 snrint = None
             else:
                 power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
+                power = power[:,tind]
                 srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
 
                 snrint = xarray.DataArray(data=power,
@@ -420,8 +423,6 @@ def readACF(fn:Path, P:dict):
         azel = getazel(f,P['beamid'])
 #%% get times
         t,tind = cliptlim(t,P['tlim'])
-        if len(t)==0:
-            logging.warning(f'did not plot ACF since {fn} not within tlim {P["tlim"]}')
 
         dt = (t[1]-t[0]).seconds if len(t)>=2 else None
 #%% get PSD
@@ -617,7 +618,7 @@ def isrselect(fn:Path, P:dict):
         if P['verbose']:
             print(f'ACF/PSD read & plot took {time()-tic:.1f} sec.')
 #%% multi-second integration (numerous integrated pulses)
-    snrint = readsnr_int(fn, P['beamid'])
+    snrint = readsnr_int(fn, P)
 #%% 30 second integration plots
     if fn.stem.rsplit('_',1)[-1] == '30sec':
         snr30int = snrvtime_fit(fn,P['beamid'])

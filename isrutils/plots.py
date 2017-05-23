@@ -46,7 +46,7 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
         close(fg)
 
 def plotsnr(snr,fn,P,azel,ctxt=''):
-    if not isinstance(snr,xarray.DataArray):
+    if not isinstance(snr,xarray.DataArray) or snr.size==0:
         return
 
     P['tlim'] = isrutils.str2dt(P['tlim'])
