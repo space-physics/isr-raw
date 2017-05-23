@@ -221,7 +221,7 @@ def readplasma(fn,beamid,fshift,tlim):
 
 
 # %% Power
-def samplepower(sampiq,bstride,ut,srng,P:dict):
+def samplepower(sampiq, bstride, t, tind, srng, P:dict):
     """
     returns I**2 + Q**2 of radar received amplitudes
     FIXME: what are sample units?
@@ -241,10 +241,6 @@ def samplepower(sampiq,bstride,ut,srng,P:dict):
         zind &= srng<=zlim[1]
     srng = srng[zind]
 #%% filter by time
-    t = ut2dt(ut)
-
-    t,tind = cliptlim(t,P['tlim'])
-
     sampiq = sampiq[:][bstride,:,:]
     sampiq = sampiq[:,zind,:]
     sampiq = sampiq[tind,:,:]
@@ -286,14 +282,17 @@ def readpower_samples(fn:Path, P:dict):
 
         bstride = findstride(f[beampatkey],P['beamid'])
 
-        ut = sampletime(f[timekey],bstride)
+        ut = sampletime(f[timekey], bstride)
+        t = ut2dt(ut)
+        t,tind = cliptlim(t, P['tlim'])
 
-        plotbeampattern(f,P,f[beampatkey])
+        if t.size>0:
+            plotbeampattern(f, P, f[beampatkey])
 #%%
         srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
 
         if rawkey+'/Samples/Data' in f:
-            power = samplepower(f[rawkey+'/Samples/Data'], bstride, ut, srng, P) #I + jQ   # Ntimes x striped x alt x real/comp
+            power = samplepower(f[rawkey+'/Samples/Data'], bstride, t, tind, srng, P) #I + jQ   # Ntimes x striped x alt x real/comp
         else:
             logging.info(f'{fn} raw pulse data not found')
             power = None

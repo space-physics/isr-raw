@@ -465,13 +465,11 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
 
 def plotsumionline(dsum,ax,fn,P):
-    if dsum is None:
+    if dsum is None or dsum.size<2:
         return
 
     assert isinstance(dsum,xarray.DataArray) and dsum.ndim==1,'incorrect input type'
-    assert dsum.size > 1,'must have at least two data points to plot'
-
-#%% threshold
+# %% threshold
     med = median(dsum.values)
     medthres = P['medthres'] * med
 
