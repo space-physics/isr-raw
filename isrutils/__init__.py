@@ -161,7 +161,7 @@ def sampletime(t:h5py.Dataset, bstride):
         if t.max() > 1.01*t.mean():
             logging.warning('at least one time gap in radar detected')
     elif t.shape[1] == 2:   # improvised case for the oldest AMISR files
-        logging.warning('improvised time method for very old AMISR files 2006-2007, may be inaccuate time')
+        logging.info('improvised time method for very old AMISR files 2006-2007, may be inaccurate time')
         assert (bstride.sum(axis=1)<=1).all(), 'were some times without pulses?'
         bstride = bstride.any(axis=1)
 
@@ -411,7 +411,7 @@ def readACF(fn:Path, P:dict):
 
         if acfkey is None or rk not in f:
             if ft == 'dt3':
-                print('try DT0 file for ACF (esp. for 2007 PFISR)', file=stderr)
+                logging.info('try DT0 file for ACF (esp. for 2007 PFISR)')
             return
 #%% get ranges
         try:
@@ -496,22 +496,23 @@ def simpleloop(inifn):
     ini.read(inifn)
 
     dpath = Path(ini.get('data','path')).expanduser()
-    ftype = ini.get('data','ftype',fallback=None)
+    ft = ini.get('data','ftype',fallback='').split(',')
 #%% parse user directory / file list input
-    if dpath.is_dir() and not ftype:  # ftype=None or ''
-        flist = dpath.glob('*dt*.h5')
-    elif dpath.is_dir() and ftype: #glob pattern
-        flist = dpath.glob(f'*.{ftype}.h5')
+    if dpath.is_dir() and not ft:
+        flist = sorted(dpath.glob('*dt*.h5'))
+    elif dpath.is_dir() and ft: #glob pattern
+        flist = []
+        for t in ft:
+            flist.extend(sorted(dpath.glob(f'*.{t}.h5')))
     elif dpath.is_file(): # a single file was specified
         flist = [flist]
     else:
-        raise FileNotFoundError(f'unknown path/filetype {dpath} / {ftype}')
+        raise FileNotFoundError(f'unknown path/filetype {dpath} / {ft}')
 
-    flist = sorted(flist) #in case glob
     if not flist:
         raise FileNotFoundError(f'no files found in {dpath}')
 
-    print(f'examining {len(flist)} files in {dpath}\n')
+    print(f'examining {len(flist)} {ft} files in {dpath}\n')
 #%% api catchall
     P = {
     'odir': ini.get('plot','odir',fallback=None),
