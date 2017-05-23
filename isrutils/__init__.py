@@ -45,6 +45,9 @@ def ut2dt(ut) -> np.ndarray:
     elif ut.ndim==2:
         T=ut[:,0]
     #return array([datetime64(int(t*1e3),'ms') for t in T]) # datetime64 is too buggy as of Numpy 1.11 and xarray 0.7
+    if 1e15 < T[0] < 3e15:  # old 2007 file with time in Unix microseconds epoch
+        T /= 1e6
+
     return np.array([datetime.fromtimestamp(t,tz=UTC) for t in T])
 
 
