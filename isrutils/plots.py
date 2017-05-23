@@ -261,7 +261,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
         return
 
     T = spec[0].time
-    dT = (T[1]-T[0]).item()/1e9
+    dT = (T[1]-T[0]).item()/1e9 if T.size >= 2 else ''
 
     for s in spec:
         assert (s.time == T).all(),'times do not match for downshift and upshift plasma spectrum'
