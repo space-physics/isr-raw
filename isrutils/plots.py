@@ -93,10 +93,9 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
     c=fg.colorbar(h,ax=ax,fraction=0.075,shrink=0.5)
     c.set_label('Power [dB]')
 
-    Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
+    Ts = f'{(snr.time[1] - snr.time[0]).item()/1e9:.3f}' if snr.time.size>=2 else ''
 
-    ax.set_title('Az,El {:.1f},{:.1f}  {}  {}  $T_{{sample}}$={:.3f} sec.'.format(azel[0],azel[1], isrutils.expfn(fn),
-                         str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10], Ts.item()/1e9))
+    ax.set_title(f'Az,El {azel[0]:.1f},{azel[1]:.1f}  {isrutils.expfn(fn)}  {str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10]}  $T_{{sample}}$={Ts} sec.')
 
     try:
       for m in P['tmark']:
