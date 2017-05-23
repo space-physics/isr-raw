@@ -285,7 +285,6 @@ def readpower_samples(fn:Path, P:dict):
         ut = sampletime(f[timekey], bstride)
         t = ut2dt(ut)
         t,tind = cliptlim(t, P['tlim'])
-
         if t.size>0:
             plotbeampattern(f, P, f[beampatkey])
 #%%
@@ -310,29 +309,29 @@ def readsnr_int(fn, P:dict) -> xarray.DataArray:
     if not isinstance(P['beamid'], int):
         raise TypeError('beam specification must be a scalar integer!')
 
-    try:
-        with h5py.File(fn, 'r', libver='latest') as f:
-            t = ut2dt(f['/Time/UnixTime'][:])
-            t,tind = cliptlim(t, P['tlim'])
+    with h5py.File(fn, 'r', libver='latest') as f:
+        t = ut2dt(f['/Time/UnixTime'][:])
+        t,tind = cliptlim(t, P['tlim'])
 
-            rawkey = filekey(f)
+        rawkey = filekey(f)
+        #  NOTE: NOT '/RadacHeader/BeamCode'
+        if rawkey+'/Beamcodes' not in f:
+            return
 
-            bind  = f[rawkey+'/Beamcodes'][0,:] == P['beamid']
-            assert bind.size ==  f[rawkey+'/Power/Data'].shape[1]
+        bind  = f[rawkey+'/Beamcodes'][0,:] == P['beamid']
+        assert bind.size ==  f[rawkey+'/Power/Data'].shape[1]
 
-            if bind.sum() == 0:  # selected beam not used
-                snrint = None
-            else:
-                power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
-                power = power[:,tind]
-                srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
+        if bind.sum() == 0:  # selected beam not used
+            snrint = None
+        else:
+            power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
+            power = power[:,tind]
+            srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
 
-                snrint = xarray.DataArray(data=power,
-                                           dims=['srng','time'],
-                                           coords={'srng':srng,'time':t})
-    except KeyError as e:
-        logging.error(f'{fn} integrated pulse data not found {e}')
-        snrint = None
+            snrint = xarray.DataArray(data=power,
+                                       dims=['srng','time'],
+                                       coords={'srng':srng,'time':t})
+
 
     return snrint
 
