@@ -19,6 +19,7 @@ fn = path/name
 P={'beamid':64157,
    'tlim':('06 Apr 2013 00:01:17','06 Apr 2013 00:02:30'),
     'zlim':(200,300),
+    'vlimacf':(None,None),
     'scan':False,
     'odir': None} #km
 

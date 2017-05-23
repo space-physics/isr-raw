@@ -45,6 +45,9 @@ def ut2dt(ut) -> np.ndarray:
     elif ut.ndim==2:
         T=ut[:,0]
     #return array([datetime64(int(t*1e3),'ms') for t in T]) # datetime64 is too buggy as of Numpy 1.11 and xarray 0.7
+    if 1e15 < T[0] < 3e15:  # old 2007 file with time in Unix microseconds epoch
+        T /= 1e6
+
     return np.array([datetime.fromtimestamp(t,tz=UTC) for t in T])
 
 
@@ -158,7 +161,7 @@ def sampletime(t:h5py.Dataset, bstride):
         if t.max() > 1.01*t.mean():
             logging.warning('at least one time gap in radar detected')
     elif t.shape[1] == 2:   # improvised case for the oldest AMISR files
-        logging.warning('improvised time method for very old AMISR files 2006-2007, may be inaccuate time')
+        logging.info('improvised time method for very old AMISR files 2006-2007, may be inaccurate time')
         assert (bstride.sum(axis=1)<=1).all(), 'were some times without pulses?'
         bstride = bstride.any(axis=1)
 
@@ -221,7 +224,7 @@ def readplasma(fn,beamid,fshift,tlim):
 
 
 # %% Power
-def samplepower(sampiq,bstride,ut,srng,P:dict):
+def samplepower(sampiq, bstride, t, tind, srng, P:dict):
     """
     returns I**2 + Q**2 of radar received amplitudes
     FIXME: what are sample units?
@@ -241,10 +244,6 @@ def samplepower(sampiq,bstride,ut,srng,P:dict):
         zind &= srng<=zlim[1]
     srng = srng[zind]
 #%% filter by time
-    t = ut2dt(ut)
-
-    t,tind = cliptlim(t,P['tlim'])
-
     sampiq = sampiq[:][bstride,:,:]
     sampiq = sampiq[:,zind,:]
     sampiq = sampiq[tind,:,:]
@@ -286,16 +285,18 @@ def readpower_samples(fn:Path, P:dict):
 
         bstride = findstride(f[beampatkey],P['beamid'])
 
-        ut = sampletime(f[timekey],bstride)
-
-        plotbeampattern(f,P,f[beampatkey])
+        ut = sampletime(f[timekey], bstride)
+        t = ut2dt(ut)
+        t,tind = cliptlim(t, P['tlim'])
+        if t.size>0:
+            plotbeampattern(f, P, f[beampatkey])
 #%%
         srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
 
         if rawkey+'/Samples/Data' in f:
-            power = samplepower(f[rawkey+'/Samples/Data'],bstride,ut,srng,P) #I + jQ   # Ntimes x striped x alt x real/comp
+            power = samplepower(f[rawkey+'/Samples/Data'], bstride, t, tind, srng, P) #I + jQ   # Ntimes x striped x alt x real/comp
         else:
-            logging.warning(f'{fn} raw pulse data not found')
+            logging.info(f'{fn} raw pulse data not found')
             power = None
 
     except OSError as e: #problem with file
@@ -304,33 +305,36 @@ def readpower_samples(fn:Path, P:dict):
 
     return power,azel,isrlla
 
-def readsnr_int(fn, bid:int) -> xarray.DataArray:
+def readsnr_int(fn, P:dict) -> xarray.DataArray:
     if not ftype(fn) in ('dt0','dt3'):
         return
 
-    if not isinstance(bid, int):
+    if not isinstance(P['beamid'], int):
         raise TypeError('beam specification must be a scalar integer!')
 
-    try:
-        with h5py.File(fn, 'r', libver='latest') as f:
-            t = ut2dt(f['/Time/UnixTime'][:])
-            rawkey = filekey(f)
+    with h5py.File(fn, 'r', libver='latest') as f:
+        t = ut2dt(f['/Time/UnixTime'][:])
+        t,tind = cliptlim(t, P['tlim'])
 
-            bind  = f[rawkey+'/Beamcodes'][0,:] == bid
-            assert bind.size ==  f[rawkey+'/Power/Data'].shape[1]
+        rawkey = filekey(f)
+        #  NOTE: NOT '/RadacHeader/BeamCode'
+        if rawkey+'/Beamcodes' not in f:
+            return
 
-            if bind.sum() == 0:  # selected beam not used
-                snrint = None
-            else:
-                power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
-                srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
+        bind  = f[rawkey+'/Beamcodes'][0,:] == P['beamid']
+        assert bind.size ==  f[rawkey+'/Power/Data'].shape[1]
 
-                snrint = xarray.DataArray(data=power,
-                                           dims=['srng','time'],
-                                           coords={'srng':srng,'time':t})
-    except KeyError as e:
-        logging.error(f'{fn} integrated pulse data not found {e}')
-        snrint = None
+        if bind.sum() == 0:  # selected beam not used
+            snrint = None
+        else:
+            power = f[rawkey+'/Power/Data'][:,bind,:].squeeze().T
+            power = power[:,tind]
+            srng  = f[rawkey+'/Power/Range'][:].squeeze()/1e3
+
+            snrint = xarray.DataArray(data=power,
+                                       dims=['srng','time'],
+                                       coords={'srng':srng,'time':t})
+
 
     return snrint
 
@@ -407,7 +411,7 @@ def readACF(fn:Path, P:dict):
 
         if acfkey is None or rk not in f:
             if ft == 'dt3':
-                print('try DT0 file for ACF (esp. for 2007 PFISR)', file=stderr)
+                logging.info('try DT0 file for ACF (esp. for 2007 PFISR)')
             return
 #%% get ranges
         try:
@@ -420,8 +424,6 @@ def readACF(fn:Path, P:dict):
         azel = getazel(f,P['beamid'])
 #%% get times
         t,tind = cliptlim(t,P['tlim'])
-        if len(t)==0:
-            logging.warning(f'did not plot ACF since {fn} not within tlim {P["tlim"]}')
 
         dt = (t[1]-t[0]).seconds if len(t)>=2 else None
 #%% get PSD
@@ -494,22 +496,23 @@ def simpleloop(inifn):
     ini.read(inifn)
 
     dpath = Path(ini.get('data','path')).expanduser()
-    ftype = ini.get('data','ftype',fallback=None)
+    ft = ini.get('data','ftype',fallback='').split(',')
 #%% parse user directory / file list input
-    if dpath.is_dir() and not ftype:  # ftype=None or ''
-        flist = dpath.glob('*dt*.h5')
-    elif dpath.is_dir() and ftype: #glob pattern
-        flist = dpath.glob(f'*.{ftype}.h5')
+    if dpath.is_dir() and not ft:
+        flist = sorted(dpath.glob('*dt*.h5'))
+    elif dpath.is_dir() and ft: #glob pattern
+        flist = []
+        for t in ft:
+            flist.extend(sorted(dpath.glob(f'*.{t}.h5')))
     elif dpath.is_file(): # a single file was specified
         flist = [flist]
     else:
-        raise FileNotFoundError(f'unknown path/filetype {dpath} / {ftype}')
+        raise FileNotFoundError(f'unknown path/filetype {dpath} / {ft}')
 
-    flist = sorted(flist) #in case glob
     if not flist:
         raise FileNotFoundError(f'no files found in {dpath}')
 
-    print(f'examining {len(flist)} files in {dpath}\n')
+    print(f'examining {len(flist)} {ft} files in {dpath}\n')
 #%% api catchall
     P = {
     'odir': ini.get('plot','odir',fallback=None),
@@ -617,7 +620,7 @@ def isrselect(fn:Path, P:dict):
         if P['verbose']:
             print(f'ACF/PSD read & plot took {time()-tic:.1f} sec.')
 #%% multi-second integration (numerous integrated pulses)
-    snrint = readsnr_int(fn, P['beamid'])
+    snrint = readsnr_int(fn, P)
 #%% 30 second integration plots
     if fn.stem.rsplit('_',1)[-1] == '30sec':
         snr30int = snrvtime_fit(fn,P['beamid'])

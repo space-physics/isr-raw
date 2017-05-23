@@ -46,7 +46,7 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
         close(fg)
 
 def plotsnr(snr,fn,P,azel,ctxt=''):
-    if not isinstance(snr,xarray.DataArray):
+    if not isinstance(snr,xarray.DataArray) or snr.size==0:
         return
 
     P['tlim'] = isrutils.str2dt(P['tlim'])
@@ -93,10 +93,9 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
     c=fg.colorbar(h,ax=ax,fraction=0.075,shrink=0.5)
     c.set_label('Power [dB]')
 
-    Ts = snr.time[1] - snr.time[0] #NOTE: assuming uniform sample time
+    Ts = f'{(snr.time[1] - snr.time[0]).item()/1e9:.3f}' if snr.time.size>=2 else ''
 
-    ax.set_title('Az,El {:.1f},{:.1f}  {}  {}  $T_{{sample}}$={:.3f} sec.'.format(azel[0],azel[1], isrutils.expfn(fn),
-                         str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10], Ts.item()/1e9))
+    ax.set_title(f'Az,El {azel[0]:.1f},{azel[1]:.1f}  {isrutils.expfn(fn)}  {str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10]}  $T_{{sample}}$={Ts} sec.')
 
     try:
       for m in P['tmark']:
@@ -262,7 +261,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
         return
 
     T = spec[0].time
-    dT = (T[1]-T[0]).item()/1e9
+    dT = (T[1]-T[0]).item()/1e9 if T.size >= 2 else ''
 
     for s in spec:
         assert (s.time == T).all(),'times do not match for downshift and upshift plasma spectrum'
@@ -466,13 +465,11 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
 
 
 def plotsumionline(dsum,ax,fn,P):
-    if dsum is None:
+    if dsum is None or dsum.size<2:
         return
 
     assert isinstance(dsum,xarray.DataArray) and dsum.ndim==1,'incorrect input type'
-    assert dsum.size > 1,'must have at least two data points to plot'
-
-#%% threshold
+# %% threshold
     med = median(dsum.values)
     medthres = P['medthres'] * med
 
