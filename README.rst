@@ -64,7 +64,10 @@ Evidence for strong Langmuir turbulence  doi:10.1029/2011GL050288
 File Types
 ==========
 Currently, raw ISR data files are *not* currently contained on `Madrigal <http://isr.sri.com/madrigal>`_, you will have to email SRI staff to get them manually.
-`Here is a limited selection of raw ISR data. <https://drive.google.com/folderview?id=0B7P8Xeeyo_YIVTlfMk9wY0YtbzQ&usp=sharing>`_
+
+When requesting raw AMISR data, please `request by experiment name <http://amisr.com/database/61/sched>`_ as this is more convenient for SRI staff than the date/time.
+
+Here is a limited selection of `raw ISR data <https://bit.ly/pokerhist>`_.
 It is indexed by date; under each date look for the ISR folder. You will typically want to download all four file types noted in the table below.
 
 ===========   ==================
