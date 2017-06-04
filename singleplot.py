@@ -6,6 +6,7 @@ See Examples/ for more updated specific code
 """
 import matplotlib
 matplotlib.use('agg') # NOTE comment out this line to enable visible plots
+matplotlib.rcParams['interactive'] = False   # https://github.com/matplotlib/matplotlib/issues/6023
 #from matplotlib.pyplot import show
 import seaborn as sns
 sns.set_context('talk',1.75)

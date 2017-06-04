@@ -38,6 +38,9 @@ def getazel(f, beamid:int) -> np.ndarray:
     return azel
 
 def ut2dt(ut) -> np.ndarray:
+    if ut is None:
+        return
+
     assert isinstance(ut, np.ndarray) and ut.ndim in (1,2)
 
     if ut.ndim==1:
@@ -205,6 +208,8 @@ def readplasma(fn,beamid,fshift,tlim):
         with h5py.File(fn,'r',libver='latest') as f:
             T     = ut2dt(f['/Time/UnixTime'].value)
             bind  = findstride(f['/PLFFTS/Data/Beamcodes'], beamid)
+            if bind.sum()==0:
+                return (None,)*2
             data = f['/PLFFTS/Data/Spectra/Data'].value[bind,:,:].T
             srng  = f['/PLFFTS/Data/Spectra/Range'].value.squeeze()/1e3
             freq  = f['/PLFFTS/Data/Spectra/Frequency'].value.squeeze() + fshift
@@ -212,8 +217,12 @@ def readplasma(fn,beamid,fshift,tlim):
     except OSError as e: #problem with file
         logging.error(f'{fn} reading error {e}')
         return (None,)*2
+    except KeyError: # maybe was old 2007 DT1 file and we needed dt2
+        return (None,)*2
 #%% spectrum compute
     T,tind = cliptlim(T,tlim)
+    if T.size==0:
+        return (None,)*2
 
     spec = xarray.DataArray(data = data[:,:,tind].transpose(2,0,1),
                             dims=['time','srng','freq'],
@@ -286,6 +295,9 @@ def readpower_samples(fn:Path, P:dict):
         bstride = findstride(f[beampatkey],P['beamid'])
 
         ut = sampletime(f[timekey], bstride)
+        if ut is None:
+            return None, azel, isrlla
+
         t = ut2dt(ut)
         t,tind = cliptlim(t, P['tlim'])
         if t.size>0:
@@ -300,18 +312,19 @@ def readpower_samples(fn:Path, P:dict):
             power = None
 
     except OSError as e: #problem with file
-        logging.error(f'{fn} OSError when reading: \n {e}')
-        power = None
+        logging.error(f'{fn} OSError when reading. \n {e}')
+        power = azel = isrlla= None
 
     return power,azel,isrlla
 
 def readsnr_int(fn, P:dict) -> xarray.DataArray:
-    if not ftype(fn) in ('dt0','dt3'):
-        return
+  if not ftype(fn) in ('dt0','dt3'):
+      return
 
-    if not isinstance(P['beamid'], int):
-        raise TypeError('beam specification must be a scalar integer!')
+  if not isinstance(P['beamid'], int):
+      raise TypeError('beam specification must be a scalar integer!')
 
+  try:
     with h5py.File(fn, 'r', libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'][:])
         t,tind = cliptlim(t, P['tlim'])
@@ -335,8 +348,11 @@ def readsnr_int(fn, P:dict) -> xarray.DataArray:
                                        dims=['srng','time'],
                                        coords={'srng':srng,'time':t})
 
+  except OSError as e:
+      print(e)
+      snrint=None
 
-    return snrint
+  return snrint
 
 def snrvtime_fit(fn,bid:int) -> xarray.DataArray:
     fn = Path(fn).expanduser()
@@ -388,14 +404,15 @@ def acf2psd(acfall,noiseall,Nr,dns):
     return spec,acf
 
 def readACF(fn:Path, P:dict):
-    """
-    reads incoherent scatter radar autocorrelation function (ACF)
-    """
-    if not ftype(fn) in ('dt0','dt3'):
-        return
+  """
+  reads incoherent scatter radar autocorrelation function (ACF)
+  """
+  if not ftype(fn) in ('dt0','dt3'):
+    return
 
-    assert isinstance(P['beamid'],int),'beam specification must be a scalar integer'
+  assert isinstance(P['beamid'],int),'beam specification must be a scalar integer'
 
+  try:
     with h5py.File(fn, 'r', libver='latest') as f:
         t = ut2dt(f['/Time/UnixTime'].value)
 
@@ -455,7 +472,8 @@ def readACF(fn:Path, P:dict):
                                        'freq': np.linspace(-ACFfreqscale, ACFfreqscale, spectrum.shape[1])})
 
             plotacf(specdf,fn,azel,tt, dt, P)
-
+  except OSError as e:
+    print(e)
 
 def dt3keys(f):
 

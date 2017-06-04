@@ -46,7 +46,7 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
         close(fg)
 
 def plotsnr(snr,fn,P,azel,ctxt=''):
-    if not isinstance(snr,xarray.DataArray) or snr.size==0:
+    if not isinstance(snr,xarray.DataArray) or min(snr.shape)<2:
         return
 
     P['tlim'] = isrutils.str2dt(P['tlim'])
@@ -85,9 +85,9 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
     tdiff = snr.time[-1] - snr.time[0]
 
 
-    majtick,mintick = timeticks(tdiff)
-    ax.xaxis.set_major_locator(majtick)
-    ax.xaxis.set_minor_locator(mintick)
+   # majtick,mintick = timeticks(tdiff)
+   # ax.xaxis.set_major_locator(majtick)
+    #ax.xaxis.set_minor_locator(mintick)
     ax.tick_params(axis='both', which='both', direction='out')
 
     c=fg.colorbar(h,ax=ax,fraction=0.075,shrink=0.5)
@@ -111,6 +111,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
     except KeyError:
         pass
 
+    # if you get RuntimeError here, will also error on savefig
     fg.tight_layout()
 #%% output
     ofn = ctxt +'power_' + isrutils.expfn(fn)
@@ -488,7 +489,7 @@ def plotsumionline(dsum,ax,fn,P):
     else:
         fg = gcf()
 
-    ax.plot(dsum.time,dsum.values,label='$\sum_{range} |P_{rx}|$')
+    ax.plot(dsum.time.values, dsum.values,label='$\sum_{range} |P_{rx}|$')
 
     ax.axhline(med,color='gold',linestyle='--',label='median')
 
