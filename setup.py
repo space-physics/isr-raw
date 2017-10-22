@@ -19,6 +19,6 @@ setup(name='isrutils',
       url='https://github.com/scivision/isrutils',
       description='utilities for reading and plotting ISR raw data',
       version='0.5',
-	  install_requires=gitreq,
+	  install_requires= req+pipreq+gitreq,
       dependency_links = ['https://github.com/jswoboda/GeoDataPython/tarball/master#egg=GeoData-999.0.0',],
 	  )
