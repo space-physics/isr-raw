@@ -3,6 +3,7 @@
 
 .. image:: https://travis-ci.org/scivision/isrutils.svg?branch=master
     :target: https://travis-ci.org/scivision/isrutils
+    
 .. image:: https://coveralls.io/repos/github/scivision/isrutils/badge.svg?branch=master
     :target: https://coveralls.io/github/scivision/isrutils?branch=master
 
@@ -22,7 +23,7 @@ Install
 =======
 ::
 
-    python setup.py develop
+    pip install -e .
 
 Usage
 =====
