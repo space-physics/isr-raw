@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-req = ['nose','python-dateutil','pytz', 'numpy','xarray','matplotlib', 'h5py',
+req = ['nose','python-dateutil','pytz', 'numpy','xarray','matplotlib', 'h5py','scipy',
 'pathvalidate', 'sciencedates','pymap3d',
 'GeoData',]
 
