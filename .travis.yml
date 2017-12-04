@@ -17,10 +17,7 @@ git:
   depth: 3
 
 
-before_install:
-  - pip -q install coveralls
-
-install: pip -q install -e . --process-dependency-links
+install: pip install -e .[tests] --process-dependency-links
 
 script: coverage run tests/test.py -v
 

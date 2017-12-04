@@ -19,7 +19,7 @@ import pathvalidate
 import isrutils
 from GeoData.plotting import polarplot
 from sciencedates import find_nearest as findnearest
-from sciencedates import timeticks
+from sciencedates.ticks import timeticks
 
 ALTMIN = 60e3 # meters
 
