@@ -17,7 +17,7 @@ git:
   depth: 3
 
 
-install: pip install -e .[tests] --process-dependency-links
+install: python -m pip install -e .[tests] --process-dependency-links
 
 script: coverage run tests/test.py -v
 
