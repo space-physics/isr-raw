@@ -7,18 +7,16 @@ python:
 os:
   - linux
 
-dist: trusty
-group: edge
-
-notifications:
-  email: false
+group: travis_latest
 
 git:
   depth: 3
 
 
-install: python -m pip install -e .[tests] --process-dependency-links
+install: pip -q install -e .[tests] --process-dependency-links
 
-script: coverage run tests/test.py -v
+script: 
+  - pytest
+  - coverage run tests/test_all.py -v
 
 after_success: coveralls

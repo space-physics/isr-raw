@@ -41,7 +41,7 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
 
         print('saving',ppth)
 
-        fg.savefig(str(ppth),dpi=100,bbox_inches='tight')
+        fg.savefig(ppth,dpi=100,bbox_inches='tight')
 
         close(fg)
 

@@ -2,7 +2,7 @@
 install_requires= ['python-dateutil','pytz', 'numpy','xarray','matplotlib', 'h5py','scipy',
 'pathvalidate', 'sciencedates','pymap3d',
 'GeoData',]
-tests_require=['nose','coveralls']
+tests_require=['pytest','nose','coveralls']
 
 # %%
 from setuptools import setup,find_packages
