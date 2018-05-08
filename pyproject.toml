@@ -1,7 +1,0 @@
-[build-system]
-requires = ["setuptools", "wheel",
-'python-dateutil','pytz', 'numpy','xarray','matplotlib', 'h5py',
-'pathvalidate', 'sciencedates','pymap3d',
-'seaborn',
-'GeoData',
- "nose"] 
