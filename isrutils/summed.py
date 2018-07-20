@@ -4,28 +4,27 @@ summed measurements and plots
 """
 from pathlib import Path
 import xarray
-import pathvalidate
 from xarray import DataArray
-import numpy as np
-#
 import isrutils
 
 
-#%% dt3
-def sumionline(snrsamp:DataArray, P:dict):
+# %% dt3
+def sumionline(snrsamp: DataArray, P: dict):
 
     if 'zsum' in P and isinstance(snrsamp, DataArray):
 
         srng = snrsamp.srng
-        i = (srng>P['zsum'][0]) & (srng<P['zsum'][1])
+        i = (srng > P['zsum'][0]) & (srng < P['zsum'][1])
 
         return snrsamp.isel(srng=i).sum(dim='srng')
 
-#%% plasma line
+# %% plasma line
+
+
 def sumplasmaline(fn: Path, P: dict):
-    spec,freq = isrutils.readplasmaline(fn, P)
-    assert isinstance(spec, xarray.DataArray) and spec.ndim==4
-    assert isinstance(P['flim'][0],float)
+    spec, freq = isrutils.readplasmaline(fn, P)
+    assert isinstance(spec, xarray.DataArray) and spec.ndim == 4
+    assert isinstance(P['flim'][0], float)
 
     z = spec.srng
     specsum = DataArray(index=spec.items, columns=spec.labels)
@@ -34,6 +33,6 @@ def sumplasmaline(fn: Path, P: dict):
 
     for s in spec:
         find = (P['flim'][0] <= abs(freq[s]/1.e6)) & (abs(freq[s]/1.e6) < P['flim'][1])
-        specsum.loc[:,s] = spec.loc[:,:,zind,find].sum(axis=3).sum(axis=2) #FIXME .sum(dim=)
+        specsum.loc[:, s] = spec.loc[:, :, zind, find].sum(axis=3).sum(axis=2)  # FIXME .sum(dim=)
 
     return specsum

@@ -7,10 +7,12 @@ from matplotlib.pyplot import show
 from isrutils.overlayISRopt import overlayisrhist
 from isrutils.common import boilerplateapi
 
-if __name__ == '__main__':
 
-    p,isrfn,odir,tlim = boilerplateapi()
-
-    overlayisrhist(isrfn,odir,tlim,p.zlim,p)
+def main():
+    overlayisrhist(boilerplateapi())
 
     show()
+
+
+if __name__ == '__main__':
+    main()
