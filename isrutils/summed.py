@@ -6,7 +6,6 @@ from pathlib import Path
 import pathvalidate
 from xarray import DataArray
 from datetime import datetime
-from pytz import UTC
 from numpy import absolute,nan,linspace,percentile
 from matplotlib.pyplot import figure,draw,pause,show
 from matplotlib.cm import jet
@@ -89,7 +88,7 @@ def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,uto
         t1.set_text('isr: {}'.format(ctisr))
 #%% update hist plot
         if iopt is not None:
-            ctopt = datetime.fromtimestamp(utopt[iopt], tz=UTC)
+            ctopt = datetime.utcfromtimestamp(utopt[iopt])
             h0.set_data(optical[iopt,...])
             t0.set_text('optical: {}'.format(ctopt))
             s0.set_array(ds.loc[ctisr]) #FIXME circle not changing magnetic zenith beam color? NOTE this is isr time index

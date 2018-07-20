@@ -1,5 +1,4 @@
 from datetime import datetime
-from pytz import UTC
 from numpy import (array,unravel_index, datetime64, asarray,atleast_1d,nanmax,nanmin,nan,isfinite)
 from scipy.interpolate import interp1d
 from argparse import ArgumentParser
@@ -7,7 +6,7 @@ from argparse import ArgumentParser
 from pymap3d.haversine import angledist
 from pymap3d import aer2ecef,ecef2aer
 
-EPOCH = datetime(1970,1,1,0,0,0,tzinfo=UTC)
+EPOCH = datetime(1970,1,1,0,0,0)
 
 def projectisrhist(isrlla,beamazel,optlla,optazel,heightkm):
     """

@@ -4,7 +4,6 @@
 """
 from pathlib import Path
 from datetime import datetime
-from pytz import UTC
 from matplotlib.pyplot import show
 import seaborn as sns
 sns.set_context('talk',1.5)
@@ -14,8 +13,8 @@ from isrutils.looper import simpleloop
 vlim=(22,55)
 #zlim=(90, 400)
 zlim = (None,None)
-#tlim=(datetime(2013,5,1,tzinfo=UTC),
-#      datetime(2013,5,1,tzinfo=UTC))
+#tlim=(datetime(2013,5,1),
+#      datetime(2013,5,1))
 tlim=(None,None)
 
 

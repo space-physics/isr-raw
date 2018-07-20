@@ -11,7 +11,6 @@ d0345626: 11:44-11:56
 d0345627: 11:56-12:08
 """
 from datetime import datetime
-from pytz import UTC
 from matplotlib.pyplot import show
 import seaborn as sns
 sns.set_context('talk',1.5)
@@ -20,8 +19,8 @@ from isrutils.looper import simpleloop
 #%% users param
 zlim=(90, 400)
 zlim=(90, 400)
-#tlim=(datetime(2013,4,11,11,30,tzinfo=UTC),
-#      datetime(2013,4,11,12,0,tzinfo=UTC))
+#tlim=(datetime(2013,4,11,11,30),
+#      datetime(2013,4,11,12,0))
 tlim=(None,None)
 
 

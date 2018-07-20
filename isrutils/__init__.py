@@ -8,14 +8,12 @@ import numpy as np
 from numpy import correlate as xcorr
 from numpy.fft import fft,fftshift
 from datetime import datetime
-from pytz import UTC
 import h5py
 from time import time
 #
 from .summed import sumionline
 from .plots import plotbeampattern,plotacf,plotsnr,plotsnr1d,plotplasmaline,plotsumionline
-#
-from sciencedates import forceutc
+
 
 ACFfreqscale=100/6  #100/2
 ACFdns=1071/3 #TODO scalefactor
@@ -51,7 +49,7 @@ def ut2dt(ut) -> np.ndarray:
     if 1e15 < T[0] < 3e15:  # old 2007 file with time in Unix microseconds epoch
         T /= 1e6
 
-    return np.array([datetime.fromtimestamp(t,tz=UTC) for t in T])
+    return np.array([datetime.utcfromtimestamp(t) for t in T])
 
 
 def str2dt(tstr) -> list:
@@ -72,9 +70,9 @@ def str2dt(tstr) -> list:
         if t is None or isinstance(t,datetime):
             ut.append(t)
         elif isinstance(t, str):
-            ut.append(forceutc(parse(t)))
+            ut.append(parse(t))
         elif isinstance(t, (float,int)):
-            ut.append(datetime.fromtimestamp(t,tz=UTC))
+            ut.append(datetime.utcfromtimestamp(t))
         else:
             raise TypeError(f'unknown data type {ut[0].dtype}')
 

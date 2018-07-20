@@ -5,7 +5,6 @@ from sys import stderr
 from time import time
 import h5py
 from datetime import datetime
-from pytz import UTC
 from numpy import log10,absolute, meshgrid, sin, radians,unique,atleast_1d, median
 from numpy.ma import masked_invalid
 import xarray
@@ -31,10 +30,10 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
         odir.mkdir(parents=True,exist_ok=True)
 
 
-        if isinstance(t,xarray.DataArray):
-            t = datetime.fromtimestamp(t.item()/1e9, tz=UTC)
-        elif isinstance(t,(float,int)): # UTC assume
-            t = datetime.fromtimestamp(t/1e9, tz=UTC)
+        if isinstance(t, xarray.DataArray):
+            t = datetime.utcfromtimestamp(t.item()/1e9)
+        elif isinstance(t, (float,int)):
+            t = datetime.utcfromtimestamp(t/1e9)
 
             #:-6 keeps up to millisecond if present.
         ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + ext,'-').replace(' ','')
@@ -271,7 +270,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
 
     for t in T:
         fg=None
-        t = datetime.fromtimestamp(t.item()/1e9,tz=UTC)
+        t = datetime.utcfromtimestamp(t.item()/1e9)
 
         if ptype in ('mesh','surf'): #cannot use subplots for 3d with matplotlib 1.4
             axs=[None,None]
