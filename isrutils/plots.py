@@ -5,20 +5,25 @@ from sys import stderr
 from time import time
 import h5py
 from datetime import datetime
-from numpy import log10,absolute, meshgrid, sin, radians,unique,atleast_1d, median
+import numpy as np
 from numpy.ma import masked_invalid
 import xarray
-#
 from matplotlib.pyplot import figure,subplots,gcf
-from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 from matplotlib.dates import DateFormatter
-#
+from matplotlib.pyplot import draw,pause,show
+from matplotlib.colors import LogNorm
+from matplotlib.cm import jet
+import matplotlib.animation as anim
+import matplotlib.gridspec as gridspec
 import pathvalidate
-#
 import isrutils
 from GeoData.plotting import polarplot
 from sciencedates import find_nearest as findnearest
-from sciencedates.ticks import timeticks
+# from sciencedates.ticks import timeticks
+from GeoData.plotting import plotazelscale
+from .common import findindex2Dsphere, timesync, projectisrhist
+
 
 ALTMIN = 60e3 # meters
 
@@ -44,6 +49,111 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
 
         close(fg)
 
+#%% joint isr optical plot
+def dojointplot(ds,spec,freq,beamazel,optical,optazel,optlla,isrlla,heightkm,utopt,P):
+    """
+    ds: radar data
+
+    f1,a1: radar   figure,axes
+    f2,a2: optical figure,axes
+    """
+    vidnorm = LogNorm()
+
+    assert isinstance(ds, xarray.DataArray)
+
+#%% setup master figure
+    fg = figure(figsize=(8,12))
+    gs = gridspec.GridSpec(2, 1, height_ratios=[3,1])
+#%% setup radar plot(s)
+    a1 = fg.add_subplot(gs[1])
+    plotsumionline(ds,a1, isrutils.expfn(P['isrfn']), P['zlim'])
+
+    h1 = a1.axvline(np.nan,color='k',linestyle='--')
+    t1 = a1.text(0.05,0.95,'time=',transform=a1.transAxes,va='top',ha='left')
+#%% setup top optical plot
+    if optical is not None:
+        a0 = fg.add_subplot(gs[0])
+        clim = compclim(optical,lower=10,upper=99.99)
+        h0 = a0.imshow(optical[0,...],origin='lower',interpolation='none',cmap='gray',
+                       norm=vidnorm,vmin=clim[0],vmax=clim[1])
+        a0.set_axis_off()
+        t0 = a0.set_title('')
+
+#%% plot magnetic zenith beam
+        azimg = optazel[:,1].reshape(optical.shape[1:])
+        elimg = optazel[:,2].reshape(optical.shape[1:])
+
+        optisrazel = projectisrhist(isrlla,beamazel,optlla,optazel,heightkm)
+
+        br,bc = findindex2Dsphere(azimg,elimg,optisrazel['az'],optisrazel['el'])
+
+        #hollow beam circle
+    #    a2.scatter(bc,br,s=500,marker='o',facecolors='none',edgecolor='red', alpha=0.5)
+
+        #beam data, filled circle
+        s0 = a0.scatter(bc,br,s=2700,alpha=0.6,linewidths=3,
+                        edgecolors=jet(np.linspace(ds.min().item(), ds.max().item())))
+
+        a0.autoscale(True,tight=True)
+        fg.tight_layout()
+#%% time sync
+    tisr = ds.time.values
+    Iisr,Iopt = timesync(tisr,utopt,P['tlim'])
+#%% iterate
+    first = True
+    Writer = anim.writers['ffmpeg']
+    writer = Writer(fps=5,
+                    metadata=dict(artist='Michael Hirsch, Ph.D.'),
+                    codec='ffv1')
+
+    ofn = Path(P['odir']).expanduser() / ('joint_' +
+            pathvalidate.sanitize_filename(str(datetime.fromtimestamp(utopt[0]))[:-3]) + '.mkv')
+
+    print(f'writing {ofn}')
+    with writer.saving(fg, str(ofn),150):
+      for iisr,iopt in zip(Iisr,Iopt):
+        ctisr = tisr[iisr]
+#%% update isr plot
+        h1.set_xdata(ctisr)
+        t1.set_text('isr: {}'.format(ctisr))
+#%% update hist plot
+        if iopt is not None:
+            ctopt = datetime.utcfromtimestamp(utopt[iopt])
+            h0.set_data(optical[iopt,...])
+            t0.set_text('optical: {}'.format(ctopt))
+            s0.set_array(ds.loc[ctisr]) #FIXME circle not changing magnetic zenith beam color? NOTE this is isr time index
+#%% anim
+        if first and iopt is not None:
+            plotazelscale(optical[iopt,...],azimg,elimg)
+            show()
+            first=False
+        #
+        draw(); pause(0.01)
+
+        writer.grab_frame(facecolor='k')
+
+        if ofn.suffix == '.png':
+            try:
+                writeplots(fg,ctopt,ofn,ctxt='joint')
+            except UnboundLocalError:
+                writeplots(fg,ctisr,ofn,ctxt='isr')
+
+
+def compclim(imgs,lower:float=0.5, upper:float=99.9, Nsamples:int=50):
+    """
+    inputs:
+    images: Nframe x ypix x xpix grayscale image stack (have not tried with 4-D color)
+    lower,upper: percentage (0,100)% to clip
+    Nsamples: number of frames to test across the image stack (don't use too many for memory reasons)
+    """
+    sampind = np.linspace(0,imgs.shape[0],Nsamples,endpoint=False,dtype=int)
+
+    clim = np.percentile(imgs[sampind,...],[lower,upper])
+    if upper == 100.:
+        clim[1] = imgs.max() #consider all images
+    return clim
+
+
 def plotsnr(snr,fn,P,azel,ctxt=''):
     if not isinstance(snr,xarray.DataArray) or min(snr.shape)<2:
         return
@@ -62,7 +172,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 
     try:
         h=ax.pcolormesh(snr.time, snr.srng,
-                10*masked_invalid(log10(snr.values)),
+                10*masked_invalid(np.log10(snr.values)),
                 vmin=vlim[0], vmax=vlim[1],
                 cmap='cubehelix_r')
     except ValueError as e:
@@ -81,7 +191,7 @@ def plotsnr(snr,fn,P,azel,ctxt=''):
 #%% date ticks
     fg.autofmt_xdate()
 
-    tdiff = snr.time[-1] - snr.time[0]
+    # tdiff = snr.time[-1] - snr.time[0]
 
 
    # majtick,mintick = timeticks(tdiff)
@@ -124,11 +234,11 @@ def plotsnr1d(snr,P):
     if not isinstance(snr,xarray.DataArray):
         return
 
-    tind=absolute(snr.time-P['t0']).argmin()
+    tind= abs(snr.time-P['t0']).argmin()
     tind = range(tind-1,tind+2)
     t1 = snr.time[tind]
 
-    S = 10*log10(snr[snr.srng >= P['zlim'][0],t1])
+    S = 10 * np.log10(snr[snr.srng >= P['zlim'][0],t1])
     z = S.index
 
     ax = figure().gca()
@@ -148,14 +258,14 @@ def plotsnrmesh(snr,fn,P):
     if not isinstance(snr,xarray.DataArray):
         return
 
-    tind=absolute(snr.time-P['t0']).argmin()
+    tind= abs(snr.time-P['t0']).argmin()
     tind=range(tind-5,tind+6)
     t1 = snr.time[tind]
 
-    S = 10*log10(snr[snr.srng >= P['zlim'][0],t1])
+    S = 10 * np.log10(snr[snr.srng >= P['zlim'][0],t1])
     z = S.index
 
-    x,y = meshgrid(S.time.values.astype(float)/1e9,z)
+    x,y = np.meshgrid(S.time.values.astype(float)/1e9,z)
 
     ax3 = figure().gca(projection='3d')
 
@@ -169,7 +279,7 @@ def plotsnrmesh(snr,fn,P):
     ax3.autoscale(True,'y',tight=True)
 
 
-def plotacf(spec,fn,azel,t,dt,P):
+def plotacf(spec: xarray.DataArray, fn: Path, azel, t, dt, P: dict):
     """
     plot PSD derived from ACF.
     """
@@ -180,12 +290,12 @@ def plotacf(spec,fn,azel,t,dt,P):
     ax = fg.gca()
 
     assert 10 <= azel[1] <= 90,'possibly invalid elevation angle for this beam'
-    goodz = spec.srng * sin(radians(azel[1])) > ALTMIN #actual altitude > 60km
+    goodz = spec.srng * np.sin(np.radians(azel[1])) > ALTMIN #actual altitude > 60km
     z = spec.srng[goodz].values / 1e3 #slant ranges where altitude > zmin km
 
     h=ax.pcolormesh(spec.freq.values,
                     z,
-                    10*log10(absolute(spec[goodz,:].values)),
+                    10 * np.log10(abs(spec[goodz,:].values)),
                     vmin=P['vlimacf'][0],
                     vmax=P['vlimacf'][1],
                     cmap='cubehelix_r')
@@ -222,13 +332,13 @@ def plotzslice(psd,zslice,vlim,azel,fn,dt,t,odir,stem,ttxt=None,flim=(None,None)
     iz = findnearest(psd.srng, zslice)[0]
 
     freq = psd.freq.values
-    if absolute(freq).max() > 1000: # MHz
+    if abs(freq).max() > 1000: # MHz
         freq /= 1e6
     if freq[freq.size//2]<0 and flim[0] is not None:
         flim = -flim
 
     ax.plot(freq,
-            10*log10(absolute(psd.isel(srng=slice(iz[0],iz[1])).sum(dim='srng'))))
+            10 * np.log10(abs(psd.isel(srng=slice(iz[0],iz[1])).sum(dim='srng'))))
 
 
 
@@ -293,7 +403,7 @@ def plotplasmaline(specdown,specup,fn, P, azel):
 
         if fg is None:
             fg,axs = subplots(Nspec,1,figsize=(15,Nspec*7.5))
-            axs = atleast_1d(axs)
+            axs = np.atleast_1d(axs)
 
             fg.suptitle('Az,El {:.1f},{:.1f}  Plasma line {}  $T_{{sample}}$: {} [sec.]'.format(azel[0],azel[1],t,dT),y=1.01)
 #%%
@@ -315,21 +425,21 @@ def plotplasmaline(specdown,specup,fn, P, azel):
         print('plasma line plot took {:.1f} sec.'.format(time()-tic))
 
 
-def plotplasmaoverlay(specdown,specup,t,fg,P):
+def plotplasmaoverlay(specdown,specup,t,fg,P: dict):
 
     ax = fg.gca()
 
     ialt,alt = findnearest(specdown.srng.values,P['zlim_pl'])
 #%%
     try:
-        dBdown = 10*log10(specdown.sel(time=t)[ialt,:].values)
+        dBdown = 10 * np.log10(specdown.sel(time=t)[ialt,:].values)
         if len(P['vlim_pl'])>=4 and P['vlim_pl'][2] is not None:
             dBdown += P['vlim_pl'][2]
     except AttributeError:
         pass
 #%%
     try:
-        dBup = 10*log10(specup.sel(time=t)[ialt,:].values)
+        dBup = 10 * np.log10(specup.sel(time=t)[ialt,:].values)
         if len(P['vlim_pl'])>=4 and P['vlim_pl'][3] is not None:
             dBup += P['vlim_pl'][3]
     except AttributeError:
@@ -348,14 +458,14 @@ def plotplasmaoverlay(specdown,specup,t,fg,P):
     fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt, str(t.item)[:19]))
 
 
-def plotplasmatime(spec,t,fg,ax,P,ctxt):
+def plotplasmatime(spec: xarray.DataArray, t, fg, ax, P: dict, ctxt):
     if not isinstance(spec,xarray.DataArray):
         return
 
     srng = spec.srng.values
     zgood = srng > 60. # above N km
 
-    hi=ax.pcolormesh(spec.freq.values/1e6, srng[zgood], 10*log10(spec[zgood,:].values),
+    hi=ax.pcolormesh(spec.freq.values/1e6, srng[zgood], 10*np.log10(spec[zgood,:].values),
                     vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
 
 #    h=ax.imshow(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
@@ -400,10 +510,10 @@ def plotplasmamesh(spec,fg,ax,P,ptype=''):
     srng = spec.index.values
     zgood = srng>P['zlim'][0] # above N km
 
-    S = 10*log10(spec.loc[zgood,:]) #FIXME .sel()
+    S = 10 * np.log10(spec.loc[zgood,:]) #FIXME .sel()
     z = S.index.values
 
-    x,y = meshgrid(spec.freq.values/1e6,z)
+    x,y = np.meshgrid(spec.freq.values/1e6,z)
 
 #    ax3 = figure().gca(projection='3d')
 #
@@ -428,7 +538,7 @@ def plotbeampattern(fn,P,beamkey,beamids=None):
         return
 
 
-    beamcodes = unique(beamkey)  # for some files they're jumbled
+    beamcodes = np.unique(beamkey)  # for some files they're jumbled
 
     def _pullbeams(f, beamcodes=None):
         M = f['/Setup/BeamcodeMap']
@@ -470,7 +580,7 @@ def plotsumionline(dsum,ax,fn,P):
 
     assert isinstance(dsum,xarray.DataArray) and dsum.ndim==1,'incorrect input type'
 # %% threshold
-    med = median(dsum.values)
+    med = np.median(dsum.values)
     medthres = P['medthres'] * med
 
     if (dsum > medthres).any():

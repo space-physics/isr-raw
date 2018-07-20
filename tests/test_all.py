@@ -4,10 +4,9 @@ matplotlib.use('agg')
 print(matplotlib.get_backend())
 
 from pathlib import Path
-from numpy.testing import run_module_suite
+import pytest
 #
 from isrutils import readpower_samples,readsnr_int,snrvtime_fit, readplasmaline, readACF
-from isrutils.plots import plotsnr,plotsnr1d,plotsnrmesh
 
 
 rdir = Path(__file__).parents[1]
@@ -31,4 +30,4 @@ def test_readacf():
 
 
 if __name__ == '__main__':
-    run_module_suite()
+    pytest.main()
