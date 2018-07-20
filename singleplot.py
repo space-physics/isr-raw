@@ -4,7 +4,7 @@ reading PFISR data down to IQ samples
 
 See Examples/ for more updated specific code
 """
-from isrutils import simpleloop
+from isrutils.plots import simpleloop
 from argparse import ArgumentParser
 import seaborn as sns
 sns.set_context('talk', 1.75)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from configparser import ConfigParser
 from pathlib import Path
 import logging
 from sys import stderr
@@ -23,6 +24,8 @@ from sciencedates import find_nearest as findnearest
 # from sciencedates.ticks import timeticks
 from GeoData.plotting import plotazelscale
 from .common import findindex2Dsphere, timesync, projectisrhist
+from . import str2dt
+from . import isrselect, readACF
 
 
 ALTMIN = 60e3  # meters
@@ -48,6 +51,117 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
         fg.savefig(ppth, dpi=100, bbox_inches='tight')
 
         close(fg)
+
+# %% looping
+
+
+def simpleloop(inifn):
+    ini = ConfigParser(allow_no_value=True, empty_lines_in_values=False,
+                       inline_comment_prefixes=(';'), strict=True)
+    ini.read(inifn)
+
+    dpath = Path(ini.get('data', 'path')).expanduser()
+    ft = ini.get('data', 'ftype', fallback='').split(',')
+# %% parse user directory / file list input
+    if dpath.is_dir() and not ft:
+        flist = sorted(dpath.glob('*dt*.h5'))
+    elif dpath.is_dir() and ft:  # glob pattern
+        flist = []
+        for t in ft:
+            flist.extend(sorted(dpath.glob(f'*.{t}.h5')))
+    elif dpath.is_file():  # a single file was specified
+        flist = [flist]
+    else:
+        raise FileNotFoundError(f'unknown path/filetype {dpath} / {ft}')
+
+    if not flist:
+        raise FileNotFoundError(f'no files found in {dpath}')
+
+    print(f'examining {len(flist)} {ft} files in {dpath}\n')
+# %% api catchall
+    P = {
+        'odir': ini.get('plot', 'odir', fallback=None),
+        'verbose': ini.getboolean('plot', 'verbose', fallback=False),
+        'scan': ini.getboolean('data', 'scan', fallback=False),
+        # N times the median is declared a detection
+        'medthres': ini.getfloat('data', 'medthreas', fallback=2.),
+        'tlim': ini.get('plot', 'tlim', fallback=None),
+        'beamid': ini.getint('data', 'beamid'),
+        'acf': ini.getboolean('plot', 'acf', fallback=False)
+    }
+
+    if P['tlim']:
+        P['tlim'] = P['tlim'].split(',')
+    P['tlim'] = str2dt(P['tlim'])
+
+    for p in ('flim_pl', 'vlim', 'vlim_pl', 'vlim', 'vlimacf', 'vlimacfslice', 'vlimint',
+              'zlim', 'zlim_pl', 'zsum'):
+        val = ini.get('plot', p, fallback=None)
+        if not val:  # None or ''
+            P[p] = [None, None]
+            continue
+        P[p] = np.array(val.split(',')).astype(float)
+
+# %% loop over files
+    for f in flist:
+        # read data
+        specdown, specup, snrsamp, azel, isrlla, snrint, snr30int, ionsum = isrselect(dpath/f, P)
+# %% plot
+        # summed ion line over altitude range
+#        tic = time()
+        hit = plotsumionline(ionsum, None, f, P)
+        if isinstance(hit, bool):
+            print(f.stem, hit)
+#        if P['verbose']: print(f'sum plot took {(time()-tic):.1f} sec.')
+
+        if hit and not P['acf']:  # if P['acf'], it was already plotted. Otherwise, we plot only if hit
+            readACF(f, P)
+
+        if hit or not P['scan']:
+            # 15 sec integration
+            plotsnr(snrint, f, P, azel, ctxt='int_')
+            # 200 ms integration
+            plotsnr(snrsamp, f, P, azel)
+            # plasma line spectrum
+            plotplasmaline(specdown, specup, f, P, azel)
+# %%
+
+
+def isrstacker(flist, P):
+
+    for fn in flist:
+        fn = Path(fn).expanduser()
+        if not fn.is_file():
+            continue
+
+        specdown, specup, snrsamp, azel, isrlla, snrint, snr30int = isrselect(fn, P)
+        if fn.samefile(flist[0]):
+            specdowns = specdown
+            specups = specup
+            snrsamps = snrsamp
+            snrints = snrint
+            snr30ints = snr30int
+        else:
+            if snrsamp is not None:
+                snrsamps = xarray.concat((snrsamps, snrsamp), axis=1)
+            if snrint is not None:
+                snrints = xarray.concat((snrints, snrint), axis=1)
+            # TOOD other concat & update to xarray syntax
+
+
+# %% plots
+    plotplasmaline(specdowns, specups, flist, P)
+
+    plotsnr(snrsamps, fn, P)
+# %% ACF
+    readACF(fn, P)
+
+    plotsnr(snrints, fn, P)
+
+    plotsnr1d(snr30ints, fn, P)
+
+    plotsnr(snr30ints, fn, P)
+    # plotsnrmesh(snr,fn,P)
 
 # %% joint isr optical plot
 
