@@ -23,6 +23,24 @@ python -m pip install -e .
 
 ## Usage
 
+Several types of "raw" data exist inside the manually-requsted I+jQ voltage files.
+They can be loaded with several different functions.
+All of these examples assume first doing:
+```python
+import isrutils as iu
+```
+
+`P` is a `dict()` with parameters such as altitude range, beam number.
+See the numerous examples for necessary parameters.
+
+`fn` is the ISR HDF5 .h5 file to process.
+
+* Raw power `hypot(I,Q)`
+  ```python
+  snrsamp, azel, isrlla = iu.readpower_samples(fn, P)
+  ```
+
+### Plotting
 
 `singleplot.py` is a main program used to examine raw ISR data. It's
 configured via `.ini` files. Some important parameters are:
