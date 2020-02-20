@@ -256,7 +256,7 @@ def dojointplot(ds, spec, freq, beamazel, optical, optazel, optlla, isrlla, heig
                     writeplots(fg, ctisr, ofn, ctxt='isr')
 
 
-def compclim(imgs, lower: float=0.5, upper: float=99.9, Nsamples: int=50):
+def compclim(imgs, lower: float = 0.5, upper: float = 99.9, Nsamples: int = 50):
     """
     inputs:
     images: Nframe x ypix x xpix grayscale image stack (have not tried with 4-D color)
@@ -717,7 +717,7 @@ def plotsumionline(dsum, ax, fn, P):
     else:
         fg = gcf()
 
-    ax.plot(dsum.time.values, dsum.values, label='$\sum_{range} |P_{rx}|$')
+    ax.plot(dsum.time.values, dsum.values, label=r'$\sum_{range} |P_{rx}|$')
 
     ax.axhline(med, color='gold', linestyle='--', label='median')
 
