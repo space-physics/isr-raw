@@ -17,7 +17,6 @@ from matplotlib.colors import LogNorm
 from matplotlib.cm import jet
 import matplotlib.animation as anim
 import matplotlib.gridspec as gridspec
-import pathvalidate
 import isrutils
 from GeoData.plotting import polarplot
 from sciencedates import find_nearest as findnearest
@@ -44,7 +43,7 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
             t = datetime.utcfromtimestamp(t/1e9)
 
         # :-6 keeps up to millisecond if present.
-        ppth = odir / pathvalidate.sanitize_filename(ctxt + str(t)[:-6] + ext, '-').replace(' ', '')
+        ppth = odir / (ctxt + str(t)[:-6] + ext, '-').replace(':', '')
 
         print('saving', ppth)
 
@@ -223,7 +222,8 @@ def dojointplot(ds, spec, freq, beamazel, optical, optazel, optlla, isrlla, heig
                     codec='ffv1')
 
     ofn = Path(P['odir']).expanduser() / ('joint_' +
-                                          pathvalidate.sanitize_filename(str(datetime.fromtimestamp(utopt[0]))[:-3]) + '.mkv')
+                                          str(datetime.fromtimestamp(utopt[0]))[:-3].replace(':', '') +
+                                          '.mkv')
 
     print(f'writing {ofn}')
     with writer.saving(fg, str(ofn), 150):
