@@ -1,8 +1,7 @@
-[![image](https://zenodo.org/badge/DOI/10.5281/zenodo.164876.svg)](https://doi.org/10.5281/zenodo.164876)
-[![image](https://travis-ci.org/scivision/isrutils.svg?branch=master)](https://travis-ci.org/scivision/isrutils)
-[![image](https://coveralls.io/repos/github/scivision/isrutils/badge.svg?branch=master)](https://coveralls.io/github/scivision/isrutils?branch=master)
-
 # AMISR raw data utilities
+
+[![image](https://zenodo.org/badge/DOI/10.5281/zenodo.164876.svg)](https://doi.org/10.5281/zenodo.164876)
+[![image](https://travis-ci.org/space-physics/isrutils.svg?branch=master)](https://travis-ci.org/space-physics/isrutils)
 
 Utilities for working with Incoherent Scatter Radar data, especially from Poker Flat AMISR.
 
@@ -13,7 +12,6 @@ the 75 milliscond time scale.
 
 Coming soon, simultaneous plots with high speed multi-camera
 synchronized video.
-
 
 ## Install
 
@@ -26,6 +24,7 @@ python -m pip install -e .
 Several types of "raw" data exist inside the manually-requsted I+jQ voltage files.
 They can be loaded with several different functions.
 All of these examples assume first doing:
+
 ```python
 import isrutils as iu
 ```
@@ -36,6 +35,7 @@ See the numerous examples for necessary parameters.
 `fn` is the ISR HDF5 .h5 file to process.
 
 * Raw power `hypot(I,Q)`
+
   ```python
   snrsamp, azel, isrlla = iu.readpower_samples(fn, P)
   ```
@@ -45,10 +45,10 @@ See the numerous examples for necessary parameters.
 `singleplot.py` is a main program used to examine raw ISR data. It's
 configured via `.ini` files. Some important parameters are:
 
- parameter                         | description                    
+ parameter                         | description
 -----------------------------------|--------------------------------
- scan                              | CFAR detection of turbulent activity (possible association with Alfven waves)              
- tlim                              | unless scan=yes, usually you use tlim to only plot over time range of interest (to avoid enormous amount of plots)       
+ scan                              | CFAR detection of turbulent activity (possible association with Alfven waves)
+ tlim                              | unless scan=yes, usually you use tlim to only plot over time range of interest (to avoid enormous amount of plots)
 
 ## Examples
 
@@ -66,16 +66,18 @@ breakup: Evidence for strong Langmuir turbulence
 
 ## File Types
 
-
 Currently, raw ISR data files are *not* currently contained on
-[Madrigal](http://isr.sri.com/madrigal), you will have to email SRI
+[Madrigal](http://isr.sri.com/madrigal),
+you will have to email SRI
 staff to get them manually.
 
-When requesting raw AMISR data, please [request by experiment
-name](http://amisr.com/database/61/sched) as this is more convenient for
+When requesting raw AMISR data, please
+[request by experiment name](http://amisr.com/database/61/sched)
+as this is more convenient for
 SRI staff than the date/time.
 
-Here is a limited selection of [raw ISR data](https://bit.ly/pokerhist).
+Here is a limited selection of
+[raw ISR data](https://bit.ly/pokerhist).
 It is indexed by date; under each date look for the ISR folder. You will
 typically want to download all four file types noted in the table below.
 
@@ -105,4 +107,3 @@ autocorrelation function (ACF). The shape of the ACF is fitted to
 estimate certain plasma parameters, given assumptions on the particle
 population that may be violated, causing in some limited sets of cases
 either inaccurate fits or a failure to estimate the parameters.
-
