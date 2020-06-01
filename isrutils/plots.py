@@ -20,6 +20,7 @@ import matplotlib.gridspec as gridspec
 import isrutils
 from GeoData.plotting import polarplot
 from sciencedates import find_nearest as findnearest
+
 # from sciencedates.ticks import timeticks
 from GeoData.plotting import plotazelscale
 from .common import findindex2Dsphere, timesync, projectisrhist
@@ -30,7 +31,7 @@ from . import isrselect, readACF
 ALTMIN = 60e3  # meters
 
 
-def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
+def writeplots(fg, t="", odir=None, ctxt="", ext=".png"):
     from matplotlib.pyplot import close
 
     if odir:
@@ -38,91 +39,92 @@ def writeplots(fg, t='', odir=None, ctxt='', ext='.png'):
         odir.mkdir(parents=True, exist_ok=True)
 
         if isinstance(t, xarray.DataArray):
-            t = datetime.utcfromtimestamp(t.item()/1e9)
+            t = datetime.utcfromtimestamp(t.item() / 1e9)
         elif isinstance(t, (float, int)):
-            t = datetime.utcfromtimestamp(t/1e9)
+            t = datetime.utcfromtimestamp(t / 1e9)
 
         # :-6 keeps up to millisecond if present.
-        ppth = odir / (ctxt + str(t)[:-6] + ext, '-').replace(':', '')
+        ppth = odir / (ctxt + str(t)[:-6] + ext, "-").replace(":", "")
 
-        print('saving', ppth)
+        print("saving", ppth)
 
-        fg.savefig(ppth, dpi=100, bbox_inches='tight')
+        fg.savefig(ppth, dpi=100, bbox_inches="tight")
 
         close(fg)
+
 
 # %% looping
 
 
 def simpleloop(inifn):
-    ini = ConfigParser(allow_no_value=True, empty_lines_in_values=False,
-                       inline_comment_prefixes=(';'), strict=True)
+    ini = ConfigParser(allow_no_value=True, empty_lines_in_values=False, inline_comment_prefixes=(";"), strict=True)
     ini.read(inifn)
 
-    dpath = Path(ini.get('data', 'path')).expanduser()
-    ft = ini.get('data', 'ftype', fallback='').split(',')
-# %% parse user directory / file list input
+    dpath = Path(ini.get("data", "path")).expanduser()
+    ft = ini.get("data", "ftype", fallback="").split(",")
+    # %% parse user directory / file list input
     if dpath.is_dir() and not ft:
-        flist = sorted(dpath.glob('*dt*.h5'))
+        flist = sorted(dpath.glob("*dt*.h5"))
     elif dpath.is_dir() and ft:  # glob pattern
         flist = []
         for t in ft:
-            flist.extend(sorted(dpath.glob(f'*.{t}.h5')))
+            flist.extend(sorted(dpath.glob(f"*.{t}.h5")))
     elif dpath.is_file():  # a single file was specified
         flist = [flist]
     else:
-        raise FileNotFoundError(f'unknown path/filetype {dpath} / {ft}')
+        raise FileNotFoundError(f"unknown path/filetype {dpath} / {ft}")
 
     if not flist:
-        raise FileNotFoundError(f'no files found in {dpath}')
+        raise FileNotFoundError(f"no files found in {dpath}")
 
-    print(f'examining {len(flist)} {ft} files in {dpath}\n')
-# %% api catchall
+    print(f"examining {len(flist)} {ft} files in {dpath}\n")
+    # %% api catchall
     P = {
-        'odir': ini.get('plot', 'odir', fallback=None),
-        'verbose': ini.getboolean('plot', 'verbose', fallback=False),
-        'scan': ini.getboolean('data', 'scan', fallback=False),
+        "odir": ini.get("plot", "odir", fallback=None),
+        "verbose": ini.getboolean("plot", "verbose", fallback=False),
+        "scan": ini.getboolean("data", "scan", fallback=False),
         # N times the median is declared a detection
-        'medthres': ini.getfloat('data', 'medthreas', fallback=2.),
-        'tlim': ini.get('plot', 'tlim', fallback=None),
-        'beamid': ini.getint('data', 'beamid'),
-        'acf': ini.getboolean('plot', 'acf', fallback=False)
+        "medthres": ini.getfloat("data", "medthreas", fallback=2.0),
+        "tlim": ini.get("plot", "tlim", fallback=None),
+        "beamid": ini.getint("data", "beamid"),
+        "acf": ini.getboolean("plot", "acf", fallback=False),
     }
 
-    if P['tlim']:
-        P['tlim'] = P['tlim'].split(',')
-    P['tlim'] = str2dt(P['tlim'])
+    if P["tlim"]:
+        P["tlim"] = P["tlim"].split(",")
+    P["tlim"] = str2dt(P["tlim"])
 
-    for p in ('flim_pl', 'vlim', 'vlim_pl', 'vlim', 'vlimacf', 'vlimacfslice', 'vlimint',
-              'zlim', 'zlim_pl', 'zsum'):
-        val = ini.get('plot', p, fallback=None)
+    for p in ("flim_pl", "vlim", "vlim_pl", "vlim", "vlimacf", "vlimacfslice", "vlimint", "zlim", "zlim_pl", "zsum"):
+        val = ini.get("plot", p, fallback=None)
         if not val:  # None or ''
             P[p] = [None, None]
             continue
-        P[p] = np.array(val.split(',')).astype(float)
+        P[p] = np.array(val.split(",")).astype(float)
 
-# %% loop over files
+    # %% loop over files
     for f in flist:
         # read data
-        specdown, specup, snrsamp, azel, isrlla, snrint, snr30int, ionsum = isrselect(dpath/f, P)
-# %% plot
+        specdown, specup, snrsamp, azel, isrlla, snrint, snr30int, ionsum = isrselect(dpath / f, P)
+        # %% plot
         # summed ion line over altitude range
-#        tic = time()
+        #        tic = time()
         hit = plotsumionline(ionsum, None, f, P)
         if isinstance(hit, bool):
             print(f.stem, hit)
-#        if P['verbose']: print(f'sum plot took {(time()-tic):.1f} sec.')
+        #        if P['verbose']: print(f'sum plot took {(time()-tic):.1f} sec.')
 
-        if hit and not P['acf']:  # if P['acf'], it was already plotted. Otherwise, we plot only if hit
+        if hit and not P["acf"]:  # if P['acf'], it was already plotted. Otherwise, we plot only if hit
             readACF(f, P)
 
-        if hit or not P['scan']:
+        if hit or not P["scan"]:
             # 15 sec integration
-            plotsnr(snrint, f, P, azel, ctxt='int_')
+            plotsnr(snrint, f, P, azel, ctxt="int_")
             # 200 ms integration
             plotsnr(snrsamp, f, P, azel)
             # plasma line spectrum
             plotplasmaline(specdown, specup, f, P, azel)
+
+
 # %%
 
 
@@ -147,12 +149,11 @@ def isrstacker(flist, P):
                 snrints = xarray.concat((snrints, snrint), axis=1)
             # TOOD other concat & update to xarray syntax
 
-
-# %% plots
+    # %% plots
     plotplasmaline(specdowns, specups, flist, P)
 
     plotsnr(snrsamps, fn, P)
-# %% ACF
+    # %% ACF
     readACF(fn, P)
 
     plotsnr(snrints, fn, P)
@@ -161,6 +162,7 @@ def isrstacker(flist, P):
 
     plotsnr(snr30ints, fn, P)
     # plotsnrmesh(snr,fn,P)
+
 
 # %% joint isr optical plot
 
@@ -176,69 +178,63 @@ def dojointplot(ds, spec, freq, beamazel, optical, optazel, optlla, isrlla, heig
 
     assert isinstance(ds, xarray.DataArray)
 
-# %% setup master figure
+    # %% setup master figure
     fg = figure(figsize=(8, 12))
     gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
-# %% setup radar plot(s)
+    # %% setup radar plot(s)
     a1 = fg.add_subplot(gs[1])
-    plotsumionline(ds, a1, isrutils.expfn(P['isrfn']), P['zlim'])
+    plotsumionline(ds, a1, isrutils.expfn(P["isrfn"]), P["zlim"])
 
-    h1 = a1.axvline(np.nan, color='k', linestyle='--')
-    t1 = a1.text(0.05, 0.95, 'time=', transform=a1.transAxes, va='top', ha='left')
-# %% setup top optical plot
+    h1 = a1.axvline(np.nan, color="k", linestyle="--")
+    t1 = a1.text(0.05, 0.95, "time=", transform=a1.transAxes, va="top", ha="left")
+    # %% setup top optical plot
     if optical is not None:
         a0 = fg.add_subplot(gs[0])
         clim = compclim(optical, lower=10, upper=99.99)
-        h0 = a0.imshow(optical[0, ...], origin='lower', interpolation='none', cmap='gray',
-                       norm=vidnorm, vmin=clim[0], vmax=clim[1])
+        h0 = a0.imshow(optical[0, ...], origin="lower", interpolation="none", cmap="gray", norm=vidnorm, vmin=clim[0], vmax=clim[1])
         a0.set_axis_off()
-        t0 = a0.set_title('')
+        t0 = a0.set_title("")
 
-# %% plot magnetic zenith beam
+        # %% plot magnetic zenith beam
         azimg = optazel[:, 1].reshape(optical.shape[1:])
         elimg = optazel[:, 2].reshape(optical.shape[1:])
 
         optisrazel = projectisrhist(isrlla, beamazel, optlla, optazel, heightkm)
 
-        br, bc = findindex2Dsphere(azimg, elimg, optisrazel['az'], optisrazel['el'])
+        br, bc = findindex2Dsphere(azimg, elimg, optisrazel["az"], optisrazel["el"])
 
         # hollow beam circle
-    #    a2.scatter(bc,br,s=500,marker='o',facecolors='none',edgecolor='red', alpha=0.5)
+        #    a2.scatter(bc,br,s=500,marker='o',facecolors='none',edgecolor='red', alpha=0.5)
 
         # beam data, filled circle
-        s0 = a0.scatter(bc, br, s=2700, alpha=0.6, linewidths=3,
-                        edgecolors=jet(np.linspace(ds.min().item(), ds.max().item())))
+        s0 = a0.scatter(bc, br, s=2700, alpha=0.6, linewidths=3, edgecolors=jet(np.linspace(ds.min().item(), ds.max().item())))
 
         a0.autoscale(True, tight=True)
         fg.tight_layout()
-# %% time sync
+    # %% time sync
     tisr = ds.time.values
-    Iisr, Iopt = timesync(tisr, utopt, P['tlim'])
-# %% iterate
+    Iisr, Iopt = timesync(tisr, utopt, P["tlim"])
+    # %% iterate
     first = True
-    Writer = anim.writers['ffmpeg']
-    writer = Writer(fps=5,
-                    metadata=dict(artist='Michael Hirsch, Ph.D.'),
-                    codec='ffv1')
+    Writer = anim.writers["ffmpeg"]
+    writer = Writer(fps=5, metadata=dict(artist="Michael Hirsch, Ph.D."), codec="ffv1")
 
-    ofn = Path(P['odir']).expanduser() / ('joint_' +
-                                          str(datetime.fromtimestamp(utopt[0]))[:-3].replace(':', '') +
-                                          '.mkv')
+    ofn = Path(P["odir"]).expanduser() / ("joint_" + str(datetime.fromtimestamp(utopt[0]))[:-3].replace(":", "") + ".mkv")
 
-    print(f'writing {ofn}')
+    print(f"writing {ofn}")
     with writer.saving(fg, str(ofn), 150):
         for iisr, iopt in zip(Iisr, Iopt):
             ctisr = tisr[iisr]
-# %% update isr plot
+            # %% update isr plot
             h1.set_xdata(ctisr)
-            t1.set_text('isr: {}'.format(ctisr))
-# %% update hist plot
+            t1.set_text("isr: {}".format(ctisr))
+            # %% update hist plot
             if iopt is not None:
                 ctopt = datetime.utcfromtimestamp(utopt[iopt])
                 h0.set_data(optical[iopt, ...])
-                t0.set_text('optical: {}'.format(ctopt))
+                t0.set_text("optical: {}".format(ctopt))
                 s0.set_array(ds.loc[ctisr])  # FIXME circle not changing magnetic zenith beam color? NOTE this is isr time index
-# %% anim
+            # %% anim
             if first and iopt is not None:
                 plotazelscale(optical[iopt, ...], azimg, elimg)
                 show()
@@ -247,13 +243,13 @@ def dojointplot(ds, spec, freq, beamazel, optical, optazel, optlla, isrlla, heig
             draw()
             pause(0.01)
 
-            writer.grab_frame(facecolor='k')
+            writer.grab_frame(facecolor="k")
 
-            if ofn.suffix == '.png':
+            if ofn.suffix == ".png":
                 try:
-                    writeplots(fg, ctopt, ofn, ctxt='joint')
+                    writeplots(fg, ctopt, ofn, ctxt="joint")
                 except UnboundLocalError:
-                    writeplots(fg, ctisr, ofn, ctxt='isr')
+                    writeplots(fg, ctisr, ofn, ctxt="isr")
 
 
 def compclim(imgs, lower: float = 0.5, upper: float = 99.9, Nsamples: int = 50):
@@ -266,21 +262,21 @@ def compclim(imgs, lower: float = 0.5, upper: float = 99.9, Nsamples: int = 50):
     sampind = np.linspace(0, imgs.shape[0], Nsamples, endpoint=False, dtype=int)
 
     clim = np.percentile(imgs[sampind, ...], [lower, upper])
-    if upper == 100.:
+    if upper == 100.0:
         clim[1] = imgs.max()  # consider all images
     return clim
 
 
-def plotsnr(snr, fn, P, azel, ctxt=''):
+def plotsnr(snr, fn, P, azel, ctxt=""):
     if not isinstance(snr, xarray.DataArray) or min(snr.shape) < 2:
         return
 
-    P['tlim'] = isrutils.str2dt(P['tlim'])
+    P["tlim"] = isrutils.str2dt(P["tlim"])
 
-    if 'int' in ctxt:
-        vlim = P['vlimint']
+    if "int" in ctxt:
+        vlim = P["vlimint"]
     else:
-        vlim = P['vlim']
+        vlim = P["vlim"]
 
     assert snr.ndim == 2 and snr.shape[1] > 0, f'you seem to have extracted zero times, look at tlim {P["tlim"]}'
 
@@ -288,24 +284,23 @@ def plotsnr(snr, fn, P, azel, ctxt=''):
     ax = fg.gca()
 
     try:
-        h = ax.pcolormesh(snr.time, snr.srng,
-                          10*masked_invalid(np.log10(snr.values)),
-                          vmin=vlim[0], vmax=vlim[1],
-                          cmap='cubehelix_r')
+        h = ax.pcolormesh(
+            snr.time, snr.srng, 10 * masked_invalid(np.log10(snr.values)), vmin=vlim[0], vmax=vlim[1], cmap="cubehelix_r"
+        )
     except ValueError as e:
         print(e, file=stderr)
         return
 
     ax.autoscale(True, tight=True)
 
-    ax.set_xlim(P['tlim'])
-    ax.set_ylim(P['zlim'])
+    ax.set_xlim(P["tlim"])
+    ax.set_ylim(P["zlim"])
 
-    ax.set_ylabel('slant range [km]')
+    ax.set_ylabel("slant range [km]")
 
-    ax.set_xlabel('Time [UTC]')
-    ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
-# %% date ticks
+    ax.set_xlabel("Time [UTC]")
+    ax.xaxis.set_major_formatter(DateFormatter("%H:%M:%S"))
+    # %% date ticks
     fg.autofmt_xdate()
 
     # tdiff = snr.time[-1] - snr.time[0]
@@ -313,37 +308,43 @@ def plotsnr(snr, fn, P, azel, ctxt=''):
     # majtick,mintick = timeticks(tdiff)
     # ax.xaxis.set_major_locator(majtick)
     # ax.xaxis.set_minor_locator(mintick)
-    ax.tick_params(axis='both', which='both', direction='out')
+    ax.tick_params(axis="both", which="both", direction="out")
 
     c = fg.colorbar(h, ax=ax, fraction=0.075, shrink=0.5)
-    c.set_label('Power [dB]')
+    c.set_label("Power [dB]")
 
     # Ts = f'{(snr.time[1] - snr.time[0]).item()/1e9:.3f}' if snr.time.size >= 2 else ''
 
-    ax.set_title(f'Az,El {azel[0]:.1f},{azel[1]:.1f}  {isrutils.expfn(fn)}'
-                 '{str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10]}'
-                 '$T_{{sample}}$={Ts} sec.')
+    ax.set_title(
+        f"Az,El {azel[0]:.1f},{azel[1]:.1f}  {isrutils.expfn(fn)}"
+        "{str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10]}"
+        "$T_{{sample}}$={Ts} sec."
+    )
 
     try:
-        for m in P['tmark']:
+        for m in P["tmark"]:
             try:
-                ax.annotate(m[2], m[:2],
-                            xytext=(m[3]*100, 50), textcoords='offset points', color='white', ha='left',
-                            bbox={'alpha': .2},
-                            arrowprops={'facecolor': 'white',
-                                        'arrowstyle': '-[',
-                                        'connectionstyle': "arc3,rad=0.2"})
+                ax.annotate(
+                    m[2],
+                    m[:2],
+                    xytext=(m[3] * 100, 50),
+                    textcoords="offset points",
+                    color="white",
+                    ha="left",
+                    bbox={"alpha": 0.2},
+                    arrowprops={"facecolor": "white", "arrowstyle": "-[", "connectionstyle": "arc3,rad=0.2"},
+                )
             except Exception as e:
-                logging.error(f'failed to annotate {e}')
+                logging.error(f"failed to annotate {e}")
     except KeyError:
         pass
 
     # if you get RuntimeError here, will also error on savefig
     fg.tight_layout()
-# %% output
-    ofn = ctxt + 'power_' + isrutils.expfn(fn)
+    # %% output
+    ofn = ctxt + "power_" + isrutils.expfn(fn)
 
-    writeplots(fg, snr.time[0].item(), P['odir'], ofn)
+    writeplots(fg, snr.time[0].item(), P["odir"], ofn)
 
     return fg
 
@@ -352,50 +353,50 @@ def plotsnr1d(snr, P):
     if not isinstance(snr, xarray.DataArray):
         return
 
-    tind = abs(snr.time-P['t0']).argmin()
-    tind = range(tind-1, tind+2)
+    tind = abs(snr.time - P["t0"]).argmin()
+    tind = range(tind - 1, tind + 2)
     t1 = snr.time[tind]
 
-    S = 10 * np.log10(snr[snr.srng >= P['zlim'][0], t1])
+    S = 10 * np.log10(snr[snr.srng >= P["zlim"][0], t1])
     z = S.index
 
     ax = figure().gca()
-    ax.plot(S.iloc[:, 0], z, color='r', label=str(t1[0]))
-    ax.plot(S.iloc[:, 1], z, color='k', label=str(t1[1]))
-    ax.plot(S.iloc[:, 2], z, color='b', label=str(t1[2]))
-#    ax.set_ylim(zlim)
-    ax.autoscale(True, 'y', tight=True)
+    ax.plot(S.iloc[:, 0], z, color="r", label=str(t1[0]))
+    ax.plot(S.iloc[:, 1], z, color="k", label=str(t1[1]))
+    ax.plot(S.iloc[:, 2], z, color="b", label=str(t1[2]))
+    #    ax.set_ylim(zlim)
+    ax.autoscale(True, "y", tight=True)
     ax.set_xlim(-5)
     ax.legend()
 
-    ax.set_title(P['fn'])
-    ax.set_xlabel('SNR [dB]')
-    ax.set_ylabel('altitude [km]')
+    ax.set_title(P["fn"])
+    ax.set_xlabel("SNR [dB]")
+    ax.set_ylabel("altitude [km]")
 
 
 def plotsnrmesh(snr, fn, P):
     if not isinstance(snr, xarray.DataArray):
         return
 
-    tind = abs(snr.time-P['t0']).argmin()
-    tind = range(tind-5, tind+6)
+    tind = abs(snr.time - P["t0"]).argmin()
+    tind = range(tind - 5, tind + 6)
     t1 = snr.time[tind]
 
-    S = 10 * np.log10(snr[snr.srng >= P['zlim'][0], t1])
+    S = 10 * np.log10(snr[snr.srng >= P["zlim"][0], t1])
     z = S.index
 
-    x, y = np.meshgrid(S.time.values.astype(float)/1e9, z)
+    x, y = np.meshgrid(S.time.values.astype(float) / 1e9, z)
 
-    ax3 = figure().gca(projection='3d')
+    ax3 = figure().gca(projection="3d")
 
-#    ax3.plot_wireframe(x,y,S.values)
-#    ax3.scatter(x,y,S.values)
-    ax3.plot_surface(x, y, S.values, cmap='jet')
-    ax3.set_zlim(P['vlim'])
-    ax3.set_zlabel('SNR [dB]')
-    ax3.set_ylabel('altitude [km]')
-    ax3.set_xlabel('time')
-    ax3.autoscale(True, 'y', tight=True)
+    #    ax3.plot_wireframe(x,y,S.values)
+    #    ax3.scatter(x,y,S.values)
+    ax3.plot_surface(x, y, S.values, cmap="jet")
+    ax3.set_zlim(P["vlim"])
+    ax3.set_zlabel("SNR [dB]")
+    ax3.set_ylabel("altitude [km]")
+    ax3.set_xlabel("time")
+    ax3.autoscale(True, "y", tight=True)
 
 
 def plotacf(spec: xarray.DataArray, fn: Path, azel, t, dt, P: dict):
@@ -404,44 +405,47 @@ def plotacf(spec: xarray.DataArray, fn: Path, azel, t, dt, P: dict):
     """
     if not isinstance(spec, xarray.DataArray):
         return
-# %% alt vs freq
+    # %% alt vs freq
     fg = figure()
     ax = fg.gca()
 
-    assert 10 <= azel[1] <= 90, 'possibly invalid elevation angle for this beam'
+    assert 10 <= azel[1] <= 90, "possibly invalid elevation angle for this beam"
     goodz = spec.srng * np.sin(np.radians(azel[1])) > ALTMIN  # actual altitude > 60km
     z = spec.srng[goodz].values / 1e3  # slant ranges where altitude > zmin km
 
-    h = ax.pcolormesh(spec.freq.values,
-                      z,
-                      10 * np.log10(abs(spec[goodz, :].values)),
-                      vmin=P['vlimacf'][0],
-                      vmax=P['vlimacf'][1],
-                      cmap='cubehelix_r')
+    h = ax.pcolormesh(
+        spec.freq.values,
+        z,
+        10 * np.log10(abs(spec[goodz, :].values)),
+        vmin=P["vlimacf"][0],
+        vmax=P["vlimacf"][1],
+        cmap="cubehelix_r",
+    )
 
-    ytop = min(z[-1], P['zlim'][1]) if P['zlim'][1] is not None else z[-1]
+    ytop = min(z[-1], P["zlim"][1]) if P["zlim"][1] is not None else z[-1]
 
-    ax.set_ylim(P['zlim'][0], ytop)
+    ax.set_ylim(P["zlim"][0], ytop)
 
     c = fg.colorbar(h, ax=ax)
-    c.set_label('Power [dB]')
-    ax.set_ylabel('slant range [km]')
-    ax.set_title('ISR PSD: Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}'.format(
-        azel[0], azel[1], isrutils.expfn(fn), dt, str(t)[:-6]))
-    ax.autoscale(True, axis='x', tight=True)
-    ax.set_xlabel('frequency [kHz]')
+    c.set_label("Power [dB]")
+    ax.set_ylabel("slant range [km]")
+    ax.set_title(
+        "ISR PSD: Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}".format(azel[0], azel[1], isrutils.expfn(fn), dt, str(t)[:-6])
+    )
+    ax.autoscale(True, axis="x", tight=True)
+    ax.set_xlabel("frequency [kHz]")
 
-    writeplots(fg, t, P['odir'], ' acf_' + isrutils.expfn(fn))
-# %% freq at alt
-    if 'zslice' in P:
-        plotzslice(spec, P['zslice'], P['vlimacfslice'], azel, fn, dt, t, P['odir'], 'acfslice_' + isrutils.expfn(fn))
+    writeplots(fg, t, P["odir"], " acf_" + isrutils.expfn(fn))
+    # %% freq at alt
+    if "zslice" in P:
+        plotzslice(spec, P["zslice"], P["vlimacfslice"], azel, fn, dt, t, P["odir"], "acfslice_" + isrutils.expfn(fn))
 
 
 def plotzslice(psd, zslice, vlim, azel, fn, dt, t, odir, stem, ttxt=None, flim=(None, None)):
-    assert psd.ndim == 2, 'single time,  spectrum vs srng and freq'
+    assert psd.ndim == 2, "single time,  spectrum vs srng and freq"
 
-#    if psd.srng[-1]<100000: # km or m
-#        zslice = zslice / 1000 # NOT /= or it modifies original dict!!
+    #    if psd.srng[-1]<100000: # km or m
+    #        zslice = zslice / 1000 # NOT /= or it modifies original dict!!
 
     if zslice[0] is None or zslice[1] is None:  # didn't specify zslice
         return
@@ -454,11 +458,10 @@ def plotzslice(psd, zslice, vlim, azel, fn, dt, t, odir, stem, ttxt=None, flim=(
     freq = psd.freq.values
     if abs(freq).max() > 1000:  # MHz
         freq /= 1e6
-    if freq[freq.size//2] < 0 and flim[0] is not None:
+    if freq[freq.size // 2] < 0 and flim[0] is not None:
         flim = -flim
 
-    ax.plot(freq,
-            10 * np.log10(abs(psd.isel(srng=slice(iz[0], iz[1])).sum(dim='srng'))))
+    ax.plot(freq, 10 * np.log10(abs(psd.isel(srng=slice(iz[0], iz[1])).sum(dim="srng"))))
 
     ax.set_xlim(flim)
     if flim[-1] is not None and flim[-1] < 0:
@@ -469,15 +472,15 @@ def plotzslice(psd, zslice, vlim, azel, fn, dt, t, odir, stem, ttxt=None, flim=(
             v += 10
     ax.set_ylim(vlim)
 
-    ax.set_xlabel('frequency: $f_c + f$ [kHz]')
-    ax.set_ylabel('Power [dB]')
+    ax.set_xlabel("frequency: $f_c + f$ [kHz]")
+    ax.set_ylabel("Power [dB]")
 
     if ttxt is None:
         ttxt = isrutils.expfn(fn)
 
-    ax.set_title(f'Az,El {azel[0]:.1f},{azel[1]:.1f}  @ {zslice[0]}..{zslice[1]} km  {ttxt}  $T_s$: {dt} [sec.] {str(t)[:-6]} \n')
+    ax.set_title(f"Az,El {azel[0]:.1f},{azel[1]:.1f}  @ {zslice[0]}..{zslice[1]} km  {ttxt}  $T_s$: {dt} [sec.] {str(t)[:-6]} \n")
 
-    writeplots(fg, t, odir, stem, ext='.eps')
+    writeplots(fg, t, odir, stem, ext=".eps")
 
 
 def plotplasmaline(specdown, specup, fn, P, azel):
@@ -489,93 +492,115 @@ def plotplasmaline(specdown, specup, fn, P, azel):
         return
 
     T = spec[0].time
-    dT = (T[1]-T[0]).item()/1e9 if T.size >= 2 else ''
+    dT = (T[1] - T[0]).item() / 1e9 if T.size >= 2 else ""
 
     for s in spec:
-        assert (s.time == T).all(), 'times do not match for downshift and upshift plasma spectrum'
+        assert (s.time == T).all(), "times do not match for downshift and upshift plasma spectrum"
 
     ptype = None  # 'mesh'
 
     for t in T:
         fg = None
-        t = datetime.utcfromtimestamp(t.item()/1e9)
+        t = datetime.utcfromtimestamp(t.item() / 1e9)
 
-        if ptype in ('mesh', 'surf'):  # cannot use subplots for 3d with matplotlib 1.4
+        if ptype in ("mesh", "surf"):  # cannot use subplots for 3d with matplotlib 1.4
             axs = [None, None]
 
             fg = figure(figsize=(15, 5))
-            axs[0] = fg.add_subplot(1, Nspec, 1, projection='3d')
+            axs[0] = fg.add_subplot(1, Nspec, 1, projection="3d")
 
-            fg.suptitle(f'{fn.name} {t.to_pydatetime()}', y=1.01)
-        elif 'zslice' in P:  # lineplot
-            print(P['zslice'])
+            fg.suptitle(f"{fn.name} {t.to_pydatetime()}", y=1.01)
+        elif "zslice" in P:  # lineplot
+            print(P["zslice"])
             # fg = figure()
             # plotplasmaoverlay(specdown,specup,t,fg,P)
             # writeplots(fg,t,P['odir'],'plasmaLineOverlay')
             # continue
-#            import pdb; pdb.set_trace()
+            #            import pdb; pdb.set_trace()
             if isinstance(specdown, xarray.DataArray):
-                plotzslice(specdown.sel(time=t), P['zslice'], P['vlim_pl'], azel, fn, dT, t,
-                           P['odir'], 'plasmaDOWNslice', 'downshifted plasma line', P['flim_pl'])
+                plotzslice(
+                    specdown.sel(time=t),
+                    P["zslice"],
+                    P["vlim_pl"],
+                    azel,
+                    fn,
+                    dT,
+                    t,
+                    P["odir"],
+                    "plasmaDOWNslice",
+                    "downshifted plasma line",
+                    P["flim_pl"],
+                )
             if isinstance(specup, xarray.DataArray):
-                plotzslice(specup.sel(time=t), P['zslice'], P['vlim_pl'], azel, fn, dT, t,
-                           P['odir'], 'plasmaUPslice', 'upshifted plasma line', P['flim_pl'])
+                plotzslice(
+                    specup.sel(time=t),
+                    P["zslice"],
+                    P["vlim_pl"],
+                    azel,
+                    fn,
+                    dT,
+                    t,
+                    P["odir"],
+                    "plasmaUPslice",
+                    "upshifted plasma line",
+                    P["flim_pl"],
+                )
 
         if fg is None:
-            fg, axs = subplots(Nspec, 1, figsize=(15, Nspec*7.5))
+            fg, axs = subplots(Nspec, 1, figsize=(15, Nspec * 7.5))
             axs = np.atleast_1d(axs)
 
-            fg.suptitle('Az,El {:.1f},{:.1f}  Plasma line {}  $T_{{sample}}$: {} [sec.]'.format(azel[0], azel[1], t, dT), y=1.01)
-# %%
-        for s, ax, fshift in zip(spec, axs, ('down', 'up')):
+            fg.suptitle("Az,El {:.1f},{:.1f}  Plasma line {}  $T_{{sample}}$: {} [sec.]".format(azel[0], azel[1], t, dT), y=1.01)
+        # %%
+        for s, ax, fshift in zip(spec, axs, ("down", "up")):
             try:
-                if ptype in ('mesh', 'surf'):
+                if ptype in ("mesh", "surf"):
                     plotplasmamesh(s.sel(time=t), fg, ax, P, ptype)
                 else:  # pcolor
                     plotplasmatime(s.sel(time=t), t, fg, ax, P, fshift)
             except KeyError as e:
-                logging.error(f'{e} plotting {fshift} {t}')
+                logging.error(f"{e} plotting {fshift} {t}")
 
         fg.tight_layout()
 
         # write plots here else you'll double write plots
-        writeplots(fg, t, P['odir'], 'plasmaLine')
+        writeplots(fg, t, P["odir"], "plasmaLine")
 
-    if P['verbose']:
-        print('plasma line plot took {:.1f} sec.'.format(time()-tic))
+    if P["verbose"]:
+        print("plasma line plot took {:.1f} sec.".format(time() - tic))
 
 
 def plotplasmaoverlay(specdown, specup, t, fg, P: dict):
 
     ax = fg.gca()
 
-    ialt, alt = findnearest(specdown.srng.values, P['zlim_pl'])
-# %%
+    ialt, alt = findnearest(specdown.srng.values, P["zlim_pl"])
+    # %%
     try:
         dBdown = 10 * np.log10(specdown.sel(time=t)[ialt, :].values)
-        if len(P['vlim_pl']) >= 4 and P['vlim_pl'][2] is not None:
-            dBdown += P['vlim_pl'][2]
+        if len(P["vlim_pl"]) >= 4 and P["vlim_pl"][2] is not None:
+            dBdown += P["vlim_pl"][2]
     except AttributeError:
         pass
-# %%
+    # %%
     try:
         dBup = 10 * np.log10(specup.sel(time=t)[ialt, :].values)
-        if len(P['vlim_pl']) >= 4 and P['vlim_pl'][3] is not None:
-            dBup += P['vlim_pl'][3]
+        if len(P["vlim_pl"]) >= 4 and P["vlim_pl"][3] is not None:
+            dBup += P["vlim_pl"][3]
     except AttributeError:
         pass
 
-    ax.plot(-specdown.freq.values/1e6, dBdown)
+    ax.plot(-specdown.freq.values / 1e6, dBdown)
 
-    ax.plot(specup.freq.values/1e6, dBup)
+    ax.plot(specup.freq.values / 1e6, dBup)
 
-    ax.set_ylabel('Power [dB]')
-    ax.set_xlabel('frequency: $f_c + f$ [MHz]')
+    ax.set_ylabel("Power [dB]")
+    ax.set_xlabel("frequency: $f_c + f$ [MHz]")
 
-    ax.set_ylim(P['vlim_pl'][:2])
-    ax.set_xlim(P['flim_pl'])
+    ax.set_ylim(P["vlim_pl"][:2])
+    ax.set_xlim(P["flim_pl"])
 
-    fg.suptitle('Plasma line at {:.0f} km slant range {}'.format(alt, str(t.item)[:19]))
+    fg.suptitle("Plasma line at {:.0f} km slant range {}".format(alt, str(t.item)[:19]))
 
 
 def plotplasmatime(spec: xarray.DataArray, t, fg, ax, P: dict, ctxt):
@@ -583,24 +608,30 @@ def plotplasmatime(spec: xarray.DataArray, t, fg, ax, P: dict, ctxt):
         return
 
     srng = spec.srng.values
-    zgood = srng > 60.  # above N km
+    zgood = srng > 60.0  # above N km
 
-    hi = ax.pcolormesh(spec.freq.values/1e6, srng[zgood], 10*np.log10(spec[zgood, :].values),
-                       vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1], cmap='cubehelix_r')
+    hi = ax.pcolormesh(
+        spec.freq.values / 1e6,
+        srng[zgood],
+        10 * np.log10(spec[zgood, :].values),
+        vmin=P["vlim_pl"][0],
+        vmax=P["vlim_pl"][1],
+        cmap="cubehelix_r",
+    )
 
-#    h=ax.imshow(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
-#                    vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
+    #    h=ax.imshow(spec.freq.values/1e6,srng[zgood],10*log10(spec[zgood,:].values),
+    #                    vmin=P['vlim_pl'][0], vmax=P['vlim_pl'][1],cmap='cubehelix_r')
 
-    ax.set_xlabel('frequency: $f_c + f$ [MHz]')
-    ax.set_ylabel('slant range [km]')
+    ax.set_xlabel("frequency: $f_c + f$ [MHz]")
+    ax.set_ylabel("slant range [km]")
 
     # if hi.colorbar is None:
-    fg.colorbar(hi, ax=ax, format='%.0f').set_label('Power [dB]')
+    fg.colorbar(hi, ax=ax, format="%.0f").set_label("Power [dB]")
 
-    ax.autoscale(True, 'both', tight=True)  # before manual lim setting
-    ax.set_ylim(P['zlim_pl'])
-# %%
-    xfreq(ax, spec, P['flim_pl'])
+    ax.autoscale(True, "both", tight=True)  # before manual lim setting
+    ax.set_ylim(P["zlim_pl"])
+    # %%
+    xfreq(ax, spec, P["flim_pl"])
 
     # ax.tick_params(axis='both', which='both', direction='out')
 
@@ -618,7 +649,7 @@ def xfreq(ax, spec, Pflim):
     ax.set_xlim(flim)
 
 
-def plotplasmamesh(spec, fg, ax, P, ptype=''):
+def plotplasmamesh(spec, fg, ax, P, ptype=""):
     if not isinstance(spec, xarray.DataArray):
         return
 
@@ -629,26 +660,26 @@ def plotplasmamesh(spec, fg, ax, P, ptype=''):
         ax = fg.gca()
 
     srng = spec.index.values
-    zgood = srng > P['zlim'][0]  # above N km
+    zgood = srng > P["zlim"][0]  # above N km
 
     S = 10 * np.log10(spec.loc[zgood, :])  # FIXME .sel()
     z = S.index.values
 
-    x, y = np.meshgrid(spec.freq.values/1e6, z)
+    x, y = np.meshgrid(spec.freq.values / 1e6, z)
 
-#    ax3 = figure().gca(projection='3d')
-#
-#    ax3.scatter(x,y,S.values)
-    if ptype == 'surf':
-        ax.plot_surface(x, y, S.values, cmap='jet')
-    elif ptype == 'mesh':
+    #    ax3 = figure().gca(projection='3d')
+    #
+    #    ax3.scatter(x,y,S.values)
+    if ptype == "surf":
+        ax.plot_surface(x, y, S.values, cmap="jet")
+    elif ptype == "mesh":
         ax.plot_wireframe(x, y, S.values)
 
-    ax.set_zlim(P['vlim'])
-    ax.set_zlabel('Power [dB]')
-    ax.set_ylabel('altitude [km]')
-    ax.set_xlabel('frequency: $f_c + f$ [MHz]')
-    ax.autoscale(True, 'y', tight=True)
+    ax.set_zlim(P["vlim"])
+    ax.set_zlabel("Power [dB]")
+    ax.set_ylabel("altitude [km]")
+    ax.set_xlabel("frequency: $f_c + f$ [MHz]")
+    ax.autoscale(True, "y", tight=True)
     fg.tight_layout()
 
 
@@ -656,24 +687,22 @@ def plotbeampattern(fn, P, beamkey, beamids=None):
     """
     plots beams used in the file
     """
-    if P['scan'] or P['odir'] is None:
+    if P["scan"] or P["odir"] is None:
         return
 
     beamcodes = np.unique(beamkey)  # for some files they're jumbled
 
     def _pullbeams(f, beamcodes=None):
-        M = f['/Setup/BeamcodeMap']
+        M = f["/Setup/BeamcodeMap"]
 
-        azel = xarray.DataArray(data=M[:, 1:3],
-                                dims=['beamid', 'azel'],
-                                coords={'beamid': M[:, 0].astype(int),
-                                        'azel': ['az', 'el']}
-                                )
+        azel = xarray.DataArray(
+            data=M[:, 1:3], dims=["beamid", "azel"], coords={"beamid": M[:, 0].astype(int), "azel": ["az", "el"]}
+        )
 
         if beamcodes is not None:
             azel = azel.loc[beamcodes, :]
 
-        date = f['/Time/RadacTimeString'][0][0][:10].decode('utf8')
+        date = f["/Time/RadacTimeString"][0][0][:10].decode("utf8")
 
         return azel, date
 
@@ -681,35 +710,35 @@ def plotbeampattern(fn, P, beamkey, beamids=None):
         beams, date = _pullbeams(fn, beamcodes)
         h5fn = Path(fn.filename).name
     else:
-        with h5py.File(fn, 'r', libver='latest') as f:
+        with h5py.File(fn, "r", libver="latest") as f:
             beams, date = _pullbeams(f, beamcodes)
         h5fn = Path(fn).name
 
-    fg = polarplot(beams.loc[:, 'az'], beams.loc[:, 'el'],  # FIXME .sel()
-                   title=f'ISR {beamcodes.size} Beam Pattern: {date}',
-                   markerarea=27.4)
+    fg = polarplot(
+        beams.loc[:, "az"], beams.loc[:, "el"], title=f"ISR {beamcodes.size} Beam Pattern: {date}", markerarea=27.4  # FIXME .sel()
+    )
 
-    logging.info(f'{beamcodes.size} beam pattern {fn}')
-    writeplots(fg, odir=P['odir'], ctxt=f'beams_{h5fn}', ext='.eps')
+    logging.info(f"{beamcodes.size} beam pattern {fn}")
+    writeplots(fg, odir=P["odir"], ctxt=f"beams_{h5fn}", ext=".eps")
 
 
 def plotsumionline(dsum, ax, fn, P):
     if dsum is None or dsum.size < 2:
         return
 
-    assert isinstance(dsum, xarray.DataArray) and dsum.ndim == 1, 'incorrect input type'
-# %% threshold
+    assert isinstance(dsum, xarray.DataArray) and dsum.ndim == 1, "incorrect input type"
+    # %% threshold
     med = np.median(dsum.values)
-    medthres = P['medthres'] * med
+    medthres = P["medthres"] * med
 
     if (dsum > medthres).any():
         hit = True
     else:
         hit = False
 
-    if not hit and P['scan']:
+    if not hit and P["scan"]:
         return hit
-# %% plot
+    # %% plot
 
     if not ax:
         fg = figure()
@@ -717,28 +746,28 @@ def plotsumionline(dsum, ax, fn, P):
     else:
         fg = gcf()
 
-    ax.plot(dsum.time.values, dsum.values, label=r'$\sum_{range} |P_{rx}|$')
+    ax.plot(dsum.time.values, dsum.values, label=r"$\sum_{range} |P_{rx}|$")
 
-    ax.axhline(med, color='gold', linestyle='--', label='median')
+    ax.axhline(med, color="gold", linestyle="--", label="median")
 
-    ax.axhline(medthres, color='red', linestyle='--', label='threshold')
+    ax.axhline(medthres, color="red", linestyle="--", label="threshold")
 
-    ax.set_ylabel('summed power')
-    ax.set_xlabel('time [UTC]')
+    ax.set_ylabel("summed power")
+    ax.set_xlabel("time [UTC]")
     ax.set_title(f'{isrutils.expfn(fn)} summed over range: ({P["zsum"][0]}..{P["zsum"][1]}) km')
 
-    ax.set_yscale('log')
+    ax.set_yscale("log")
     ax.grid(True)
-    ax.legend(loc='upper right')
+    ax.legend(loc="upper right")
 
     fg.autofmt_xdate()
-# %% save plot efficiently
+    # %% save plot efficiently
     if dsum.size <= 1000:
-        ext = '.eps'
+        ext = ".eps"
     else:
-        ext = '.png'  # EPS is slow with tons of points
+        ext = ".png"  # EPS is slow with tons of points
 
-    writeplots(fg, dsum.time[0].item(), P['odir'], 'summedAlt', ext=ext)
+    writeplots(fg, dsum.time[0].item(), P["odir"], "summedAlt", ext=ext)
 
     return hit
 
@@ -749,8 +778,8 @@ def plotsumplasmaline(plsum):
     fg = figure()
     ax = fg.gca()
     plsum.plot(ax=ax)
-    ax.set_ylabel('summed power')
-    ax.set_xlabel('time [UTC]')
-    ax.set_title('plasma line summed over altitude (200..350)km and frequency (3.5..5.5)MHz')
+    ax.set_ylabel("summed power")
+    ax.set_xlabel("time [UTC]")
+    ax.set_title("plasma line summed over altitude (200..350)km and frequency (3.5..5.5)MHz")
 
     # ax.xaxis.set_major_locator(timeticks(plsum.time[-1]-plsum.time[0])[0])

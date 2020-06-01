@@ -5,8 +5,9 @@ from .plasmaline import readplasmaline
 from .summed import sumionline
 from .plots import dojointplot
 from GeoData.utilityfuncs import readNeoCMOS
+
 #
-heightkm = 110.
+heightkm = 110.0
 #
 
 
@@ -19,31 +20,31 @@ def overlayisrhist(P):
     5) register ISR to HST
     6) plot overlay joint data
     """
-    if P['optfn'] and P['azelfn']:
-        optfn = Path(P['optfn']).expanduser()
-        azelfn = Path(P['azelfn']).expanduser()
+    if P["optfn"] and P["azelfn"]:
+        optfn = Path(P["optfn"]).expanduser()
+        azelfn = Path(P["azelfn"]).expanduser()
     else:
         optfn = azelfn = None
 
-    P['tlim'] = str2dt(P['tlim'])
-# %% (1) read ISR plasma line
-#    plsum = sumplasmaline(isrfn,p.beamid,p.flim,tlim,zlim)
-#    plotsumplasmaline(plsum)
-    spec, freq = readplasmaline(P['isrfn'], P)
+    P["tlim"] = str2dt(P["tlim"])
+    # %% (1) read ISR plasma line
+    #    plsum = sumplasmaline(isrfn,p.beamid,p.flim,tlim,zlim)
+    #    plotsumplasmaline(plsum)
+    spec, freq = readplasmaline(P["isrfn"], P)
     # plotplasmaline(spec,freq,isrfn,P)
-# %% (2-3) read ISR long pulse
-    snrsamp, beamazel, isrlla = readpower_samples(P['isrfn'], P)
+    # %% (2-3) read ISR long pulse
+    snrsamp, beamazel, isrlla = readpower_samples(P["isrfn"], P)
     lpsum = sumionline(snrsamp, P)
-# %% (4) load optical data
+    # %% (4) load optical data
     if optfn is not None:
         # hst = []; hstazel=[]; hstlla=[]; hstut=[]
-        opt, _, optazel, optlla, optut = readNeoCMOS(optfn, azelfn, treq=P['tlim'])[:5]
+        opt, _, optazel, optlla, optut = readNeoCMOS(optfn, azelfn, treq=P["tlim"])[:5]
         # hst.append(opt['optical']); hstazel.append(optazel)
         # hstlla.append(optlla); hstut.append(optut)
-        optdat = opt['optical']
+        optdat = opt["optical"]
     else:
         optdat = optazel = optlla = optut = None
-# %% (5) transform magnetic zenith PFISR to HiST frame, assuming single altitude
+    # %% (5) transform magnetic zenith PFISR to HiST frame, assuming single altitude
     # now this happens inside do joint plot
-# %% (6) plot joint
+    # %% (6) plot joint
     dojointplot(lpsum, spec, freq, beamazel, optdat, optazel, optlla, isrlla, heightkm, optut, P)

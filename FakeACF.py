@@ -7,11 +7,11 @@ from numpy import exp, arange, pi, sqrt
 from matplotlib.pyplot import figure, show
 
 f0 = [-5, 5]
-f = arange(-10, 10, .1)
+f = arange(-10, 10, 0.1)
 
 
 def gaussian(x, x0=0, mu=0, sig=1):
-    return 1/(sig*sqrt(2*pi)) * exp(-((x-x0) - mu) ** 2./(2*sig**2))
+    return 1 / (sig * sqrt(2 * pi)) * exp(-(((x - x0) - mu) ** 2.0) / (2 * sig ** 2))
 
 
 def quiet():
@@ -19,11 +19,11 @@ def quiet():
 
     ax = figure().gca()
     ax.plot(f, psd)
-    ax.set_xlabel('frequency [kHz]')
-    ax.set_ylabel('amplitude [unitless]')
-    ax.set_title('quiet ISR PSD')
+    ax.set_xlabel("frequency [kHz]")
+    ax.set_ylabel("amplitude [unitless]")
+    ax.set_title("quiet ISR PSD")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     quiet()
     show()
