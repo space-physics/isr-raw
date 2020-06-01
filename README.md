@@ -92,18 +92,22 @@ The "ion line" measurement bandwidth is ~ +/- 100 kHz from the radar
 center frequency, and contains the data necessary for volume estimates
 of Electron Density, Ion Temperature, Electron Temperature, and Ion
 Velocity, under certain assumptions for species composition vs.
-altitude. Some of the need to make assumptions about atmospheric
+altitude.
+Some of the need to make assumptions about atmospheric
 composition can be mitigated with combined ion/plasma line inversion,
-among numerous other benefits. The plasma line returns have several MHz
+among numerous other benefits.
+The plasma line returns have several MHz
 of bandwidth, but most of the energy is contained in narrower bands
 upshifted and downshifted from the center frequency.
 
 No one radar waveform is optimal for all conditions, particularly with
-regard to the spatio-temporal sampling dilemma. Incoherent scattering
+regard to the spatio-temporal sampling dilemma.
+Incoherent scattering
 from tiny particles gives exceedingly weak returns, and even with many
 billions of particles in the scattering volume, it takes well over ten
 thousand radar pulses to build a statistical basis for a usable
-autocorrelation function (ACF). The shape of the ACF is fitted to
+autocorrelation function (ACF).
+The shape of the ACF is fitted to
 estimate certain plasma parameters, given assumptions on the particle
 population that may be violated, causing in some limited sets of cases
 either inaccurate fits or a failure to estimate the parameters.
