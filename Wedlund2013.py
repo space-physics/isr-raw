@@ -22,8 +22,12 @@ sns.set_context("talk", font_scale=1.5)
 
 def main():
     p = ArgumentParser(description="simple demo of solving for flux given ISR Ne measurement")
-    p.add_argument("--depfn", help="energy deposition data HDF5 file", default="precompute/transcareigen.h5")
-    p.add_argument("--nez0", help="SIMULATION peak ionization altitude [km]", default=110.0, type=float)
+    p.add_argument(
+        "--depfn", help="energy deposition data HDF5 file", default="precompute/transcareigen.h5"
+    )
+    p.add_argument(
+        "--nez0", help="SIMULATION peak ionization altitude [km]", default=110.0, type=float
+    )
     p.add_argument("--H", help="SIMULATION scale height [km]", default=15.0, type=float)
     p.add_argument("--zlim", help="plotting, altitude limits [km]", default=(90, 300), type=float)
     p = p.parse_args()
@@ -43,10 +47,10 @@ def isrdep(depfn: Path) -> tuple:
     depfn = Path(depfn).expanduser()
 
     with h5py.File(depfn, "r") as f:
-        A = f["/eigenprofile"].value
-        zkm = f["/altitude"].value
-        Ek = f["/Ebins"].value
-        # Ekedges = f['/EbinEdges'].value
+        A = f["/eigenprofile"][:]
+        zkm = f["/altitude"][:]
+        Ek = f["/Ebins"][:]
+        # Ekedges = f['/EbinEdges'][:]
 
     return A, zkm, Ek
 
@@ -56,7 +60,7 @@ def isrNe2q(Fwd: xarray.DataArray):
     From Wedlund 2013 Par. 40, Sheedhan and St.-Maurice 2004
     """
     Te = Fwd.loc[:, "Te"]
-    hotind = Te.values > 1200.0
+    hotind = Te.data > 1200.0
     alphaO2 = np.empty_like(hotind, dtype=float)
     alphaNO = np.empty_like(hotind, dtype=float)
 
@@ -76,7 +80,9 @@ def isrNe2q(Fwd: xarray.DataArray):
 def phantom(Z0, H, zkm: np.ndarray):
     # this is a repurposing of the maxwellian normally used for energy
     Fwd = xarray.DataArray(
-        data=np.column_stack((1e5 * chapman_profile(Z0, zkm, H), maxwellian(zkm, 220, 2e9)[0])),  # [electrons cm^-3]
+        data=np.column_stack(
+            (1e5 * chapman_profile(Z0, zkm, H), maxwellian(zkm, 220, 2e9)[0])
+        ),  # [electrons cm^-3]
         dims=["altitude", "type"],
         coords={"altitude": zkm, "type": ["Ne", "Te"]},
     )

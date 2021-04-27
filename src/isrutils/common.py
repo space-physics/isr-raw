@@ -1,5 +1,15 @@
 from datetime import datetime
-from numpy import array, unravel_index, datetime64, asarray, atleast_1d, nanmax, nanmin, nan, isfinite
+from numpy import (
+    array,
+    unravel_index,
+    datetime64,
+    asarray,
+    atleast_1d,
+    nanmax,
+    nanmin,
+    nan,
+    isfinite,
+)
 from scipy.interpolate import interp1d
 from argparse import ArgumentParser
 
@@ -51,7 +61,9 @@ def timesync(tisr, topt, tlim=None):
     if tlim is not None and isinstance(tlim[0], datetime):
         tlim = array([t.timestamp() for t in tlim])
 
-    assert isinstance(tisr[0], float), "datetime64 is not wanted here, lets use ut1_unix float for minimum conversion effort"
+    assert isinstance(
+        tisr[0], float
+    ), "datetime64 is not wanted here, lets use ut1_unix float for minimum conversion effort"
     # separate comparison
     if topt is None:
         topt = (nan, nan)
@@ -113,16 +125,28 @@ def findindex2Dsphere(azimg, elimg, az, el):
 def boilerplateapi(descr="loading, processing, plotting raw ISR data"):
     p = ArgumentParser(description=descr)
     p.add_argument("isrfn", help="HDF5 file (or path) to read")
-    p.add_argument("-r", "--rtype", help="0: alt code. 1: plasma line. 3: long pulse", type=int, default=3)
+    p.add_argument(
+        "-r", "--rtype", help="0: alt code. 1: plasma line. 3: long pulse", type=int, default=3
+    )
     p.add_argument("-c", "--optfn", help="optical data HDF5 to read")  # ,nargs='+',default=('',)
     p.add_argument("-a", "--azelfn", help="plate scale file hdf5")  # ,nargs='+',default=('',)
     p.add_argument("--t0", help="time to extract 1-D vertical plot")
     p.add_argument("--acf", help="show autocorrelation function (ACF)", action="store_true")
-    p.add_argument("--beamid", help="beam id 64157 is magnetic zenith beam", type=int, default=64157)
-    p.add_argument("--vlim", help="min,max for SNR plot [dB]", type=float, nargs=2, default=(None, None))
-    p.add_argument("--zlim", help="min,max for altitude [km]", type=float, nargs=2, default=(90.0, None))
-    p.add_argument("--tlim", help="min,max time range yyyy-mm-ddTHH:MM:SSz", nargs=2, default=[None, None])
-    p.add_argument("--flim", help="frequency limits to plots", type=float, nargs=2, default=(None, None))
+    p.add_argument(
+        "--beamid", help="beam id 64157 is magnetic zenith beam", type=int, default=64157
+    )
+    p.add_argument(
+        "--vlim", help="min,max for SNR plot [dB]", type=float, nargs=2, default=(None, None)
+    )
+    p.add_argument(
+        "--zlim", help="min,max for altitude [km]", type=float, nargs=2, default=(90.0, None)
+    )
+    p.add_argument(
+        "--tlim", help="min,max time range yyyy-mm-ddTHH:MM:SSz", nargs=2, default=[None, None]
+    )
+    p.add_argument(
+        "--flim", help="frequency limits to plots", type=float, nargs=2, default=(None, None)
+    )
     p.add_argument("-o", "--odir", help="directory to write files to", default=".")
     p = p.parse_args()
 

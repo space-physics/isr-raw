@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from __future__ import annotations
 from pathlib import Path
 import logging
 import xarray
@@ -57,7 +58,7 @@ def getazel(f, beamid: int) -> np.ndarray:
 
 def ut2dt(ut) -> np.ndarray:
     if ut is None:
-        return
+        return None
 
     assert isinstance(ut, np.ndarray) and ut.ndim in (1, 2)
 
@@ -72,7 +73,7 @@ def ut2dt(ut) -> np.ndarray:
     return np.array([datetime.utcfromtimestamp(t) for t in T])
 
 
-def str2dt(tstr) -> list:
+def str2dt(tstr) -> np.ndarray:
     """
     converts parseable string to datetime, pass other suitable types back through.
     FIXME: assumes all elements are of same type as first element.
@@ -184,7 +185,9 @@ def sampletime(t: h5py.Dataset, bstride):
         if t.max() > 1.01 * t.mean():
             logging.warning("at least one time gap in radar detected")
     elif t.shape[1] == 2:  # improvised case for the oldest AMISR files
-        logging.info("improvised time method for very old AMISR files 2006-2007, may be inaccurate time")
+        logging.info(
+            "improvised time method for very old AMISR files 2006-2007, may be inaccurate time"
+        )
         assert (bstride.sum(axis=1) <= 1).all(), "were some times without pulses?"
         bstride = bstride.any(axis=1)
 
@@ -217,9 +220,13 @@ def readplasmaline(fn: Path, P: dict):
     FREQSHIFT = (-5e6, 5e6)
 
     # %% read downshift spectrum
-    specdown, azel = readplasma(fn.parent / (fn.stem.split(".")[0] + ".dt1.h5"), P["beamid"], FREQSHIFT[0], P["tlim"])
+    specdown, azel = readplasma(
+        fn.parent / (fn.stem.split(".")[0] + ".dt1.h5"), P["beamid"], FREQSHIFT[0], P["tlim"]
+    )
     # %% read upshift spectrum
-    specup, azel = readplasma(fn.parent / (fn.stem.split(".")[0] + ".dt2.h5"), P["beamid"], FREQSHIFT[1], P["tlim"])
+    specup, azel = readplasma(
+        fn.parent / (fn.stem.split(".")[0] + ".dt2.h5"), P["beamid"], FREQSHIFT[1], P["tlim"]
+    )
 
     if P["verbose"]:
         print("Took {:.1f} sec. to read plasma data".format(time() - tic))
@@ -227,16 +234,16 @@ def readplasmaline(fn: Path, P: dict):
     return specdown, specup, azel
 
 
-def readplasma(fn, beamid, fshift, tlim):
+def readplasma(fn: Path, beamid, fshift, tlim):
     try:
-        with h5py.File(fn, "r", libver="latest") as f:
-            T = ut2dt(f["/Time/UnixTime"].value)
+        with h5py.File(fn, "r") as f:
+            T = ut2dt(f["/Time/UnixTime"][:])
             bind = findstride(f["/PLFFTS/Data/Beamcodes"], beamid)
             if bind.sum() == 0:
                 return (None,) * 2
-            data = f["/PLFFTS/Data/Spectra/Data"].value[bind, :, :].T
-            srng = f["/PLFFTS/Data/Spectra/Range"].value.squeeze() / 1e3
-            freq = f["/PLFFTS/Data/Spectra/Frequency"].value.squeeze() + fshift
+            data = f["/PLFFTS/Data/Spectra/Data"][:][bind, :, :].T
+            srng = f["/PLFFTS/Data/Spectra/Range"][:].squeeze() / 1e3
+            freq = f["/PLFFTS/Data/Spectra/Frequency"][:].squeeze() + fshift
             azel = getazel(f, beamid)
     except OSError as e:  # problem with file
         logging.error(f"{fn} reading error {e}")
@@ -249,7 +256,9 @@ def readplasma(fn, beamid, fshift, tlim):
         return (None,) * 2
 
     spec = xarray.DataArray(
-        data=data[:, :, tind].transpose(2, 0, 1), dims=["time", "srng", "freq"], coords={"time": T, "srng": srng, "freq": freq}
+        data=data[:, :, tind].transpose(2, 0, 1),
+        dims=["time", "srng", "freq"],
+        coords={"time": T, "srng": srng, "freq": freq},
     )
 
     return spec, azel
@@ -284,7 +293,9 @@ def samplepower(sampiq, bstride, t, tind, srng, P: dict):
     return xarray.DataArray(data=power, dims=["srng", "time"], coords={"srng": srng, "time": t})
 
 
-def readpower_samples(fn: Path, P: dict) -> Tuple[np.ndarray, Tuple[float, float], Tuple[float, float, float]]:
+def readpower_samples(
+    fn: Path, P: dict
+) -> tuple[np.ndarray, np.ndarray, tuple[float, float, float]]:
     """
     reads samples (lowest level data) and computes power for a particular beam.
     returns power measurements
@@ -292,9 +303,8 @@ def readpower_samples(fn: Path, P: dict) -> Tuple[np.ndarray, Tuple[float, float
     assert isinstance(P["beamid"], int), "beam specification must be a scalar integer!"
 
     try:
-        with h5py.File(fn, "r", libver="latest") as f:
-            # scalars need .value, [:] won't work
-            isrlla = (f["/Site/Latitude"].value, f["/Site/Longitude"].value, f["/Site/Altitude"].value)
+        with h5py.File(fn, "r") as f:
+            isrlla = (f["/Site/Latitude"][()], f["/Site/Longitude"][()], f["/Site/Altitude"][()])
             azel = getazel(f, P["beamid"])
             # %% find time and beam pattern
             rawkey = filekey(f)
@@ -302,7 +312,9 @@ def readpower_samples(fn: Path, P: dict) -> Tuple[np.ndarray, Tuple[float, float
             if rawkey + "/RadacHeader/BeamCode" in f:
                 beampatkey = rawkey + "/RadacHeader/BeamCode"
                 timekey = rawkey + "/RadacHeader/RadacTime"
-            elif "/RadacHeader/BeamCode" in f:  # old 2007 DT3 files (DT0 2007 didn't have raw data?)
+            elif (
+                "/RadacHeader/BeamCode" in f
+            ):  # old 2007 DT3 files (DT0 2007 didn't have raw data?)
                 beampatkey = "/RadacHeader/BeamCode"
                 timekey = "/RadacHeader/RadacTime"
             elif rawkey + "/Beamcodes" in f:  # very old 2007 files
@@ -349,7 +361,7 @@ def readsnr_int(fn: Path, P: dict) -> xarray.DataArray:
         raise TypeError("beam specification must be a scalar integer!")
 
     try:
-        with h5py.File(fn, "r", libver="latest") as f:
+        with h5py.File(fn, "r") as f:
             t = ut2dt(f["/Time/UnixTime"][:])
             t, tind = cliptlim(t, P["tlim"])
 
@@ -368,7 +380,9 @@ def readsnr_int(fn: Path, P: dict) -> xarray.DataArray:
                 power = power[:, tind]
                 srng = f[rawkey + "/Power/Range"][:].squeeze() / 1e3
 
-                snrint = xarray.DataArray(data=power, dims=["srng", "time"], coords={"srng": srng, "time": t})
+                snrint = xarray.DataArray(
+                    data=power, dims=["srng", "time"], coords={"srng": srng, "time": t}
+                )
 
     except OSError as e:
         print(e)
@@ -394,7 +408,9 @@ def snrvtime_fit(fn: Path, bid: int) -> xarray.DataArray:
 # %% ACF
 
 
-def acf2psd(acfall: np.ndarray, noiseall: np.ndarray, Nr: int, dns: int) -> Tuple[np.ndarray, np.ndarray]:
+def acf2psd(
+    acfall: np.ndarray, noiseall: np.ndarray, Nr: int, dns: int
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     acf all:  Nlag x Nslantrange x real/comp
 
@@ -438,8 +454,8 @@ def readACF(fn: Path, P: dict):
     assert isinstance(P["beamid"], int), "beam specification must be a scalar integer"
 
     try:
-        with h5py.File(fn, "r", libver="latest") as f:
-            t = ut2dt(f["/Time/UnixTime"].value)
+        with h5py.File(fn, "r") as f:
+            t = ut2dt(f["/Time/UnixTime"][:])
 
             ft = ftype(fn)
             noisekey = None
@@ -456,6 +472,7 @@ def readACF(fn: Path, P: dict):
                     logging.info("try DT0 file for ACF (esp. for 2007 PFISR)")
                 return
             # %% get ranges
+
             try:
                 srng = f[rk + "Data/Acf/Range"]
                 bstride = findstride(f[rk + "Data/Beamcodes"], P["beamid"])
@@ -470,13 +487,17 @@ def readACF(fn: Path, P: dict):
             dt = (t[1] - t[0]).seconds if len(t) >= 2 else None
             # %% get PSD
             if bstride.sum() == 0:
-                logging.warning(f'did not plot ACF since {fn} did not use selected beam {P["beamid"]}')
+                logging.warning(
+                    f'did not plot ACF since {fn} did not use selected beam {P["beamid"]}'
+                )
                 return
 
             istride = np.column_stack(bstride.nonzero())[tind, :]
             for tt, s in zip(t, istride):
                 if noisekey is not None:
-                    spectrum, acf = acf2psd(acfkey[s[0], s[1], ...], noisekey[s[0], s[1], ...], srng.size, ACFdns)
+                    spectrum, acf = acf2psd(
+                        acfkey[s[0], s[1], ...], noisekey[s[0], s[1], ...], srng.size, ACFdns
+                    )
                 elif acfkey.ndim == 5:
                     spectrum, acf = acf2psd(acfkey[s[0], s[1], ...], noisekey, srng.size, ACFdns)
                 elif acfkey.ndim == 4:  # TODO raw samples from 2007 file
@@ -491,7 +512,10 @@ def readACF(fn: Path, P: dict):
                 specdf = xarray.DataArray(
                     data=spectrum,
                     dims=["srng", "freq"],
-                    coords={"srng": srng.value.squeeze(), "freq": np.linspace(-ACFfreqscale, ACFfreqscale, spectrum.shape[1])},
+                    coords={
+                        "srng": srng[:].squeeze(),
+                        "freq": np.linspace(-ACFfreqscale, ACFfreqscale, spectrum.shape[1]),
+                    },
                 )
                 if plotacf is not None:
                     plotacf(specdf, fn, azel, tt, dt, P)

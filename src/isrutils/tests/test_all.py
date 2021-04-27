@@ -1,8 +1,6 @@
-#!/usr/bin/env python
 from pathlib import Path
-import pytest
-import isrutils as iu
 
+import isrutils as iu
 
 rdir = Path(__file__).parents[1]
 name = "test.dt3.h5"
@@ -26,7 +24,3 @@ def test_readpowersnr():
 
 def test_readacf():
     iu.readACF(fn, P)
-
-
-if __name__ == "__main__":
-    pytest.main()
