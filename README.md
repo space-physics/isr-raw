@@ -1,7 +1,7 @@
 # AMISR raw data utilities
 
 [![image](https://zenodo.org/badge/DOI/10.5281/zenodo.164876.svg)](https://doi.org/10.5281/zenodo.164876)
-[![image](https://travis-ci.org/space-physics/isrutils.svg?branch=master)](https://travis-ci.org/space-physics/isrutils)
+[![ci](https://github.com/space-physics/isr-raw/actions/workflows/ci.yml/badge.svg)](https://github.com/space-physics/isr-raw/actions/workflows/ci.yml)
 
 Utilities for working with Incoherent Scatter Radar data, especially from Poker Flat AMISR.
 
@@ -9,9 +9,6 @@ We work with the complex I+jQ voltage samples, the lowest level data
 available from the radar, on a single pulse basis. Depending on the beam
 pattern and pulse modulation, the per-beam pulse cadence is perhaps on
 the 75 milliscond time scale.
-
-Coming soon, simultaneous plots with high speed multi-camera
-synchronized video.
 
 ## Install
 
@@ -100,14 +97,10 @@ The plasma line returns have several MHz
 of bandwidth, but most of the energy is contained in narrower bands
 upshifted and downshifted from the center frequency.
 
-No one radar waveform is optimal for all conditions, particularly with
-regard to the spatio-temporal sampling dilemma.
-Incoherent scattering
-from tiny particles gives exceedingly weak returns, and even with many
+No one radar waveform is optimal for all conditions, particularly with regard to the spatio-temporal sampling dilemma.
+Incoherent scattering from tiny particles gives exceedingly weak returns, and even with many
 billions of particles in the scattering volume, it takes well over ten
 thousand radar pulses to build a statistical basis for a usable
 autocorrelation function (ACF).
-The shape of the ACF is fitted to
-estimate certain plasma parameters, given assumptions on the particle
-population that may be violated, causing in some limited sets of cases
+The shape of the ACF is fitted to estimate certain plasma parameters, given assumptions on the particle population that may be violated, causing in some limited sets of cases
 either inaccurate fits or a failure to estimate the parameters.
