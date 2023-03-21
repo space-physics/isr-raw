@@ -15,9 +15,6 @@ from matplotlib.pyplot import show, subplots
 from argparse import ArgumentParser
 from gridaurora.eFluxGen import maxwellian
 from gridaurora import chapman_profile
-import seaborn as sns
-
-sns.set_context("talk", font_scale=1.5)
 
 
 def main():

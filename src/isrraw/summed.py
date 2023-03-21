@@ -2,16 +2,16 @@
 """
 summed measurements and plots
 """
+
 from pathlib import Path
 import xarray
-from xarray import DataArray
-import isrutils
+import isrraw
 
 
 # %% dt3
-def sumionline(snrsamp: DataArray, P: dict):
+def sumionline(snrsamp, P: dict):
 
-    if "zsum" in P and isinstance(snrsamp, DataArray):
+    if "zsum" in P and isinstance(snrsamp, xarray.DataArray):
 
         srng = snrsamp.srng
         i = (srng > P["zsum"][0]) & (srng < P["zsum"][1])
@@ -23,12 +23,12 @@ def sumionline(snrsamp: DataArray, P: dict):
 
 
 def sumplasmaline(fn: Path, P: dict):
-    spec, freq = isrutils.readplasmaline(fn, P)
+    spec, freq = isrraw.readplasmaline(fn, P)
     assert isinstance(spec, xarray.DataArray) and spec.ndim == 4
     assert isinstance(P["flim"][0], float)
 
     z = spec.srng
-    specsum = DataArray(index=spec.items, columns=spec.labels)
+    specsum = xarray.DataArray(indexes=spec.items, coords=spec.coords)
 
     zind = (P["zlim"][0] <= z) & (z <= P["zlim"][1])
 

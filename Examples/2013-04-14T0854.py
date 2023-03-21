@@ -4,8 +4,6 @@
 """
 
 
-from isrutils.looper import simpleloop
-
 # %% users param
 P = {
     "path": "~/data/2013-04-14/isr",
@@ -36,5 +34,3 @@ flist = (
     # '20130413.001_ac_30sec.h5',
     # '20130413.001_lp_30sec.h5'
 )
-
-ax = simpleloop(flist, P)

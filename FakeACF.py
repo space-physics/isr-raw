@@ -11,7 +11,7 @@ f = arange(-10, 10, 0.1)
 
 
 def gaussian(x, x0=0, mu=0, sig=1):
-    return 1 / (sig * sqrt(2 * pi)) * exp(-(((x - x0) - mu) ** 2.0) / (2 * sig ** 2))
+    return 1 / (sig * sqrt(2 * pi)) * exp(-(((x - x0) - mu) ** 2.0) / (2 * sig**2))
 
 
 def quiet():

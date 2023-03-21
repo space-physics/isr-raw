@@ -2,7 +2,7 @@
 """
 plots integrated ISR power over altitude range on top of HiST image stream
 """
-from isrutils.overlayISRopt import overlayisrhist
+from isrraw.overlayISRopt import overlayisrhist
 
 P = {
     "isrfn": "~/data/2013-04-14/isr/d0346834.dt3.h5",

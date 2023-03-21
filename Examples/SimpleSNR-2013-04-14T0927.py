@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from isrutils.looper import simpleloop
 
 # %% users param
 P = {
@@ -24,5 +23,3 @@ flist = (  # 'd0346836.dt3.h5', # 9:13-9:25
     # 'd0346838.dt3.h5', # 9:37-9:50
     # 'd0346837.dt1.h5',
 )
-
-simpleloop(flist, P)

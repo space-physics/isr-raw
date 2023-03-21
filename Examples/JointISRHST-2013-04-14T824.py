@@ -1,10 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 plots integrated ISR power over altitude range on top of HiST image stream
 """
-from isrutils.overlayISRopt import overlayisrhist
 
-P = {
+from __future__ import annotations
+import typing as T
+
+from isrraw.overlayISRopt import overlayisrhist
+
+P: dict[str, T.Any] = {
     "isrfn": "~/data/2013-04-14/isr/d0346832.dt0.h5",
     "zsum": (120, 220),
     "zlim": (90, None),

@@ -23,7 +23,7 @@ They can be loaded with several different functions.
 All of these examples assume first doing:
 
 ```python
-import isrutils as iu
+import isrraw as iu
 ```
 
 `P` is a `dict()` with parameters such as altitude range, beam number.

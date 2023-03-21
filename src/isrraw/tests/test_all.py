@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import isrutils as iu
+import isrraw as iu
 
 rdir = Path(__file__).parents[1]
 name = "test.dt3.h5"

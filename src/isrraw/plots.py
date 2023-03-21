@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from configparser import ConfigParser
 from pathlib import Path
 import logging
@@ -10,16 +9,16 @@ import numpy as np
 from numpy.ma import masked_invalid
 import xarray
 from matplotlib.pyplot import figure, subplots, gcf
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+
+# from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 from matplotlib.dates import DateFormatter
 from matplotlib.pyplot import draw, pause, show
 from matplotlib.colors import LogNorm
 from matplotlib.cm import jet
 import matplotlib.animation as anim
 import matplotlib.gridspec as gridspec
-import isrutils
+import isrraw
 from GeoData.plotting import polarplot
-from sciencedates import find_nearest as findnearest
 
 # from sciencedates.ticks import timeticks
 from GeoData.plotting import plotazelscale
@@ -56,7 +55,10 @@ def writeplots(fg, t="", odir=None, ctxt="", ext=".png"):
 # %% looping
 
 
-def simpleloop(inifn):
+def simpleloop(inifn: str | Path):
+
+    inifn = Path(inifn).expanduser()
+
     ini = ConfigParser(
         allow_no_value=True, empty_lines_in_values=False, inline_comment_prefixes=(";"), strict=True
     )
@@ -65,6 +67,7 @@ def simpleloop(inifn):
     dpath = Path(ini.get("data", "path")).expanduser()
     ft = ini.get("data", "ftype", fallback="").split(",")
     # %% parse user directory / file list input
+    flist: list[Path]
     if dpath.is_dir() and not ft:
         flist = sorted(dpath.glob("*dt*.h5"))
     elif dpath.is_dir() and ft:  # glob pattern
@@ -72,7 +75,7 @@ def simpleloop(inifn):
         for t in ft:
             flist.extend(sorted(dpath.glob(f"*.{t}.h5")))
     elif dpath.is_file():  # a single file was specified
-        flist = [flist]
+        flist = [dpath]
     else:
         raise FileNotFoundError(f"unknown path/filetype {dpath} / {ft}")
 
@@ -92,7 +95,7 @@ def simpleloop(inifn):
         "acf": ini.getboolean("plot", "acf", fallback=False),
     }
 
-    if P["tlim"]:
+    if isinstance(P["tlim"], str):
         P["tlim"] = P["tlim"].split(",")
     P["tlim"] = str2dt(P["tlim"])
 
@@ -198,7 +201,7 @@ def dojointplot(ds, spec, freq, beamazel, optical, optazel, optlla, isrlla, heig
     gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
     # %% setup radar plot(s)
     a1 = fg.add_subplot(gs[1])
-    plotsumionline(ds, a1, isrutils.expfn(P["isrfn"]), P["zlim"])
+    plotsumionline(ds, a1, isrraw.expfn(P["isrfn"]), P["zlim"])
 
     h1 = a1.axvline(np.nan, color="k", linestyle="--")
     t1 = a1.text(0.05, 0.95, "time=", transform=a1.transAxes, va="top", ha="left")
@@ -259,12 +262,12 @@ def dojointplot(ds, spec, freq, beamazel, optical, optazel, optlla, isrlla, heig
             ctisr = tisr[iisr]
             # %% update isr plot
             h1.set_xdata(ctisr)
-            t1.set_text("isr: {}".format(ctisr))
+            t1.set_text(f"isr: {ctisr}")
             # %% update hist plot
             if iopt is not None:
                 ctopt = datetime.utcfromtimestamp(utopt[iopt])
                 h0.set_data(optical[iopt, ...])
-                t0.set_text("optical: {}".format(ctopt))
+                t0.set_text(f"optical: {ctopt}")
                 s0.set_array(
                     ds.loc[ctisr]
                 )  # FIXME circle not changing magnetic zenith beam color? NOTE this is isr time index
@@ -305,7 +308,7 @@ def plotsnr(snr, fn, P, azel, ctxt=""):
     if not isinstance(snr, xarray.DataArray) or min(snr.shape) < 2:
         return
 
-    P["tlim"] = isrutils.str2dt(P["tlim"])
+    P["tlim"] = isrraw.str2dt(P["tlim"])
 
     if "int" in ctxt:
         vlim = P["vlimint"]
@@ -357,7 +360,7 @@ def plotsnr(snr, fn, P, azel, ctxt=""):
     # Ts = f'{(snr.time[1] - snr.time[0]).item()/1e9:.3f}' if snr.time.size >= 2 else ''
 
     ax.set_title(
-        f"Az,El {azel[0]:.1f},{azel[1]:.1f}  {isrutils.expfn(fn)}"
+        f"Az,El {azel[0]:.1f},{azel[1]:.1f}  {isrraw.expfn(fn)}"
         "{str(datetime.fromtimestamp(snr.time[0].item()/1e9))[:10]}"
         "$T_{{sample}}$={Ts} sec."
     )
@@ -387,7 +390,7 @@ def plotsnr(snr, fn, P, azel, ctxt=""):
     # if you get RuntimeError here, will also error on savefig
     fg.tight_layout()
     # %% output
-    ofn = ctxt + "power_" + isrutils.expfn(fn)
+    ofn = ctxt + "power_" + isrraw.expfn(fn)
 
     writeplots(fg, snr.time[0].item(), P["odir"], ofn)
 
@@ -475,14 +478,13 @@ def plotacf(spec: xarray.DataArray, fn: Path, azel, t, dt, P: dict):
     c.set_label("Power [dB]")
     ax.set_ylabel("slant range [km]")
     ax.set_title(
-        "ISR PSD: Az,El {:.1f},{:.1f}  {} $T_s$: {} [sec.] \n {}".format(
-            azel[0], azel[1], isrutils.expfn(fn), dt, str(t)[:-6]
-        )
+        f"ISR PSD: Az,El {azel[0]:.1f},{azel[1]:.1f}  {isrraw.expfn(fn)} $T_s$: {dt} [sec.] \n {str(t)[:-6]}"
     )
+
     ax.autoscale(True, axis="x", tight=True)
     ax.set_xlabel("frequency [kHz]")
 
-    writeplots(fg, t, P["odir"], " acf_" + isrutils.expfn(fn))
+    writeplots(fg, t, P["odir"], " acf_" + isrraw.expfn(fn))
     # %% freq at alt
     if "zslice" in P:
         plotzslice(
@@ -494,7 +496,7 @@ def plotacf(spec: xarray.DataArray, fn: Path, azel, t, dt, P: dict):
             dt,
             t,
             P["odir"],
-            "acfslice_" + isrutils.expfn(fn),
+            "acfslice_" + isrraw.expfn(fn),
         )
 
 
@@ -510,7 +512,7 @@ def plotzslice(psd, zslice, vlim, azel, fn, dt, t, odir, stem, ttxt=None, flim=(
     fg = figure()
     ax = fg.gca()
 
-    iz = findnearest(psd.srng, zslice)[0]
+    iz = abs(psd.srng - np.asarray(zslice)).argmin()
 
     freq = psd.freq.data
     if abs(freq).max() > 1000:  # MHz
@@ -533,7 +535,7 @@ def plotzslice(psd, zslice, vlim, azel, fn, dt, t, odir, stem, ttxt=None, flim=(
     ax.set_ylabel("Power [dB]")
 
     if ttxt is None:
-        ttxt = isrutils.expfn(fn)
+        ttxt = isrraw.expfn(fn)
 
     ax.set_title(
         f"Az,El {azel[0]:.1f},{azel[1]:.1f}  @ {zslice[0]}..{zslice[1]} km  {ttxt}  $T_s$: {dt} [sec.] {str(t)[:-6]} \n"
@@ -610,11 +612,10 @@ def plotplasmaline(specdown, specup, fn, P, azel):
             axs = np.atleast_1d(axs)
 
             fg.suptitle(
-                "Az,El {:.1f},{:.1f}  Plasma line {}  $T_{{sample}}$: {} [sec.]".format(
-                    azel[0], azel[1], t, dT
-                ),
+                f"Az,El {azel[0]:.1f},{azel[1]:.1f}  Plasma line {t}  $T_{{sample}}$: {dT} [sec.]",
                 y=1.01,
             )
+
         # %%
         for s, ax, fshift in zip(spec, axs, ("down", "up")):
             try:
@@ -631,14 +632,14 @@ def plotplasmaline(specdown, specup, fn, P, azel):
         writeplots(fg, t, P["odir"], "plasmaLine")
 
     if P["verbose"]:
-        print("plasma line plot took {:.1f} sec.".format(time() - tic))
+        print(f"plasma line plot took {time() - tic:.1f} sec.")
 
 
 def plotplasmaoverlay(specdown, specup, t, fg, P: dict):
 
     ax = fg.gca()
 
-    ialt, alt = findnearest(specdown.srng.data, P["zlim_pl"])
+    ialt = abs(specdown.srng.data - np.asarray(P["zlim_pl"])).argmin()
     # %%
     try:
         dBdown = 10 * np.log10(specdown.sel(time=t)[ialt, :].data)
@@ -664,7 +665,7 @@ def plotplasmaoverlay(specdown, specup, t, fg, P: dict):
     ax.set_ylim(P["vlim_pl"][:2])
     ax.set_xlim(P["flim_pl"])
 
-    fg.suptitle("Plasma line at {:.0f} km slant range {}".format(alt, str(t.item)[:19]))
+    fg.suptitle(f"Plasma line at {specdown.srng.data[ialt]:.0f} km slant range {str(t.item)[:19]}")
 
 
 def plotplasmatime(spec: xarray.DataArray, t, fg, ax, P: dict, ctxt):
@@ -823,7 +824,7 @@ def plotsumionline(dsum, ax, fn, P):
 
     ax.set_ylabel("summed power")
     ax.set_xlabel("time [UTC]")
-    ax.set_title(f'{isrutils.expfn(fn)} summed over range: ({P["zsum"][0]}..{P["zsum"][1]}) km')
+    ax.set_title(f'{isrraw.expfn(fn)} summed over range: ({P["zsum"][0]}..{P["zsum"][1]}) km')
 
     ax.set_yscale("log")
     ax.grid(True)

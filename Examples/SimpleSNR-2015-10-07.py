@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from isrutils.looper import simpleloop
 
 # %% users param
 P = {
@@ -15,8 +14,3 @@ P = {
     "zlim": (90, None),
     "verbose": True,
 }
-# %%
-
-flist = ()
-
-simpleloop(flist, P)

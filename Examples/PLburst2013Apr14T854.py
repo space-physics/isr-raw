@@ -7,8 +7,8 @@ from pathlib import Path
 from tempfile import gettempdir
 from datetime import datetime
 
-# github.com/scivision/isrutils
-from isrutils.plasmaline import readplasmaline, plotplasmaline
+# github.com/scivision/isrraw
+from isrraw.plasmaline import readplasmaline, plotplasmaline
 
 stem = Path("~/data/2013-04-14/ISR/d0346834").expanduser()
 vlim = (70, 100)

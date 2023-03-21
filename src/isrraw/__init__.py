@@ -1,5 +1,5 @@
 """
-Copyright 2020 Michael Hirsch, Ph.D.
+Copyright 2023 Scivision, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,11 +34,13 @@ except ImportError:
     plotbeampattern = plotacf = None  # type: ignore
 
 
+__version__ = "2.0.0"
+
 ACFfreqscale = 100 / 6  # 100/2
 ACFdns = 1071 // 3  # TODO scalefactor
 
 
-def getazel(f, beamid: int) -> np.ndarray:
+def getazel(f, beamid: int):
     """
     f: h5py HDF5 handle
     beamid: integer beam id number
@@ -56,7 +58,7 @@ def getazel(f, beamid: int) -> np.ndarray:
     return azel
 
 
-def ut2dt(ut) -> np.ndarray:
+def ut2dt(ut):
     if ut is None:
         return None
 
@@ -73,7 +75,7 @@ def ut2dt(ut) -> np.ndarray:
     return np.array([datetime.utcfromtimestamp(t) for t in T])
 
 
-def str2dt(tstr) -> np.ndarray:
+def str2dt(tstr):
     """
     converts parseable string to datetime, pass other suitable types back through.
     FIXME: assumes all elements are of same type as first element.
@@ -97,7 +99,7 @@ def str2dt(tstr) -> np.ndarray:
     return ut
 
 
-def findstride(beammat: h5py.Dataset, bid: int) -> np.ndarray:  # boolean np.ndarray
+def findstride(beammat, bid: int):
     assert isinstance(bid, int)
     assert beammat.ndim == 2
     # NOTE: Pre-2013 files have distinct rows, so touch each value in beamcode!
@@ -105,7 +107,10 @@ def findstride(beammat: h5py.Dataset, bid: int) -> np.ndarray:  # boolean np.nda
     return beammat[:] == bid
 
 
-def filekey(f: h5py.Dataset) -> str:
+# boolean np.ndarray
+
+
+def filekey(f) -> str:
     # detect old and new HDF5 AMISR files
     if "/Raw11/Raw/PulsesIntegrated" in f:  # new 2013
         key = "/Raw11/Raw"
@@ -353,9 +358,9 @@ def readpower_samples(
     return power, azel, isrlla
 
 
-def readsnr_int(fn: Path, P: dict) -> xarray.DataArray:
+def readsnr_int(fn: Path, P: dict):
     if not ftype(fn) in ("dt0", "dt3"):
-        return
+        return {}
 
     if not isinstance(P["beamid"], int):
         raise TypeError("beam specification must be a scalar integer!")
@@ -436,7 +441,7 @@ def acf2psd(
         spec_noise = spec_noise / Nlag
     else:
         acf_noise = None
-        spec_noise = 0.0
+        spec_noise = np.array(0.0)
     # %% spectrum from ACF
     for i in range(Nr):
         spec[i, :] = fftshift(fft(np.append(np.conj(acf[i, 1:][::-1]), acf[i, :]))) - spec_noise

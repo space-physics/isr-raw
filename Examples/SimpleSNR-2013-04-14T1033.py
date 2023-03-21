@@ -2,7 +2,6 @@
 """
 2013-04-14 08:24 UT event
 """
-from isrutils.looper import simpleloop
 
 # %% users param
 P = {
@@ -31,5 +30,3 @@ flist = (
     # 'd0346843.dt3.h5',
     # 'd0346844.dt3.h5',
 )
-
-simpleloop(flist, P)
