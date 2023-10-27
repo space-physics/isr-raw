@@ -10,8 +10,6 @@ available from the radar, on a single pulse basis. Depending on the beam
 pattern and pulse modulation, the per-beam pulse cadence is perhaps on
 the 75 milliscond time scale.
 
-## Install
-
 ```sh
 python -m pip install -e .
 ```

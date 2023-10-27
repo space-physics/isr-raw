@@ -25,7 +25,6 @@ from numpy.fft import fft, fftshift
 from datetime import datetime
 import h5py
 from time import time
-from typing import Tuple, Optional
 from .summed import sumionline
 
 try:
@@ -298,9 +297,7 @@ def samplepower(sampiq, bstride, t, tind, srng, P: dict):
     return xarray.DataArray(data=power, dims=["srng", "time"], coords={"srng": srng, "time": t})
 
 
-def readpower_samples(
-    fn: Path, P: dict
-) -> tuple[np.ndarray, np.ndarray, tuple[float, float, float]]:
+def readpower_samples(fn: Path, P: dict) -> tuple:
     """
     reads samples (lowest level data) and computes power for a particular beam.
     returns power measurements
@@ -413,12 +410,9 @@ def snrvtime_fit(fn: Path, bid: int) -> xarray.DataArray:
 # %% ACF
 
 
-def acf2psd(
-    acfall: np.ndarray, noiseall: np.ndarray, Nr: int, dns: int
-) -> Tuple[np.ndarray, np.ndarray]:
+def acf2psd(acfall, noiseall, Nr: int, dns: int) -> tuple:
     """
-    acf all:  Nlag x Nslantrange x real/comp
-
+    acf all:  Nlag x Nslantrange x real / complex
     """
     assert acfall.ndim in (3, 2)
 
@@ -542,11 +536,11 @@ def dt3keys(f):
     return rk, acfkey, noisekey
 
 
-def dt0keys(f: h5py.Dataset) -> Tuple[Optional[str], Optional[str]]:
+def dt0keys(f: h5py.Dataset) -> tuple[str | None, str | None]:
 
     stem = "/Data/Acf/Data"
 
-    rk: Optional[str]
+    rk: str | None
 
     if "/IncohCodeFl" + stem in f:
         rk = "/IncohCodeFl/"
