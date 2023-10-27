@@ -63,10 +63,13 @@ def ut2dt(ut):
 
     assert isinstance(ut, np.ndarray) and ut.ndim in (1, 2)
 
-    if ut.ndim == 1:
-        T = ut
-    elif ut.ndim == 2:
-        T = ut[:, 0]
+    match ut.ndim:
+        case 1:
+            T = ut
+        case 2:
+            T = ut[:, 0]
+        case _:
+            raise ValueError(f"unknown ut dimension {ut.ndim}")
     # return array([datetime64(int(t*1e3),'ms') for t in T]) # datetime64 is too buggy as of Numpy 1.11 and xarray 0.7
     if 1e15 < T[0] < 3e15:  # old 2007 file with time in Unix microseconds epoch
         T /= 1e6
@@ -139,20 +142,20 @@ def expfn(fn: Path) -> str:
     """
     ft = ftype(fn)
 
-    if ft == "dt0":
-        return "alternating code"
-    elif ft == "dt1":
-        return "downshift plasma line"
-    elif ft == "dt2":
-        return "upshift plasma line"
-    elif ft == "dt3":
-        return "long pulse"
-    else:
-        raise ValueError(f"unknown file type {ft}")
+    match ftype(fn):
+        case "dt0":
+            return "alternating code"
+        case "dt1":
+            return "downshift plasma line"
+        case "dt2":
+            return "upshift plasma line"
+        case "dt3":
+            return "long pulse"
+        case _:
+            raise ValueError(f"unknown file type {ft}")
 
 
-def cliptlim(t: np.ndarray, tlim):
-    assert isinstance(t, np.ndarray) and t.ndim == 1
+def cliptlim(t, tlim):
     # FIXME what if tlim has 'NaT'?  as of Numpy 1.11, only Pandas understands NaT with .isnull()
 
     tlim = str2dt(tlim)
@@ -393,7 +396,7 @@ def readsnr_int(fn: Path, P: dict):
     return snrint
 
 
-def snrvtime_fit(fn: Path, bid: int) -> xarray.DataArray:
+def snrvtime_fit(fn: Path, bid: int):
     fn = Path(fn).expanduser()
 
     with h5py.File(fn, "r") as f:
@@ -443,9 +446,9 @@ def acf2psd(acfall, noiseall, Nr: int, dns: int) -> tuple:
     return spec, acf
 
 
-def readACF(fn: Path, P: dict):
+def readACF(fn: Path, P: dict) -> None:
     """
-    reads incoherent scatter radar autocorrelation function (ACF)
+    read and plot incoherent scatter radar autocorrelation function (ACF)
     """
     if not ftype(fn) in ("dt0", "dt3"):
         return
@@ -459,12 +462,13 @@ def readACF(fn: Path, P: dict):
             ft = ftype(fn)
             noisekey = None
             # %%
-            if ft == "dt3":
-                rk, acfkey, noisekey = dt3keys(f)
-            elif ft == "dt0":
-                rk, acfkey = dt0keys(f)
-            else:
-                raise TypeError("unexpected file type {}".format(ft))
+            match ft:
+                case "dt3":
+                    rk, acfkey, noisekey = dt3keys(f)
+                case "dt0":
+                    rk, acfkey = dt0keys(f)
+                case _:
+                    raise ValueError(f"unexpected file type {ft}")
 
             if acfkey is None or rk not in f:
                 if ft == "dt3":
@@ -522,7 +526,7 @@ def readACF(fn: Path, P: dict):
         print(e)
 
 
-def dt3keys(f):
+def dt3keys(f) -> tuple:
 
     rk = "/S/"
 

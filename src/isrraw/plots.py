@@ -735,10 +735,13 @@ def plotplasmamesh(spec, fg, ax, P, ptype=""):
     #    ax3 = figure().gca(projection='3d')
     #
     #    ax3.scatter(x,y,S.data)
-    if ptype == "surf":
-        ax.plot_surface(x, y, S.data, cmap="jet")
-    elif ptype == "mesh":
-        ax.plot_wireframe(x, y, S.data)
+    match ptype:
+        case "surf":
+            ax.plot_surface(x, y, S.data, cmap="jet")
+        case "mesh":
+            ax.plot_wireframe(x, y, S.data)
+        case _:
+            raise ValueError(f"ptype {ptype} not recognized")
 
     ax.set_zlim(P["vlim"])
     ax.set_zlabel("Power [dB]")
