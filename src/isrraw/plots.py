@@ -14,7 +14,7 @@ from matplotlib.pyplot import figure, subplots, gcf
 from matplotlib.dates import DateFormatter
 from matplotlib.pyplot import draw, pause, show
 from matplotlib.colors import LogNorm
-from matplotlib.cm import jet
+import matplotlib.colormaps as mcm
 import matplotlib.animation as anim
 import matplotlib.gridspec as gridspec
 import isrraw
@@ -239,7 +239,7 @@ def dojointplot(ds, spec, freq, beamazel, optical, optazel, optlla, isrlla, heig
             s=2700,
             alpha=0.6,
             linewidths=3,
-            edgecolors=jet(np.linspace(ds.min().item(), ds.max().item())),
+            edgecolors=mcm.jet(np.linspace(ds.min().item(), ds.max().item())),
         )
 
         a0.autoscale(True, tight=True)
@@ -330,6 +330,7 @@ def plotsnr(snr, fn, P, azel, ctxt=""):
             vmin=vlim[0],
             vmax=vlim[1],
             cmap="cubehelix_r",
+            shading="nearest"
         )
     except ValueError as e:
         print(e, file=stderr)
@@ -468,6 +469,7 @@ def plotacf(spec: xarray.DataArray, fn: Path, azel, t, dt, P: dict):
         vmin=P["vlimacf"][0],
         vmax=P["vlimacf"][1],
         cmap="cubehelix_r",
+        shading="nearest"
     )
 
     ytop = min(z[-1], P["zlim"][1]) if P["zlim"][1] is not None else z[-1]
@@ -547,10 +549,8 @@ def plotzslice(psd, zslice, vlim, azel, fn, dt, t, odir, stem, ttxt=None, flim=(
 def plotplasmaline(specdown, specup, fn, P, azel):
     tic = time()
 
-    spec = [s for s in (specdown, specup) if isinstance(s, xarray.DataArray)]
+    spec = [s for s in (specdown, specup)]
     Nspec = len(spec)
-    if Nspec == 0:
-        return
 
     T = spec[0].time
     dT = (T[1] - T[0]).item() / 1e9 if T.size >= 2 else ""
@@ -564,7 +564,7 @@ def plotplasmaline(specdown, specup, fn, P, azel):
         fg = None
         t = datetime.utcfromtimestamp(t.item() / 1e9)
 
-        if ptype in ("mesh", "surf"):  # cannot use subplots for 3d with matplotlib 1.4
+        if ptype in {"mesh", "surf"}:  # cannot use subplots for 3d with matplotlib 1.4
             axs = [None, None]
 
             fg = figure(figsize=(15, 5))
@@ -669,8 +669,6 @@ def plotplasmaoverlay(specdown, specup, t, fg, P: dict):
 
 
 def plotplasmatime(spec: xarray.DataArray, t, fg, ax, P: dict, ctxt):
-    if not isinstance(spec, xarray.DataArray):
-        return
 
     srng = spec.srng.data
     zgood = srng > 60.0  # above N km
@@ -682,6 +680,7 @@ def plotplasmatime(spec: xarray.DataArray, t, fg, ax, P: dict, ctxt):
         vmin=P["vlim_pl"][0],
         vmax=P["vlim_pl"][1],
         cmap="cubehelix_r",
+        shading="nearest"
     )
 
     #    h=ax.imshow(spec.freq.data/1e6,srng[zgood],10*log10(spec[zgood,:].data),
