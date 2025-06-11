@@ -330,7 +330,7 @@ def plotsnr(snr, fn, P, azel, ctxt=""):
             vmin=vlim[0],
             vmax=vlim[1],
             cmap="cubehelix_r",
-            shading="nearest"
+            shading="nearest",
         )
     except ValueError as e:
         print(e, file=stderr)
@@ -469,7 +469,7 @@ def plotacf(spec: xarray.DataArray, fn: Path, azel, t, dt, P: dict):
         vmin=P["vlimacf"][0],
         vmax=P["vlimacf"][1],
         cmap="cubehelix_r",
-        shading="nearest"
+        shading="nearest",
     )
 
     ytop = min(z[-1], P["zlim"][1]) if P["zlim"][1] is not None else z[-1]
@@ -680,7 +680,7 @@ def plotplasmatime(spec: xarray.DataArray, t, fg, ax, P: dict, ctxt):
         vmin=P["vlim_pl"][0],
         vmax=P["vlim_pl"][1],
         cmap="cubehelix_r",
-        shading="nearest"
+        shading="nearest",
     )
 
     #    h=ax.imshow(spec.freq.data/1e6,srng[zgood],10*log10(spec[zgood,:].data),

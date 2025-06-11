@@ -5,7 +5,7 @@
 
 Utilities for working with Incoherent Scatter Radar data, especially from Poker Flat AMISR.
 
-We work with the complex I+jQ voltage samples, the lowest level data
+We work with the complex `I + jQ` voltage samples, the lowest level data
 available from the radar, on a single pulse basis. Depending on the beam
 pattern and pulse modulation, the per-beam pulse cadence is perhaps on
 the 75 milliscond time scale.
