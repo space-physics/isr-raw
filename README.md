@@ -71,10 +71,8 @@ When requesting raw AMISR data, please
 as this is more convenient for
 SRI staff than the date/time.
 
-Here is a limited selection of
-[raw ISR data](https://bit.ly/pokerhist).
-It is indexed by date; under each date look for the ISR folder. You will
-typically want to download all four file types noted in the table below.
+Raw ISR data files are indexed by date.
+The four file types indicated by filename suffix are:
 
 * dt0.h5      Ion Line: Alternating Code
 * dt1.h5      Downshifted Plasma line (negative Doppler shift)
